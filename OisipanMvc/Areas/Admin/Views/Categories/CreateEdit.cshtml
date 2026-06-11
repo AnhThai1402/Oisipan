@@ -1,0 +1,71 @@
+@model FrontendMvc.Models.CategoryAdminViewModel
+@{
+    ViewData["Title"] = Model?.CategoryId > 0 ? "Chỉnh sửa danh mục" : "Thêm danh mục mới";
+    var isEdit = Model?.CategoryId > 0;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Index"><i class="bi bi-house-door"></i> Danh mục</a>
+    <span>/</span>
+    <span>@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+        <h1>@ViewData["Title"]</h1>
+        <p>@(isEdit ? "Cập nhật thông tin danh mục" : "Tạo danh mục mới cho sản phẩm")</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Index" class="soft-action">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</section>
+
+<form method="post" class="form-container">
+    <article class="panel" style="max-width: 700px;">
+        <div class="form-group">
+            <label for="categoryName">Tên danh mục <span class="required">*</span></label>
+            <input type="text" id="categoryName" name="CategoryName" class="form-input form-lg" 
+                   value="@Model?.CategoryName" placeholder="Ví dụ: Bánh ngọt Nhật" required />
+            <small class="form-hint">Tên danh mục hiển thị trên website</small>
+        </div>
+
+        <div class="form-group">
+            <label for="categoryDescription">Mô tả</label>
+            <textarea id="categoryDescription" name="Description" class="form-input" rows="4" 
+                      placeholder="Mô tả ngắn về danh mục...">@Model?.Description</textarea>
+            <small class="form-hint">Mô tả sẽ hiển thị trong danh sách danh mục</small>
+        </div>
+
+        @if (Model?.ProductCount > 0)
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Danh mục này có <strong>@Model.ProductCount sản phẩm</strong></span>
+            </div>
+        }
+
+        <div class="form-actions">
+            <a asp-area="Admin" asp-controller="Categories" asp-action="Index" class="soft-action">
+                <i class="bi bi-x-circle"></i> Hủy
+            </a>
+            <button type="submit" class="primary-action">
+                <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
+                @(isEdit ? "Cập nhật danh mục" : "Tạo danh mục")
+            </button>
+        </div>
+    </article>
+</form>
+
+@section Scripts {
+    <script>
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const categoryName = document.getElementById('categoryName').value.trim();
+            if (!categoryName) {
+                e.preventDefault();
+                alert('Vui lòng nhập tên danh mục');
+            }
+        });
+    </script>
+}

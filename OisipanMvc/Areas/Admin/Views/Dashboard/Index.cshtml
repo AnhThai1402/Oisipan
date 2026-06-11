@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+}
+
+<section class="admin-hero">
+    <div>
+        <span class="eyebrow">Bảng điều khiển</span>
+        <h1>Bảng điều khiển</h1>
+        <p>Theo dõi doanh thu, tồn kho, đơn hàng cần xử lý và hiệu suất chiến dịch trong ngày.</p>
+    </div>
+    <button class="primary-action"><i class="fa-solid fa-file-export"></i> Xuất báo cáo</button>
+</section>
+
+<section class="metric-grid">
+    <article class="metric-card glow-green"><span>Doanh thu tháng</span><strong>426.8Mđ</strong><small>+18.2% tăng trưởng</small></article>
+    <article class="metric-card glow-gold"><span>Đơn chờ xử lý</span><strong>38</strong><small>12 đơn cần xác nhận</small></article>
+    <article class="metric-card glow-red"><span>Sắp hết hàng</span><strong>9</strong><small>Cần nhập trong 48 giờ</small></article>
+    <article class="metric-card glow-blue"><span>Khách hàng mới</span><strong>1,284</strong><small>+7.4% trong tuần</small></article>
+</section>
+
+<section class="admin-grid two-columns">
+    <article class="panel">
+        <div class="panel-head">
+            <div><span class="eyebrow">Hiệu suất</span><h2>Doanh thu theo kênh</h2></div>
+            <select class="admin-select"><option>7 ngày</option><option>30 ngày</option></select>
+        </div>
+        <div class="chart-bars" aria-label="Biểu đồ doanh thu">
+            <span style="--h:45%"><b>Web</b></span>
+            <span style="--h:72%"><b>App</b></span>
+            <span style="--h:58%"><b>Shopee</b></span>
+            <span style="--h:84%"><b>Grab</b></span>
+            <span style="--h:64%"><b>Store</b></span>
+            <span style="--h:92%"><b>TikTok</b></span>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div><span class="eyebrow">Việc cần làm</span><h2>Ưu tiên vận hành</h2></div>
+        </div>
+        <div class="task-list">
+            <label><input type="checkbox"> Xác nhận 12 đơn COD trước 15:00</label>
+            <label><input type="checkbox"> Kiểm tra tồn kho bánh Mấn Nhân</label>
+            <label><input type="checkbox"> Duyệt voucher cuối tuần</label>
+            <label><input type="checkbox"> Phản hồi 6 yêu cầu đổi trả</label>
+        </div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div><span class="eyebrow">Đơn mới</span><h2>Đơn hàng cần chú ý</h2></div>
+        <a class="ghost-link" asp-area="Admin" asp-controller="Orders" asp-action="Index">Xem tất cả</a>
+    </div>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Giá trị</th><th>Thanh toán</th><th>Trạng thái</th><th>ETA</th></tr></thead>
+            <tbody>
+                <tr><td>#OP1048</td><td>Minh Anh</td><td>845.000đ</td><td>COD</td><td><span class="status pending">Chờ xác nhận</span></td><td>Hôm nay</td></tr>
+                <tr><td>#OP1047</td><td>Hoàng Nam</td><td>1.245.000đ</td><td>Ví điện tử</td><td><span class="status preparing">Đang chuẩn bị</span></td><td>17:30</td></tr>
+                <tr><td>#OP1046</td><td>Gia Hân</td><td>520.000đ</td><td>Thẻ</td><td><span class="status shipping">Đang giao</span></td><td>35 phút</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>

@@ -1,0 +1,139 @@
+@model List<FrontendMvc.Models.VoucherAdminViewModel>
+@{
+    ViewData["Title"] = "Quản lý Voucher";
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Danh mục</span>
+        <h1>Quản lý mã giảm giá</h1>
+        <p>Tạo và quản lý các voucher khuyến mãi.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Create" class="primary-action"><i class="bi bi-plus-circle"></i> Tạo voucher</a>
+</section>
+
+@if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle"></i>
+        <div class="alert-content">
+            @TempData["Message"]
+        </div>
+    </div>
+}
+
+<section class="panel">
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã voucher</th>
+                    <th>Giá trị giảm</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày hết hạn</th>
+                    <th style="width: 120px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Count > 0)
+                {
+                    @foreach (var voucher in Model)
+                    {
+                        var isExpired = voucher.ExpiryDate < DateTime.Now;
+                        <tr>
+                            <td><strong>@voucher.Code</strong></td>
+                            <td><span class="text-success">@voucher.DiscountValue.ToString("N0")đ</span></td>
+                            <td>
+                                @if (isExpired)
+                                {
+                                    <span class="status inactive">Hết hạn</span>
+                                }
+                                else
+                                {
+                                    <span class="status active">Hoạt động</span>
+                                }
+                            </td>
+                            <td>@voucher.ExpiryDate.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Detail" asp-route-id="@voucher.VoucherId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Edit" asp-route-id="@voucher.VoucherId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                    <form method="post" asp-area="Admin" asp-controller="Vouchers" asp-action="Delete" asp-route-id="@voucher.VoucherId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@voucher.Code');">
+                                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 40px;">
+                            <p style="color: var(--admin-muted);">Không có voucher nào. <a asp-area="Admin" asp-controller="Vouchers" asp-action="Create">Tạo voucher mới</a></p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa voucher?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa voucher <strong id="voucherCode"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa voucher</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingForm = null;
+
+        function showDeleteConfirm(event, voucherCode) {
+            event.preventDefault();
+            pendingForm = event.target;
+            
+            // Update modal with voucher code
+            document.getElementById('voucherCode').textContent = voucherCode;
+            
+            // Show modal with animation
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+    </script>
+}

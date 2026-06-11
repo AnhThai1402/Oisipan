@@ -1,0 +1,170 @@
+@model FrontendMvc.Models.ProductAdminViewModel
+@{
+    ViewData["Title"] = Model?.ProductName;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Products" asp-action="Index"><i class="bi bi-house-door"></i> Sản phẩm</a>
+    <span>/</span>
+    <span>Chi tiết</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Chi tiết sản phẩm</span>
+        <h1>@Model?.ProductName</h1>
+        <p>SKU: <strong>@Model?.Sku</strong></p>
+    </div>
+    <div class="button-group">
+        <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model?.ProductId" class="primary-action">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa
+        </a>
+        <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="soft-action">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</section>
+
+<div class="admin-grid two-columns">
+    <!-- Product Image & Basic Info -->
+    <article class="panel">
+        <div class="product-detail-image">
+            @if (!string.IsNullOrWhiteSpace(Model?.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="@Model.ProductName" />
+            }
+            else
+            {
+                <div class="image-placeholder">
+                    <i class="bi bi-image"></i>
+                </div>
+            }
+        </div>
+
+        <div class="product-detail-info">
+            <div class="info-row">
+                <span class="label">Danh mục</span>
+                <strong>@Model?.CategoryName</strong>
+            </div>
+            <div class="info-row">
+                <span class="label">Trạng thái</span>
+                <span class="status @(Model?.Status == "active" ? "live" : "muted")">
+                    <i class="bi bi-@(Model?.Status == "active" ? "check-circle-fill" : "dash-circle-fill")"></i>
+                    @(Model?.Status == "active" ? "Đang bán" : "Ẩn")
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Ngày tạo</span>
+                <span>@Model?.CreatedDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Lần cập nhật cuối</span>
+                <span>@(Model?.UpdatedDate?.ToString("dd/MM/yyyy") ?? "—")</span>
+            </div>
+        </div>
+    </article>
+
+    <!-- Pricing & Stock Info -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Giá & Tồn kho</h2>
+        </div>
+
+        <div class="metric-card glow-gold">
+            <span>Giá bán</span>
+            <strong>@Model?.Price.ToString("N0")đ</strong>
+            <small>Giá hiển thị trên website</small>
+        </div>
+
+        <div class="metric-card glow-green">
+            <span>Tồn kho hiện tại</span>
+            <strong>@Model?.Stock</strong>
+            <small>@(Model?.Stock > (Model?.MinimumStock ?? 10) ? "Đủ hàng" : "⚠️ Sắp hết hàng")</small>
+        </div>
+
+        @if (Model?.MinimumStock.HasValue ?? false)
+        {
+            <div class="metric-card glow-blue">
+                <span>Tồn kho tối thiểu</span>
+                <strong>@Model.MinimumStock</strong>
+                <small>Cảnh báo khi còn lại</small>
+            </div>
+        }
+    </article>
+</div>
+
+<!-- Description -->
+<article class="panel">
+    <div class="panel-head">
+        <h2>Mô tả chi tiết</h2>
+    </div>
+    <div class="product-description">
+        @if (!string.IsNullOrWhiteSpace(Model?.Description))
+        {
+            <p>@Html.Raw(Model.Description.Replace(Environment.NewLine, "<br />"))</p>
+        }
+        else
+        {
+            <p class="text-muted"><em>Chưa có mô tả</em></p>
+        }
+    </div>
+</article>
+
+<!-- Action Buttons -->
+<div class="form-actions">
+    <button type="button" class="soft-action danger" data-open-modal="deleteModal">
+        <i class="bi bi-trash-fill"></i> Xóa sản phẩm
+    </button>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model?.ProductId" class="primary-action">
+        <i class="bi bi-pencil-square"></i> Chỉnh sửa
+    </a>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content modal-sm">
+        <div class="modal-head">
+            <h2><i class="bi bi-exclamation-triangle-fill" style="color: var(--admin-red);"></i> Xác nhận xóa</h2>
+        </div>
+        <p>Bạn có chắc muốn xóa sản phẩm <strong>@Model?.ProductName</strong>?</p>
+        <p style="color: var(--admin-red); font-size: 0.85rem;">⚠️ Hành động này không thể hoàn tác.</p>
+        <form method="post" asp-action="Delete" asp-route-id="@Model?.ProductId">
+            <div class="modal-actions">
+                <button type="button" class="soft-action" data-close-modal>Hủy</button>
+                <button type="submit" class="danger-action">Xóa sản phẩm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Modal functionality
+        document.querySelectorAll('[data-open-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-open-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+                document.body.style.overflow = '';
+            });
+        });
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    </script>
+}

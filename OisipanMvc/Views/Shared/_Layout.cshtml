@@ -1,0 +1,372 @@
+﻿<!DOCTYPE html>
+@{
+    var cartItems = Context.Session.GetJson<List<CartItemViewModel>>("Cart") ?? new List<CartItemViewModel>();
+    var cartTotalQuantity = cartItems.Sum(item => item.Quantity);
+    var cartTotalAmount = cartItems.Sum(item => item.LineTotal);
+    var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Oishipan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+</head>
+<body data-cart-message="@TempData["CartMessage"]" data-cart-error="@TempData["CartError"]">
+
+    <header id="main-header">
+        <a asp-controller="Home" asp-action="Index" class="logo">
+            <span class="logo-text">Oishipan</span>
+        </a>
+        <nav>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="hero" class="active">Trang chủ</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="menu">Menu bánh</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="about">Về Oishipan</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="footer">Liên hệ</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="news">Tin tức</a>
+        </nav>
+        <div class="header-actions">
+            <button class="icon-btn" id="open-cart-btn" aria-label="Open Cart">
+                <i class="bi bi-bag"></i>
+                <span class="cart-badge" id="cart-counter">@cartTotalQuantity</span>
+            </button>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="Orders" asp-action="Index" class="btn-login">
+                    <i class="bi bi-receipt"></i> Lịch sử đơn hàng
+                </a>
+                <a asp-controller="Vouchers" asp-action="Index" class="btn-login">
+                    <i class="bi bi-ticket"></i> Vouchers
+                </a>
+                <span class="btn-login">
+                    <i class="bi bi-person-check"></i> @User.Identity.Name
+                </span>
+                <form method="post" asp-controller="Account" asp-action="Logout" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn-login">
+                    <i class="bi bi-person-circle"></i> Đăng nhập
+                </a>
+            }
+        </div>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3 class="cart-title">Giỏ Bánh Của Bạn</h3>
+            <button class="close-cart" id="close-cart-btn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="cart-items-list" id="cart-items-wrap">
+            @if (cartItems.Any())
+            {
+                @foreach (var item in cartItems)
+                {
+                    <div class="cart-item" data-product-id="@item.ProductId">
+                        <div class="cart-item-icon">
+                            @if (!string.IsNullOrWhiteSpace(item.Image))
+                            {
+                                <img src="@item.Image" alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-cake2"></i>
+                            }
+                        </div>
+                        <div class="cart-item-details">
+                            <span class="cart-item-title">@item.Name</span>
+                            <span class="cart-item-price">@item.UnitPrice.ToString("N0")đ</span>
+                            <div class="cart-item-actions">
+                                <button type="button" class="cart-qty-btn cart-qty-decrease" data-product-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity - 1)">-</button>
+                                <span style="font-size: 0.9rem; font-weight: 600;" class="cart-qty-display">@item.Quantity</span>
+                                <button type="button" class="cart-qty-btn cart-qty-increase" data-product-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity + 1)">+</button>
+                            </div>
+                        </div>
+                        <button type="button" class="remove-item cart-remove-btn" data-product-id="@item.ProductId" data-action="remove" title="Xóa khỏi giỏ">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="cart-empty">
+                    <i class="bi bi-bag"></i>
+                    <strong>Giỏ hàng trống</strong>
+                    <span>Chọn món bánh bạn thích để bắt đầu đặt hàng.</span>
+                </div>
+            }
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total-row">
+                <span>Tổng tiền hàng:</span>
+                <span class="cart-total-price" id="cart-total-price">@cartTotalAmount.ToString("N0")đ</span>
+            </div>
+            <button class="btn-primary" style="width: 100%; text-align: center;" id="cart-checkout-btn" @(cartItems.Any() ? "" : "disabled")>
+                Tiến hành thanh toán
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="checkout-modal-overlay">
+        <div class="custom-modal">
+            <button class="modal-close-btn" id="close-checkout-modal"><i class="bi bi-x-lg"></i></button>
+            <h3 class="modal-title">Thông Tin Giao Hàng</h3>
+            <form id="checkout-form" method="post" asp-controller="Cart" asp-action="Checkout" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                <div class="form-group">
+                    <label for="customer-name">Họ và tên khách hàng</label>
+                    <input type="text" id="customer-name" name="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Số điện thoại liên hệ</label>
+                    <input type="tel" id="customer-phone" name="CustomerPhone" class="form-control" placeholder="Ví dụ: 0901234567" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-address">Địa chỉ nhận bánh</label>
+                    <input type="text" id="customer-address" name="CustomerAddress" class="form-control" placeholder="Số nhà, tên đường..." required>
+                </div>
+                <input type="hidden" id="payment-method" name="PaymentMethod" value="COD" />
+                <div class="form-group">
+                    <label>Phương thức thanh toán</label>
+                    <div class="payment-options">
+                        <div class="pay-opt-card active" data-method="COD" onclick="selectPaymentMethod(this)">
+                            <i class="bi bi-cash-stack"></i>
+                            <span>Khi nhận hàng</span>
+                        </div>
+                        <div class="pay-opt-card" data-method="Bank" onclick="selectPaymentMethod(this)">
+                            <i class="bi bi-bank"></i>
+                            <span>Chuyển khoản</span>
+                        </div>
+                        <div class="pay-opt-card" data-method="Momo" onclick="selectPaymentMethod(this)">
+                            <i class="bi bi-wallet2"></i>
+                            <span>Ví Momo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Code Section -->
+                <div id="qr-code-section" style="display: none; border: 2px dashed var(--accent-green); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 1.5rem; background: rgba(31, 111, 80, 0.03);">
+                    <h4 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-main);">Quét mã QR để thanh toán</h4>
+                    <div id="qr-code-display" style="display: flex; justify-content: center; margin-bottom: 1rem;">
+                        <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="160" height="160" fill="white" stroke="#1f6f50" stroke-width="2"/>
+                            <rect x="8" y="8" width="40" height="40" fill="#1f6f50"/>
+                            <rect x="112" y="8" width="40" height="40" fill="#1f6f50"/>
+                            <rect x="8" y="112" width="40" height="40" fill="#1f6f50"/>
+                            <text x="80" y="85" text-anchor="middle" font-size="12" font-family="Arial" fill="#1f6f50" font-weight="bold">Mã QR</text>
+                        </svg>
+                    </div>
+                    <div id="qr-amount" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.8rem;">@cartTotalAmount.ToString("N0")đ</div>
+                    <small style="color: var(--text-muted); display: block;">Số tiền chuyển khoản chính xác như trên</small>
+                </div>
+
+                <!-- Bank Transfer Section -->
+                <div id="bank-transfer-section" style="display: none; border: 2px solid var(--accent-green); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; background: rgba(31, 111, 80, 0.05);">
+                    <h4 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-bank" style="color: var(--accent-green);"></i> Thông tin thanh toán
+                    </h4>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <small style="color: var(--text-muted);">Mã chuyển khoản</small>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input type="text" id="transfer-code" readonly style="flex: 1; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; font-size: 0.85rem; font-weight: 600; background-color: #f8f9fa;" value="">
+                            <button type="button" class="icon-btn" title="Sao chép mã" onclick="copyTransferCode()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Sao chép mã này vào nội dung chuyển khoản</small>
+                    </div>
+
+                    <div style="background: white; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                        <div style="margin-bottom: 0.8rem;">
+                            <small style="color: var(--text-muted); font-weight: 500;">Chuyển khoản đến</small>
+                            <p style="margin: 0.3rem 0; font-weight: 600;">Oishipan Bakery</p>
+                        </div>
+                        <div style="margin-bottom: 0.8rem;">
+                            <small style="color: var(--text-muted); font-weight: 500;">Số tài khoản</small>
+                            <p style="margin: 0.3rem 0; font-family: monospace; font-weight: 600;">1234567890</p>
+                        </div>
+                        <div>
+                            <small style="color: var(--text-muted); font-weight: 500;">Ngân hàng</small>
+                            <p style="margin: 0.3rem 0;">Vietcombank</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Tổng thanh toán</span>
+                        <div id="checkout-total-display" style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--accent-green); font-weight: 700;">@cartTotalAmount.ToString("N0")đ</div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="padding: 0.8rem 2rem;">Xác Nhận Đặt Hàng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="login-modal-overlay">
+        <div class="auth-grid">
+            <button class="modal-close-btn" id="close-login-modal"><i class="fa-solid fa-xmark"></i></button>
+            <div class="auth-banner">
+                <div class="auth-badge-row">
+                    <span class="auth-tag">MỚI NHẤT</span>
+                    <h4 class="auth-banner-title">Bộ Sưu Tập<br>"MẤN NHÂN"</h4>
+                    <p class="auth-banner-desc">Thưởng vị ngọt thanh tươi mát kết hợp vỏ giòn rụm từ nguyên liệu thượng hạng.</p>
+                </div>
+                <div class="auth-visual-wrap">
+                    <div class="auth-bun-container">
+                        <div class="auth-glow"></div>
+                        <svg class="main-showcase-img" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 140px; height: 140px;">
+                            <circle cx="100" cy="100" r="70" fill="#E89B37" />
+                            <circle cx="98" cy="98" r="68" fill="url(#authBunGradient)" />
+                            <ellipse cx="98" cy="100" rx="42" ry="24" fill="#F4CD91" opacity="0.9" />
+                            <circle cx="70" cy="94" r="5" fill="#522D16" />
+                            <circle cx="82" cy="88" r="4.5" fill="#522D16" />
+                            <circle cx="114" cy="88" r="4.5" fill="#522D16" />
+                            <circle cx="126" cy="94" r="5" fill="#522D16" />
+                            <circle cx="98" cy="104" r="8" fill="#D32F2F" />
+                            <circle cx="96" cy="102" r="2.5" fill="#FF8A80" opacity="0.8" />
+                            <defs>
+                                <radialGradient id="authBunGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(104 90) rotate(115) scale(75)">
+                                    <stop offset="0%" stop-color="#FCD58C" />
+                                    <stop offset="50%" stop-color="#ECA343" />
+                                    <stop offset="100%" stop-color="#C6791E" />
+                                </radialGradient>
+                            </defs>
+                        </svg>
+                        <div class="auth-sparkle" style="top: 5px; right: 10px;">✨</div>
+                    </div>
+                </div>
+                <div class="auth-banner-footer">
+                    <div><p class="auth-footer-italic">"Hương vị từ xứ sở Mặt Trời"</p></div>
+                    <div class="auth-rating-box"><span class="auth-rating-score">4.9 / 5</span><span class="auth-rating-label">Đánh giá</span></div>
+                </div>
+            </div>
+
+            <div class="auth-forms-container">
+                <div id="login-panel" class="form-card">
+                    <div class="auth-header-block">
+                        <span class="auth-sub">Chào mừng trở lại</span>
+                        <h3 class="auth-title">Đăng Nhập</h3>
+                    </div>
+                    <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@currentUrl" class="auth-form" novalidate>
+                        @Html.AntiForgeryToken()
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-envelope"></i></span><input type="email" id="login-email" name="Email" class="auth-control" placeholder="Tên tài khoản hoặc Email" required></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-lock"></i></span><input type="password" id="login-password" name="Password" class="auth-control" placeholder="Mật khẩu" required><button type="button" class="eye-btn" onclick="togglePassword('login-password', this)"><i class="fa-regular fa-eye"></i></button></div></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="checkbox-row"><input type="checkbox" class="checkbox-custom" id="remember-me" name="RememberMe" value="true"><input type="hidden" name="RememberMe" value="false"><span class="checkbox-label">Ghi nhớ đăng nhập</span></label>
+                            <a href="javascript:void(0)" onclick="switchAuthPanel('forgot')" class="forgot-link">Quên mật khẩu?</a>
+                        </div>
+                        <button type="submit" class="btn-auth-submit"><span>Đăng Nhập</span><i class="fa-solid fa-arrow-right"></i></button>
+                    </form>
+                    <div class="divider">Hoặc</div>
+                    <div class="social-row">
+                        <button class="social-btn google" onclick="triggerSocialLogin('Google')"><i class="fa-brands fa-google"></i> Google</button>
+                        <button class="social-btn facebook" onclick="triggerSocialLogin('Facebook')"><i class="fa-brands fa-facebook-f"></i> Facebook</button>
+                    </div>
+                    <p class="auth-switch-prompt">Chưa có tài khoản? <a href="javascript:void(0)" onclick="switchAuthPanel('register')" class="auth-switch-link">Đăng ký ngay</a></p>
+                </div>
+
+                <div id="register-panel" class="form-card hidden">
+                    <div class="auth-header-block">
+                        <span class="auth-sub">Đồng hành cùng Oishipan</span>
+                        <h3 class="auth-title">Đăng Ký</h3>
+                    </div>
+                    <form method="post" asp-controller="Account" asp-action="Register" class="auth-form" novalidate>
+                        @Html.AntiForgeryToken()
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-user"></i></span><input type="text" id="reg-name" name="FullName" class="auth-control" placeholder="Họ và Tên của bạn" required></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-envelope"></i></span><input type="email" id="reg-email" name="Email" class="auth-control" placeholder="Địa chỉ Email" required></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-phone"></i></span><input type="tel" id="reg-phone" name="PhoneNumber" class="auth-control" placeholder="Số điện thoại" required></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-map"></i></span><input type="text" id="reg-address" name="Address" class="auth-control" placeholder="Địa chỉ"></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-lock"></i></span><input type="password" id="reg-password" name="Password" class="auth-control" placeholder="Mật khẩu" onkeyup="checkPasswordStrength(this.value)" required><button type="button" class="eye-btn" onclick="togglePassword('reg-password', this)"><i class="fa-regular fa-eye"></i></button></div></div>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-lock"></i></span><input type="password" id="reg-confirm-password" name="ConfirmPassword" class="auth-control" placeholder="Nhập lại mật khẩu" required><button type="button" class="eye-btn" onclick="togglePassword('reg-confirm-password', this)"><i class="fa-regular fa-eye"></i></button></div></div>
+                        <div class="strength-indicator">
+                            <div class="strength-header"><span>Độ mạnh:</span><span id="strength-label">Rất yếu</span></div>
+                            <div class="strength-track"><div id="strength-bar" class="strength-bar"></div></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-row">
+                                <input type="checkbox" class="checkbox-custom" id="agree-terms">
+                                <span class="checkbox-label">Tôi đồng ý với Điều khoản và Chính sách.</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-auth-submit"><span>Tạo Tài Khoản</span><i class="fa-solid fa-user-plus"></i></button>
+                    </form>
+                    <p class="auth-switch-prompt">Đã có tài khoản? <a href="javascript:void(0)" onclick="switchAuthPanel('login')" class="auth-switch-link">Đăng nhập</a></p>
+                </div>
+
+                <div id="forgot-panel" class="form-card hidden">
+                    <div class="auth-header-block">
+                        <h3 class="auth-title">Quên Mật Khẩu?</h3>
+                    </div>
+                    <form id="forgot-form" onsubmit="handleForgotPasswordRequest(event)" class="auth-form" novalidate>
+                        <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-envelope"></i></span><input type="email" id="forgot-email" class="auth-control" placeholder="Nhập Email đã đăng ký"></div></div>
+                        <button type="submit" class="btn-auth-submit"><span>Gửi Yêu Cầu</span><i class="fa-regular fa-paper-plane"></i></button>
+                    </form>
+                    <div id="forgot-success" class="form-card hidden">
+                        <div class="forgot-success-box">
+                            <h4 class="success-title">Yêu Cầu Thành Công!</h4>
+                            <p class="success-desc">Kiểm tra hộp thư <strong id="sent-email-placeholder"></strong> để đặt lại mật khẩu.</p>
+                        </div>
+                    </div>
+                    <p style="text-align: center;"><a href="javascript:void(0)" onclick="switchAuthPanel('login')" class="btn-back-login"><i class="fa-solid fa-arrow-left"></i> Quay lại Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <footer id="footer">
+        <div class="footer-grid">
+            <div class="footer-logo-desc">
+                <a asp-controller="Home" asp-action="Index" class="logo"><span class="logo-text">Oishipan</span></a>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.65;">Oishipan mang đến tinh hoa bánh nướng Nhật Bản cao cấp nóng hổi mỗi ngày.</p>
+                <div class="footer-socials">
+                    <a href="#" class="icon-btn"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="icon-btn"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="footer-column-title">Liên kết nhanh</h4>
+                <ul class="footer-links">
+                    <li><a asp-controller="Home" asp-action="Index" asp-fragment="hero">Trang chủ</a></li>
+                    <li><a asp-controller="Home" asp-action="Index" asp-fragment="menu">Thực đơn</a></li>
+                    <li><a asp-controller="Home" asp-action="Index" asp-fragment="about">Về Oishipan</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-column-title">Hệ thống cửa hàng</h4>
+                <ul class="footer-links" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <li><i class="fa-solid fa-map-marker-alt" style="margin-right: 0.5rem;"></i> 88 Nguyễn Huệ, Quận 1, TP. HCM</li>
+                    <li><i class="fa-solid fa-phone" style="margin-right: 0.5rem;"></i> +84 28 3824 1234</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Hệ thống cửa hàng Oishipan Bakery.</p>
+        </div>
+    </footer>
+
+    <script src="~/js/home.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

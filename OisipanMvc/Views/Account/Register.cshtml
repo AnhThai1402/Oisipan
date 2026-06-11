@@ -1,0 +1,157 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng Ký";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - OISIPAN</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="register-page">
+        <div class="register-container">
+            <div class="register-card">
+                <span class="subtitle">Đồng Hành Cùng OISIPAN</span>
+                <h1>Đăng Ký</h1>
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="validation-summary-errors">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>@TempData["ErrorMessage"]</span>
+                    </div>
+                }
+
+                <form method="post" asp-action="Register" class="register-form">
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                    <div class="form-group">
+                        <label asp-for="FullName">Họ và Tên của bạn</label>
+                        <i class="bi bi-person form-icon"></i>
+                        <input asp-for="FullName" class="form-control" placeholder="Họ và Tên của bạn" />
+                        <span asp-validation-for="FullName" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Email">Địa chỉ Email</label>
+                        <i class="bi bi-envelope form-icon"></i>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="Địa chỉ Email" />
+                        <span asp-validation-for="Email" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="PhoneNumber">Số điện thoại</label>
+                        <i class="bi bi-telephone form-icon"></i>
+                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="0xxxxxxxxx" />
+                        <span asp-validation-for="PhoneNumber" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Address">Địa chỉ (Không bắt buộc)</label>
+                        <i class="bi bi-geo-alt form-icon"></i>
+                        <input asp-for="Address" type="text" class="form-control" placeholder="Địa chỉ của bạn" />
+                        <span asp-validation-for="Address" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Password">Mật khẩu</label>
+                        <div class="password-field">
+                            <i class="bi bi-lock form-icon"></i>
+                            <input asp-for="Password" type="password" class="form-control password-input" placeholder="Mật khẩu" 
+                                   onchange="updatePasswordStrength(this.value)" onkeyup="updatePasswordStrength(this.value)" />
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility(this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="field-validation-error"></span>
+
+                        <div class="password-strength-container">
+                            <div class="password-strength-bar">
+                                <div class="password-strength-fill" id="strengthFill"></div>
+                            </div>
+                            <div class="password-strength-label">
+                                <span>Độ mạnh:</span>
+                                <span class="password-strength-text" id="strengthText">Rất yếu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ConfirmPassword">Nhập lại Mật khẩu</label>
+                        <div class="password-field">
+                            <i class="bi bi-lock form-icon"></i>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control password-input" placeholder="Nhập lại Mật khẩu" />
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility(this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-check form-check-terms">
+                        <input type="checkbox" id="agreeTerms" name="agreeTerms" class="form-check-input" required />
+                        <label for="agreeTerms" class="form-check-label">
+                            Tôi đồng ý với Điều khoản và Chính sách
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Tạo Tài Khoản</button>
+                </form>
+
+                <div class="login-link">
+                    Đã có tài khoản?
+                    <a href="@Url.Action("Login", "Account")">Đăng nhập</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script>
+        function updatePasswordStrength(password) {
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+            let strength = 'weak';
+
+            if (password.length === 0) {
+                fill.className = 'password-strength-fill';
+                text.className = 'password-strength-text';
+                text.textContent = 'Rất yếu';
+                return;
+            }
+
+            if (password.length < 6) {
+                strength = 'weak';
+            } else if (password.length < 10) {
+                strength = 'fair';
+            } else if (password.length < 15) {
+                strength = 'good';
+            } else {
+                strength = 'strong';
+            }
+
+            fill.className = 'password-strength-fill ' + strength;
+            text.className = 'password-strength-text ' + strength;
+
+            const strengthLabels = {
+                'weak': 'Rất yếu',
+                'fair': 'Rất yếu',
+                'good': 'Vừa phải',
+                'strong': 'Mạnh'
+            };
+            text.textContent = strengthLabels[strength];
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeFormValidation();
+            initializeFormSubmission();
+        });
+    </script>
+</body>
+</html>
