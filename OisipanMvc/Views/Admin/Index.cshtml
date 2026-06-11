@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Bang quan tri";
+}
+
+<section class="admin-panel">
+    <div class="admin-hero">
+        <p class="auth-eyebrow">Quan tri he thong</p>
+        <h1>Bang quan tri</h1>
+        <p>Chao mung @User.Identity?.Name. Day la khu vuc quan tri danh cho tai khoan Admin.</p>
+    </div>
+
+    <div class="admin-grid">
+        <a class="admin-tile" asp-controller="AdminProducts" asp-action="Index">
+            <span>San pham</span>
+            <strong>Quan ly san pham</strong>
+        </a>
+        <a class="admin-tile" href="#">
+            <span>Don hang</span>
+            <strong>Quan ly don hang</strong>
+        </a>
+        <a class="admin-tile" asp-controller="AdminCategories" asp-action="Index">
+            <span>Danh muc</span>
+            <strong>Quan ly danh muc</strong>
+        </a>
+        <a class="admin-tile" asp-controller="AdminUsers" asp-action="Index">
+            <span>Tai khoan</span>
+            <strong>Quan ly nguoi dung</strong>
+        </a>
+    </div>
+</section>
