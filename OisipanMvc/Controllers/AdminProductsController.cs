@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using FrontendMvc.Services;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +13,12 @@ public class AdminProductsController : Controller
 {
     private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IImageStorageService _imageStorageService;
 
-    public AdminProductsController(IHttpClientFactory httpClientFactory, IWebHostEnvironment environment)
+    public AdminProductsController(IHttpClientFactory httpClientFactory, IImageStorageService imageStorageService)
     {
         _httpClientFactory = httpClientFactory;
-        _environment = environment;
+        _imageStorageService = imageStorageService;
     }
 
     public async Task<IActionResult> Index()
@@ -159,16 +160,14 @@ public class AdminProductsController : Controller
             return;
         }
 
-        var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
-        var fileName = $"{Guid.NewGuid():N}{extension}";
-        var uploadFolder = Path.Combine(_environment.WebRootPath, "uploads", "products");
-        Directory.CreateDirectory(uploadFolder);
-
-        var filePath = Path.Combine(uploadFolder, fileName);
-        await using var stream = System.IO.File.Create(filePath);
-        await model.ImageFile.CopyToAsync(stream);
-
-        model.Image = $"/uploads/products/{fileName}";
+        try
+        {
+            model.Image = await _imageStorageService.UploadProductImageAsync(model.ImageFile, HttpContext.RequestAborted);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(model.ImageFile), $"Khong the upload anh len Cloudinary: {ex.Message}");
+        }
     }
 
     private async Task AddApiErrors(HttpResponseMessage response)

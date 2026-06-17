@@ -228,3 +228,8 @@ D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\FrontendMvc.dll
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\FrontendMvc.pdb
+D:\DATN_Oisipan_2026\OisipanMvc\bin\Debug\net10.0\CloudinaryDotNet.dll
+D:\DATN_Oisipan_2026\OisipanMvc\bin\Debug\net10.0\Newtonsoft.Json.dll
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\FrontendMvc.csproj.AssemblyReference.cache
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\FrontendMvc.sourcelink.json
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\Frontend.102078B3.Up2Date
