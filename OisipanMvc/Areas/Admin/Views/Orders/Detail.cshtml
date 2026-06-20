@@ -1,0 +1,144 @@
+@model FrontendMvc.Models.OrderAdminViewModel
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:0000}";
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Orders" asp-action="Index"><i class="bi bi-house-door"></i> Đơn hàng</a>
+    <span>/</span>
+    <span>Chi tiết</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Chi tiết đơn hàng</span>
+        <h1>#OP-@Model.OrderId.ToString("0000")</h1>
+        <p>Đặt hàng bởi <strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách hàng" : Model.CustomerName)</strong></p>
+    </div>
+    <div class="button-group">
+        <button class="primary-action" title="In đơn hàng" onclick="window.print()"><i class="bi bi-printer"></i> In</button>
+    </div>
+</section>
+
+@if (TempData["Message"] is string message)
+{
+    <section class="panel" style="padding: 14px 18px;">
+        <strong>@message</strong>
+    </section>
+}
+
+<div class="admin-grid two-columns">
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-box-seam"></i> Thông tin đơn hàng</h2>
+        </div>
+
+        <div class="detail-group">
+            <div class="detail-row"><span class="detail-label">Mã đơn</span><strong>#OP-@Model.OrderId.ToString("0000")</strong></div>
+            <div class="detail-row"><span class="detail-label">Ngày đặt</span><strong>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
+            <div class="detail-row"><span class="detail-label">Khách hàng</span><strong>@Model.CustomerName</strong></div>
+            <div class="detail-row"><span class="detail-label">Số điện thoại</span><strong>@Model.CustomerPhone</strong></div>
+            <div class="detail-row"><span class="detail-label">Thanh toán</span><strong>@Model.PaymentMethod</strong></div>
+            <div class="detail-row"><span class="detail-label">Trạng thái</span><span class="status pending">@Model.Status</span></div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-check2-square"></i> Duyệt đơn</h2>
+        </div>
+        <div class="button-group" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            @{
+                var statusOrder = new[] { "Đã duyệt", "Đang chuẩn bị", "Đang giao", "Hoàn thành" };
+                var currentIndex = Array.IndexOf(statusOrder, Model.Status);
+                var isCompleted = Model.Status == "Hoàn thành" || Model.Status == "Đã hủy";
+                var isShipping = Model.Status == "Đang giao";
+            }
+            
+            @if (!isCompleted)
+            {
+                // Show next status button
+                @if (currentIndex >= 0 && currentIndex < statusOrder.Length - 1)
+                {
+                    var nextStatus = statusOrder[currentIndex + 1];
+                    <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="status" value="@nextStatus" />
+                        <button type="submit" class="primary-action" style="flex: 1; min-width: 120px;">
+                            <i class="bi bi-arrow-right"></i> @nextStatus
+                        </button>
+                    </form>
+                }
+                
+                // Show cancel button only if not shipping
+                @if (!isShipping)
+                {
+                    <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="status" value="Đã hủy" />
+                        <button type="submit" class="soft-action">
+                            <i class="bi bi-x-circle"></i> Hủy đơn
+                        </button>
+                    </form>
+                }
+            }
+            else
+            {
+                <div style="padding: 0.8rem 1rem; background: rgba(31, 111, 80, 0.1); border-radius: 6px; border-left: 4px solid var(--accent-green); width: 100%;">
+                    <strong style="color: var(--text-main);">@Model.Status</strong>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-top: 0.3rem;">
+                        @if (Model.Status == "Hoàn thành")
+                        {
+                            <span><i class="bi bi-check-circle"></i> Đơn hàng đã hoàn thành</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-x-circle"></i> Đơn hàng đã hủy</span>
+                        }
+                    </span>
+                </div>
+            }
+        </div>
+    </article>
+</div>
+
+<article class="panel">
+    <div class="panel-head">
+        <h2><i class="bi bi-receipt"></i> Tổng quan</h2>
+    </div>
+    <div class="metric-card glow-gold">
+        <span>Tổng thanh toán</span>
+        <strong>@Model.TotalAmount.ToString("N0")đ</strong>
+        <small>@Model.OrderItems.Sum(item => item.Quantity) sản phẩm</small>
+    </div>
+</article>
+
+<article class="panel">
+    <div class="panel-head">
+        <h2><i class="bi bi-basket-fill"></i> Chi tiết đơn hàng</h2>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th style="text-align: center;">Số lượng</th>
+                    <th style="text-align: right;">Giá</th>
+                    <th style="text-align: right;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.OrderItems)
+                {
+                    <tr>
+                        <td><strong>@item.ProductName</strong></td>
+                        <td style="text-align: center;">@item.Quantity</td>
+                        <td style="text-align: right;">@item.Price.ToString("N0")đ</td>
+                        <td style="text-align: right; font-weight: 600;">@item.Total.ToString("N0")đ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

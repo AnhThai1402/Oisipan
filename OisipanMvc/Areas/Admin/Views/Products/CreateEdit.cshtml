@@ -1,0 +1,203 @@
+@model FrontendMvc.Models.ProductAdminViewModel
+@{
+    ViewData["Title"] = Model?.ProductId > 0 ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới";
+    var isEdit = Model?.ProductId > 0;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Products" asp-action="Index"><i class="bi bi-house-door"></i> Sản phẩm</a>
+    <span>/</span>
+    <span>@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+        <h1>@ViewData["Title"]</h1>
+        <p>@(isEdit ? "Cập nhật thông tin sản phẩm" : "Tạo sản phẩm mới để bán trên kênh của bạn")</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="soft-action"><i class="bi bi-arrow-left"></i> Quay lại</a>
+</section>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+{
+    <div class="alert alert-error" role="alert">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <div class="alert-content">
+            <strong>Vui lòng kiểm tra các lỗi dưới đây:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                @foreach (var modelState in ViewData.ModelState.Values)
+                {
+                    @foreach (var error in modelState.Errors)
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+<form method="post" enctype="multipart/form-data" class="product-form-container">
+    <div class="admin-grid two-columns">
+        <!-- Left Column: Basic Info -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Thông tin cơ bản</h2>
+            </div>
+
+            <div class="form-group">
+                <label for="productName">Tên sản phẩm <span class="required">*</span></label>
+                <input type="text" id="productName" name="ProductName" class="form-input" value="@Model?.ProductName" placeholder="Ví dụ: Bánh Mấn Nhân Sakura" required />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="productSku">SKU <span class="required">*</span></label>
+                    <input type="text" id="productSku" name="Sku" class="form-input" value="@Model?.Sku" placeholder="OP-SAKURA-01" required />
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Danh mục <span class="required">*</span></label>
+                    <select id="productCategory" name="CategoryId" class="form-input" required>
+                        <option value="">-- Chọn --</option>
+                        @foreach (var category in Model?.Categories ?? new List<SelectListItem>())
+                        {
+                            <option value="@category.Value" selected="@category.Selected">@category.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="productDesc">Mô tả chi tiết</label>
+                <textarea id="productDesc" name="Description" class="form-input" rows="4" placeholder="Mô tả đầy đủ về sản phẩm...">@Model?.Description</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="productImage">Hình ảnh sản phẩm</label>
+                <div class="file-upload-area">
+                    <input type="file" id="productImage" name="ImageFile" accept="image/*" />
+                    <label for="productImage" class="file-upload-label">
+                        <div class="upload-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <div class="upload-text">
+                            <strong>Chọn hình ảnh hoặc kéo thả</strong>
+                            <small>PNG, JPG, GIF tối đa 5MB</small>
+                        </div>
+                    </label>
+                    @if (!string.IsNullOrWhiteSpace(Model?.ImageUrl))
+                    {
+                        <div class="image-preview">
+                            <img src="@Model.ImageUrl" alt="@Model.ProductName" />
+                            <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <!-- Right Column: Pricing & Stock -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Giá & Tồn kho</h2>
+            </div>
+
+            <div class="form-group">
+                <label for="productPrice">Giá bán (đ) <span class="required">*</span></label>
+                <div class="input-with-icon">
+                    <span class="input-prefix">₫</span>
+                    <input type="number" id="productPrice" name="Price" class="form-input" value="@Model?.Price" placeholder="89000" required />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="productStock">Tồn kho <span class="required">*</span></label>
+                    <input type="number" id="productStock" name="Quantity" class="form-input" value="@Model?.Quantity" placeholder="120" required />
+                </div>
+                <div class="form-group">
+                    <label for="productMinStock">Tồn kho tối thiểu</label>
+                    <input type="number" id="productMinStock" name="MinimumStock" class="form-input" value="@Model?.MinimumStock" placeholder="10" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Trạng thái <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="Status" value="active" checked="@(Model?.Status == "active" || Model == null)" />
+                        <span class="radio-custom"></span>
+                        <strong>Đang bán</strong>
+                        <small>Hiển thị trên website</small>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="Status" value="inactive" checked="@(Model?.Status == "inactive")" />
+                        <span class="radio-custom"></span>
+                        <strong>Ẩn</strong>
+                        <small>Không hiển thị trên website</small>
+                    </label>
+                </div>
+            </div>
+
+            <div class="metric-card glow-green" style="margin-top: 20px;">
+                <span>Giá bán hiện tại</span>
+                <strong id="displayPrice">@(Model?.Price.ToString("N0") ?? "0")đ</strong>
+                @if (Model?.StockStatus != null)
+                {
+                    <small>@Model.StockStatus sản phẩm trong kho</small>
+                }
+            </div>
+        </article>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+        <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="soft-action">
+            <i class="bi bi-x-circle"></i> Hủy
+        </a>
+        <button type="submit" class="primary-action">
+            <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
+            @(isEdit ? "Cập nhật sản phẩm" : "Tạo sản phẩm")
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Update display price
+        document.getElementById('productPrice')?.addEventListener('change', function() {
+            const price = parseInt(this.value) || 0;
+            document.getElementById('displayPrice').textContent = price.toLocaleString('vi-VN') + 'đ';
+        });
+
+        // Image preview
+        document.getElementById('productImage')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.querySelector('.image-preview') || document.createElement('div');
+                    preview.className = 'image-preview';
+                    preview.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview" />
+                        <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                    `;
+                    const uploadArea = document.querySelector('.file-upload-area');
+                    const existingPreview = uploadArea.querySelector('.image-preview');
+                    if (existingPreview) {
+                        existingPreview.remove();
+                    }
+                    uploadArea.appendChild(preview);
+                    
+                    preview.querySelector('.remove-image').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        document.getElementById('productImage').value = '';
+                        preview.remove();
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+}

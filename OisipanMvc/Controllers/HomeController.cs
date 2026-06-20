@@ -1,7 +1,7 @@
 using System.Diagnostics;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using FrontendMvc.Models;
-using System.Net.Http.Json;
 
 namespace FrontendMvc.Controllers;
 
@@ -14,9 +14,9 @@ public class HomeController : Controller
         _httpClientFactory = httpClientFactory;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        return View();
+        return View(await BuildStorefrontModel());
     }
 
     public IActionResult Privacy()
@@ -29,27 +29,14 @@ public class HomeController : Controller
         return View();
     }
 
-    public IActionResult Menu()
+    public async Task<IActionResult> Menu()
+    {
+        return View(await BuildStorefrontModel());
+    }
+
+    public IActionResult News()
     {
         return View();
-    }
-
-    public async Task<IActionResult> News()
-    {
-        var articles = await Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles") ?? new();
-        return View(articles);
-    }
-
-    public async Task<IActionResult> NewsDetail(int id)
-    {
-        var response = await Api.GetAsync($"api/newsarticles/{id}");
-        if (!response.IsSuccessStatusCode)
-        {
-            return NotFound();
-        }
-
-        var article = await response.Content.ReadFromJsonAsync<NewsArticleViewModel>();
-        return article is null ? NotFound() : View(article);
     }
 
     public IActionResult Contact()
@@ -61,6 +48,17 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    private async Task<StorefrontViewModel> BuildStorefrontModel()
+    {
+        var products = await Api.GetFromJsonAsync<List<ProductCatalogViewModel>>("api/products")
+            ?? new List<ProductCatalogViewModel>();
+
+        return new StorefrontViewModel
+        {
+            Products = products.Where(product => product.Quantity > 0).ToList()
+        };
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");

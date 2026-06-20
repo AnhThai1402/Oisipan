@@ -1,0 +1,141 @@
+@model UserAdminViewModel
+@{
+    var isEdit = Model.UserId > 0;
+    ViewData["Title"] = isEdit ? "Chỉnh sửa người dùng" : "Thêm người dùng mới";
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Users" asp-action="Index"><i class="bi bi-house-door"></i> Người dùng</a>
+    <span>/</span>
+    <span>@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+        <h1>@(isEdit ? "Cập nhật tài khoản người dùng" : "Tạo tài khoản người dùng")</h1>
+        <p>Chỉ có thể tạo và chỉnh sửa tài khoản vai trò Người dùng. Tài khoản quản trị viên được bảo vệ.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="soft-action">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</section>
+
+<form method="post" class="admin-grid two-columns">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserId" />
+    <input type="hidden" asp-for="Role" value="User" />
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Thông tin cơ bản</h2>
+        </div>
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+        <div class="form-group">
+            <label asp-for="FullName">Họ và tên <span class="required">*</span></label>
+            <input asp-for="FullName" class="form-input" placeholder="Ví dụ: Nguyễn Văn A" />
+            <span asp-validation-for="FullName" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email">Email <span class="required">*</span></label>
+            <input asp-for="Email" type="email" class="form-input" placeholder="email@example.com" />
+            <span asp-validation-for="Email" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PhoneNumber">Số điện thoại <span class="required">*</span></label>
+            <input asp-for="PhoneNumber" type="tel" class="form-input" placeholder="0901234567" />
+            <span asp-validation-for="PhoneNumber" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address">Địa chỉ</label>
+            <input asp-for="Address" class="form-input" placeholder="Địa chỉ nhận hàng hoặc liên hệ" />
+            <span asp-validation-for="Address" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-actions">
+            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="soft-action">
+                <i class="bi bi-x-circle"></i> Hủy
+            </a>
+            <button type="submit" class="primary-action">
+                <i class="bi @(isEdit ? "bi-check-circle" : "bi-plus-circle")"></i> @(isEdit ? "Lưu thay đổi" : "Tạo tài khoản")
+            </button>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Quyền và mật khẩu</h2>
+        </div>
+
+        <div class="form-group">
+            <label>Vai trò</label>
+            <input class="form-input" value="Người dùng" disabled />
+            <small class="form-hint">Không thể cấp quyền quản trị viên cho tài khoản khác.</small>
+        </div>
+
+        @if (isEdit)
+        {
+            <div class="form-group">
+                <label asp-for="NewPassword">Mật khẩu mới</label>
+                <div class="input-with-icon">
+                    <input asp-for="NewPassword" type="password" class="form-input password-input" placeholder="Để trống nếu không đổi mật khẩu" />
+                    <button type="button" class="toggle-password" title="Hiển thị mật khẩu">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="NewPassword" class="field-validation-error"></span>
+            </div>
+        }
+        else
+        {
+            <div class="form-group">
+                <label asp-for="Password">Mật khẩu tạm <span class="required">*</span></label>
+                <div class="input-with-icon">
+                    <input asp-for="Password" type="password" class="form-input password-input" placeholder="Ít nhất 6 ký tự" />
+                    <button type="button" class="toggle-password" title="Hiển thị mật khẩu">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Password" class="field-validation-error"></span>
+                <small class="form-hint">Người dùng có thể đổi mật khẩu sau khi đăng nhập.</small>
+            </div>
+        }
+
+        <div class="form-group">
+            <label>Trạng thái <span class="required">*</span></label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input asp-for="Status" type="radio" value="true" />
+                    <span class="radio-custom"></span>
+                    <strong>Hoạt động</strong>
+                </label>
+                <label class="radio-option">
+                    <input asp-for="Status" type="radio" value="false" />
+                    <span class="radio-custom"></span>
+                    <strong>Vô hiệu hóa</strong>
+                </label>
+            </div>
+        </div>
+    </article>
+</form>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function () {
+                const input = this.closest('.input-with-icon')?.querySelector('.password-input');
+                const icon = this.querySelector('i');
+                if (!input || !icon) return;
+
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+            });
+        });
+    </script>
+}

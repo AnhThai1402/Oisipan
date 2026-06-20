@@ -1,0 +1,128 @@
+@model FrontendMvc.Models.CategoryAdminViewModel
+@{
+    ViewData["Title"] = Model?.CategoryName;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Index"><i class="bi bi-house-door"></i> Danh mục</a>
+    <span>/</span>
+    <span>Chi tiết</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Chi tiết danh mục</span>
+        <h1>@Model?.CategoryName</h1>
+    </div>
+    <div class="button-group">
+        <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@Model?.CategoryId" class="primary-action">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa
+        </a>
+        <a asp-area="Admin" asp-controller="Categories" asp-action="Index" class="soft-action">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</section>
+
+<div class="admin-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-info-circle"></i> Thông tin danh mục</h2>
+        </div>
+
+        <div class="detail-group">
+            <div class="detail-row">
+                <span class="detail-label">ID</span>
+                <strong>@Model?.CategoryId</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Tên danh mục</span>
+                <strong>@Model?.CategoryName</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Mô tả</span>
+                <p>@(string.IsNullOrWhiteSpace(Model?.Description) ? "—" : Model.Description)</p>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Số sản phẩm</span>
+                <span class="badge badge-info">@Model?.ProductCount sản phẩm</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-graph-up"></i> Thống kê</h2>
+        </div>
+
+        <div class="metric-card glow-green">
+            <span>Sản phẩm trong danh mục</span>
+            <strong>@Model?.ProductCount</strong>
+            <small>Đang quản lý</small>
+        </div>
+
+        @if (Model?.ProductCount == 0)
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Danh mục này chưa có sản phẩm</span>
+            </div>
+        }
+    </article>
+</div>
+
+<!-- Action Buttons -->
+<div class="form-actions">
+    <button type="button" class="soft-action danger" data-open-modal="deleteModal">
+        <i class="bi bi-trash-fill"></i> Xóa danh mục
+    </button>
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@Model?.CategoryId" class="primary-action">
+        <i class="bi bi-pencil-square"></i> Chỉnh sửa
+    </a>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content modal-sm">
+        <div class="modal-head">
+            <h2><i class="bi bi-exclamation-triangle-fill" style="color: var(--admin-red);"></i> Xác nhận xóa</h2>
+        </div>
+        <p>Bạn có chắc muốn xóa danh mục <strong>@Model?.CategoryName</strong>?</p>
+        @if (Model?.ProductCount > 0)
+        {
+            <p style="color: var(--admin-red); font-size: 0.85rem;">
+                ⚠️ Danh mục này có <strong>@Model.ProductCount sản phẩm</strong> sẽ bị ảnh hưởng.
+            </p>
+        }
+        <p style="color: var(--admin-muted); font-size: 0.85rem;">Hành động này không thể hoàn tác.</p>
+        <form method="post" asp-action="Delete" asp-route-id="@Model?.CategoryId">
+            <div class="modal-actions">
+                <button type="button" class="soft-action" data-close-modal>Hủy</button>
+                <button type="submit" class="danger-action">Xóa danh mục</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Modal functionality
+        document.querySelectorAll('[data-open-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-open-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+                document.body.style.overflow = '';
+            });
+        });
+    </script>
+}

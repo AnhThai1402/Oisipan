@@ -1,0 +1,152 @@
+@model FrontendMvc.Models.VoucherAdminViewModel
+@{
+    ViewData["Title"] = Model?.VoucherId > 0 ? "Chỉnh sửa Voucher" : "Tạo Voucher mới";
+    var isEdit = Model?.VoucherId > 0;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"><i class="bi bi-house-door"></i> Voucher</a>
+    <span>/</span>
+    <span>@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+        <h1>@(isEdit ? "Cập nhật mã giảm giá" : "Tạo mã giảm giá mới")</h1>
+        <p>@(isEdit ? "Cập nhật thông tin voucher" : "Tạo voucher khuyến mãi mới cho khách hàng")</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="soft-action">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</section>
+
+<div class="admin-grid two-columns">
+    <form method="post" class="form-container">
+        <!-- Voucher Code -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Thông tin cơ bản</h2>
+            </div>
+
+            <div class="form-group">
+                <label for="code">Mã voucher <span class="required">*</span></label>
+                <input type="text" id="code" name="Code" class="form-input form-lg" 
+                       value="@Model?.Code" placeholder="VD: SUMMER50" required maxlength="20" />
+                <small class="form-hint">Mã duy nhất, viết hoa, không dấu</small>
+            </div>
+
+            <div class="form-group">
+                <label for="discountValue">Giá trị giảm giá (₫) <span class="required">*</span></label>
+                <div class="input-with-icon">
+                    <span class="input-prefix">₫</span>
+                    <input type="number" id="discountValue" name="DiscountValue" class="form-input" 
+                           value="@Model?.DiscountValue" placeholder="50000" required step="0.01" min="0.01" />
+                </div>
+                <small class="form-hint">Nhập số tiền giảm giá</small>
+            </div>
+
+            <div class="form-group">
+                <label for="expiryDate">Ngày hết hạn <span class="required">*</span></label>
+                <input type="date" id="expiryDate" name="ExpiryDate" class="form-input" 
+                       value="@(Model?.ExpiryDate != DateTime.MinValue ? Model?.ExpiryDate.ToString("yyyy-MM-dd") : "")" required />
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions" style="margin-top: 24px;">
+                <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="soft-action">
+                    <i class="bi bi-x-circle"></i> Hủy
+                </a>
+                <button type="submit" class="primary-action">
+                    <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
+                    @(isEdit ? "Cập nhật Voucher" : "Tạo Voucher")
+                </button>
+            </div>
+        </article>
+    </form>
+
+    <!-- Preview -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-eye"></i> Xem trước</h2>
+        </div>
+
+        <div class="voucher-preview-card">
+            <div class="voucher-preview-header">Mã giảm giá</div>
+            <div class="voucher-preview-code" id="previewCode">
+                @(Model?.Code?.ToUpper() ?? "SUMMER50")
+            </div>
+            <div class="voucher-preview-amount" id="previewAmount">
+                @(Model?.DiscountValue.ToString("N0") ?? "50000")₫
+            </div>
+            <div class="voucher-preview-footer" id="previewExpiry">
+                @if (Model != null && Model.ExpiryDate != DateTime.MinValue)
+                {
+                    <span>Hạn: @Model.ExpiryDate.ToString("dd/MM/yyyy")</span>
+                }
+                else
+                {
+                    <span style="color: var(--admin-muted);">Hạn: chưa chọn</span>
+                }
+            </div>
+        </div>
+
+        <div class="metric-card glow-green" style="margin-top: 20px;" id="statusCard">
+            <span>Trạng thái</span>
+            <strong>Sẵn sàng</strong>
+            <small>Voucher có thể được sử dụng</small>
+        </div>
+    </article>
+</div>
+
+@section Scripts {
+    <script>
+        // Real-time preview updates
+        const codeInput = document.getElementById('code');
+        const discountInput = document.getElementById('discountValue');
+        const expiryInput = document.getElementById('expiryDate');
+        const previewCode = document.getElementById('previewCode');
+        const previewAmount = document.getElementById('previewAmount');
+        const previewExpiry = document.getElementById('previewExpiry');
+        const statusCard = document.getElementById('statusCard');
+
+        // Format number with thousands separator
+        function formatNumber(num) {
+            return Math.floor(num).toLocaleString('vi-VN');
+        }
+
+        // Update preview code
+        codeInput.addEventListener('input', function() {
+            const code = this.value.toUpperCase() || 'SUMMER50';
+            previewCode.textContent = code;
+        });
+
+        // Update preview amount
+        discountInput.addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            previewAmount.textContent = formatNumber(amount) + '₫';
+        });
+
+        // Update preview expiry and status
+        expiryInput.addEventListener('change', function() {
+            if (this.value) {
+                const expiryDate = new Date(this.value);
+                const day = String(expiryDate.getDate()).padStart(2, '0');
+                const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+                const year = expiryDate.getFullYear();
+                
+                previewExpiry.innerHTML = `<span>Hạn: ${day}/${month}/${year}</span>`;
+
+                // Update status
+                const isExpired = expiryDate < new Date();
+                if (isExpired) {
+                    statusCard.innerHTML = '<span>Trạng thái</span><strong style="color: var(--admin-red);">Hết hạn</strong><small>Voucher không thể sử dụng</small>';
+                } else {
+                    statusCard.innerHTML = '<span>Trạng thái</span><strong>Sẵn sàng</strong><small>Voucher có thể được sử dụng</small>';
+                }
+            } else {
+                previewExpiry.innerHTML = '<span style="color: var(--admin-muted);">Hạn: chưa chọn</span>';
+            }
+        });
+    </script>
+}

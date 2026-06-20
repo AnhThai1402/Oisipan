@@ -12,6 +12,16 @@ public class ProductAdminViewModel
     [Display(Name = "Tên sản phẩm")]
     public string Name { get; set; } = string.Empty;
 
+    // Alias for views
+    public string ProductName
+    {
+        get => Name;
+        set => Name = value;
+    }
+
+    [StringLength(50)]
+    public string? Sku { get; set; }
+
     [Range(0.01, double.MaxValue, ErrorMessage = "Giá sản phẩm phải lớn hơn 0.")]
     [Display(Name = "Giá")]
     public decimal Price { get; set; }
@@ -19,12 +29,29 @@ public class ProductAdminViewModel
     [Display(Name = "Ảnh")]
     public string? Image { get; set; }
 
-    [Display(Name = "Anh")]
+    // Alias for views
+    public string? ImageUrl
+    {
+        get => Image;
+        set => Image = value;
+    }
+
+    [Display(Name = "Ảnh tải lên")]
     public IFormFile? ImageFile { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Số lượng không được âm.")]
-    [Display(Name = "Số lượng")]
+    [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
+    [Display(Name = "Tồn kho")]
     public int Quantity { get; set; }
+
+    // Alias for views
+    public int Stock
+    {
+        get => Quantity;
+        set => Quantity = value;
+    }
+
+    [Display(Name = "Tồn kho tối thiểu")]
+    public int? MinimumStock { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
     [Display(Name = "Danh mục")]
@@ -35,56 +62,39 @@ public class ProductAdminViewModel
     [Display(Name = "Mô tả")]
     public string? Description { get; set; }
 
-    public List<ProductOptionAdminViewModel> ProductOptions { get; set; } = new();
-    public List<ProductVariantAdminViewModel> ProductVariants { get; set; } = new();
+    [StringLength(50)]
+    public string Status { get; set; } = "active"; // active, inactive
+
+    public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+    public DateTime? UpdatedDate { get; set; }
+
+    // Helper property for views
+    public string StockStatus
+    {
+        get
+        {
+            if (Quantity == 0) return "Hết hàng";
+            if (MinimumStock.HasValue && Quantity <= MinimumStock) return "Sắp hết hàng";
+            return "Đủ hàng";
+        }
+    }
 
     public List<SelectListItem> Categories { get; set; } = new();
+
+    [Display(Name = "Biến thể sản phẩm")]
+    public List<ProductVariantAdminViewModel> Variants { get; set; } = new();
 }
 
 public class ProductVariantAdminViewModel
 {
-    public int ProductVariantId { get; set; }
+    public int Id { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn sản phẩm.")]
-    [Display(Name = "Sản phẩm")]
-    public int ProductId { get; set; }
-
-    public string? ProductName { get; set; }
-
-    [Required(ErrorMessage = "Vui lòng nhập size.")]
-    [StringLength(100)]
-    public string Size { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Vui lòng nhập nhân bánh.")]
-    [StringLength(100)]
-    public string Filling { get; set; } = string.Empty;
-
-    [Range(0, double.MaxValue, ErrorMessage = "Giá cộng thêm không được âm.")]
-    public decimal AdditionalPrice { get; set; }
-
-    [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
-    public int Quantity { get; set; }
-
-    public bool IsActive { get; set; } = true;
-
-    public List<SelectListItem> Products { get; set; } = new();
-}
-
-public class ProductOptionAdminViewModel
-{
-    public int ProductOptionId { get; set; }
+    [Display(Name = "Tên tùy chọn")]
     public string OptionName { get; set; } = string.Empty;
-    public List<ProductValueAdminViewModel> ProductValues { get; set; } = new();
-}
 
-public class ProductValueAdminViewModel
-{
-    public int ProductValueId { get; set; }
+    [Display(Name = "Giá trị")]
+    public string Value { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lòng nhập giá trị biến thể.")]
-    [StringLength(100, ErrorMessage = "Giá trị biến thể không được vượt quá 100 ký tự.")]
-    public string ValueName { get; set; } = string.Empty;
-
-    [Range(0, double.MaxValue, ErrorMessage = "Giá cộng thêm không được âm.")]
-    public decimal AdditionalPrice { get; set; }
+    public int ProductId { get; set; }
 }

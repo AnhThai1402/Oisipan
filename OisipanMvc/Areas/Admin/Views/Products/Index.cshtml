@@ -1,0 +1,166 @@
+@model IEnumerable<FrontendMvc.Models.ProductAdminViewModel>
+@{
+    ViewData["Title"] = "Sản phẩm";
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">
+            @TempData["Message"]
+        </div>
+    </div>
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Sản phẩm</span>
+        <h1>Quản lý sản phẩm</h1>
+        <p>Dữ liệu được lấy trực tiếp từ API sản phẩm.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="primary-action">
+        <i class="bi bi-plus-circle"></i> Thêm sản phẩm
+    </a>
+</section>
+
+<section class="toolbar-panel">
+    <div class="toolbar-left">
+        <div class="search-bar-group">
+            <input type="search" class="form-input" placeholder="Tìm sản phẩm..." id="productSearch" />
+            <i class="bi bi-search"></i>
+        </div>
+    </div>
+    <div class="toolbar-right">
+        <div class="segmented">
+            <button class="active" data-filter="all"><i class="bi bi-funnel"></i> Tất cả</button>
+            <button data-filter="selling">Đang bán</button>
+            <button data-filter="low-stock">Sắp hết</button>
+            <button data-filter="hidden">Hết hàng</button>
+        </div>
+    </div>
+</section>
+
+<section class="product-admin-grid" data-filter-scope>
+    @if (Model?.Any() == true)
+    {
+        @foreach (var product in Model)
+        {
+            var status = product.Quantity <= 0 ? "hidden" : product.Quantity <= (product.MinimumStock ?? 10) ? "low-stock" : "selling";
+            var statusClass = status == "hidden" ? "muted" : status == "low-stock" ? "warning" : "live";
+            var statusText = status == "hidden" ? "Hết hàng" : status == "low-stock" ? "Sắp hết" : "Đang bán";
+
+            <article class="product-admin-card" data-status="@status" onclick="window.location='@Url.Action("Detail", "Products", new { area = "Admin", id = product.ProductId })'">
+                <div class="product-thumb">
+                    @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                    {
+                        <img src="@product.ImageUrl" alt="@product.ProductName" />
+                    }
+                    else
+                    {
+                        <i class="bi bi-cake2"></i>
+                    }
+                </div>
+                <div class="product-card-body">
+                    <span class="status @statusClass">@statusText</span>
+                    <h3>@product.ProductName</h3>
+                    <p>@(product.CategoryName ?? "Chưa có danh mục")</p>
+                    <div class="price-row"><strong>@product.Price.ToString("N0")đ</strong><span>Tồn @product.Quantity</span></div>
+                </div>
+                <div class="product-card-actions" onclick="event.stopPropagation()">
+                    <a asp-area="Admin" asp-controller="Products" asp-action="Detail" asp-route-id="@product.ProductId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                    <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@product.ProductId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                    <form method="post" asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@product.ProductId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@product.ProductName');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                    </form>
+                </div>
+            </article>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <strong>Chưa có sản phẩm</strong>
+            <span>Thêm sản phẩm đầu tiên để hiển thị trên menu.</span>
+        </div>
+    }
+</section>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa sản phẩm?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa sản phẩm <strong id="productName"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa sản phẩm</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingForm = null;
+
+        function showDeleteConfirm(event, productName) {
+            event.preventDefault();
+            pendingForm = event.target;
+            
+            // Update modal with product name
+            document.getElementById('productName').textContent = productName;
+            
+            // Show modal with animation
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
+        document.querySelectorAll('.segmented button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.segmented button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.product-admin-card').forEach(card => {
+                    card.style.display = filter === 'all' || card.getAttribute('data-status') === filter ? '' : 'none';
+                });
+            });
+        });
+
+        document.getElementById('productSearch')?.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll('.product-admin-card').forEach(card => {
+                card.style.display = card.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        });
+    </script>
+}

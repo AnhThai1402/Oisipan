@@ -1,0 +1,82 @@
+@model IEnumerable<FrontendMvc.Models.OrderAdminViewModel>
+@{
+    ViewData["Title"] = "Đơn hàng";
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Đơn hàng</span>
+        <h1>Quản lý đơn hàng</h1>
+        <p>Dữ liệu đơn hàng được lấy trực tiếp từ API.</p>
+    </div>
+</section>
+
+<section class="toolbar-panel">
+    <div class="toolbar-left">
+        <div class="search-bar-group">
+            <input type="search" class="form-input" placeholder="Tìm mã đơn, khách hàng..." id="orderSearch" />
+            <i class="bi bi-search"></i>
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="table-wrapper">
+        <table class="admin-table" id="orderTable">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày đặt</th>
+                    <th style="width: 120px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() == true)
+                {
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td><strong>#OP-@order.OrderId.ToString("0000")</strong></td>
+                            <td>
+                                <span>@(string.IsNullOrWhiteSpace(order.CustomerName) ? "Khách hàng" : order.CustomerName)</span><br />
+                                <span class="text-muted" style="font-size: 12px;">@order.CustomerPhone</span>
+                            </td>
+                            <td><strong>@order.TotalAmount.ToString("N0")đ</strong></td>
+                            <td><span class="status pending">@order.Status</span></td>
+                            <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-area="Admin" asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                    <button class="icon-action" title="In đơn" onclick="window.print()"><i class="bi bi-printer"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <i class="bi bi-inbox" style="font-size: 48px; color: var(--admin-line); margin-bottom: 16px; display: block;"></i>
+                            <strong>Chưa có đơn hàng</strong>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.getElementById('orderSearch')?.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll('#orderTable tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        });
+    </script>
+}

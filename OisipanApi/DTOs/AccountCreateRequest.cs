@@ -23,7 +23,7 @@ public class AccountCreateRequest
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
-    [RegularExpression("^(Admin|User)$", ErrorMessage = "Vai trò không hợp lệ.")]
+    [RegularExpression("^User$", ErrorMessage = "Không thể cấp quyền quản trị viên cho tài khoản khác.")]
     public string Role { get; set; } = "User";
 
     public string? Address { get; set; }

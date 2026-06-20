@@ -39,8 +39,16 @@ public class AccountController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đăng ký thành công. Vui lòng đăng nhập.";
-        return RedirectToAction(nameof(Login));
+        var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        if (account is null)
+        {
+            ModelState.AddModelError(string.Empty, "Không đọc được thông tin tài khoản.");
+            return View(model);
+        }
+
+        await SignIn(account, rememberMe: false);
+        TempData["CartMessage"] = "Đăng ký thành công.";
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -81,7 +89,7 @@ public class AccountController : Controller
 
         if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
         {
-            return RedirectToAction("Index", "Admin");
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
         }
 
         return RedirectToAction("Index", "Home");

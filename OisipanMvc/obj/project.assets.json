@@ -1,112 +1,30 @@
 {
   "version": 4,
   "targets": {
-    "net10.0": {
-      "CloudinaryDotNet/1.29.2": {
-        "type": "package",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.3"
-        },
-        "compile": {
-          "lib/netstandard2.0/CloudinaryDotNet.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/netstandard2.0/CloudinaryDotNet.dll": {
-            "related": ".xml"
-          }
-        }
-      },
-      "Newtonsoft.Json/13.0.3": {
-        "type": "package",
-        "compile": {
-          "lib/net6.0/Newtonsoft.Json.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net6.0/Newtonsoft.Json.dll": {
-            "related": ".xml"
-          }
-        }
-      }
-    }
+    "net10.0": {}
   },
-  "libraries": {
-    "CloudinaryDotNet/1.29.2": {
-      "sha512": "4vrrx4N960MShjpKlsiRdl8eIHeT2UBn2X69d7b7C34M84lyoZT/ig4CkVCCb8fx5X95oaLE3wNv4tGJHHGnSA==",
-      "type": "package",
-      "path": "cloudinarydotnet/1.29.2",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "CloudinaryIcon.png",
-        "README.md",
-        "cloudinarydotnet.1.29.2.nupkg.sha512",
-        "cloudinarydotnet.nuspec",
-        "lib/net452/CloudinaryDotNet.dll",
-        "lib/net452/CloudinaryDotNet.xml",
-        "lib/netstandard1.3/CloudinaryDotNet.dll",
-        "lib/netstandard1.3/CloudinaryDotNet.xml",
-        "lib/netstandard2.0/CloudinaryDotNet.dll",
-        "lib/netstandard2.0/CloudinaryDotNet.xml"
-      ]
-    },
-    "Newtonsoft.Json/13.0.3": {
-      "sha512": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
-      "type": "package",
-      "path": "newtonsoft.json/13.0.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "LICENSE.md",
-        "README.md",
-        "lib/net20/Newtonsoft.Json.dll",
-        "lib/net20/Newtonsoft.Json.xml",
-        "lib/net35/Newtonsoft.Json.dll",
-        "lib/net35/Newtonsoft.Json.xml",
-        "lib/net40/Newtonsoft.Json.dll",
-        "lib/net40/Newtonsoft.Json.xml",
-        "lib/net45/Newtonsoft.Json.dll",
-        "lib/net45/Newtonsoft.Json.xml",
-        "lib/net6.0/Newtonsoft.Json.dll",
-        "lib/net6.0/Newtonsoft.Json.xml",
-        "lib/netstandard1.0/Newtonsoft.Json.dll",
-        "lib/netstandard1.0/Newtonsoft.Json.xml",
-        "lib/netstandard1.3/Newtonsoft.Json.dll",
-        "lib/netstandard1.3/Newtonsoft.Json.xml",
-        "lib/netstandard2.0/Newtonsoft.Json.dll",
-        "lib/netstandard2.0/Newtonsoft.Json.xml",
-        "newtonsoft.json.13.0.3.nupkg.sha512",
-        "newtonsoft.json.nuspec",
-        "packageIcon.png"
-      ]
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net10.0": [
-      "CloudinaryDotNet >= 1.29.2"
-    ]
+    "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\ACER NITRO\\.nuget\\packages\\": {},
+    "C:\\Users\\GALLERIA\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
+      "projectUniqueName": "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
       "projectName": "FrontendMvc",
-      "projectPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
-      "packagesPath": "C:\\Users\\ACER NITRO\\.nuget\\packages\\",
-      "outputPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\obj\\",
+      "projectPath": "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
+      "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
+      "outputPath": "D:\\DATN\\Oisipan\\OisipanMvc\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ACER NITRO\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -140,12 +58,6 @@
       "net10.0": {
         "framework": "net10.0",
         "targetAlias": "net10.0",
-        "dependencies": {
-          "CloudinaryDotNet": {
-            "target": "Package",
-            "version": "[1.29.2, )"
-          }
-        },
         "imports": [
           "net461",
           "net462",

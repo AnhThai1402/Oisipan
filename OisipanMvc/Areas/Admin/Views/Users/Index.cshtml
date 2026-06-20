@@ -1,0 +1,118 @@
+@model IReadOnlyList<UserAdminViewModel>
+@{
+    ViewData["Title"] = "Người dùng";
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Danh mục</span>
+        <h1>Quản lý người dùng</h1>
+        <p>Admin chỉ được tạo tài khoản người dùng, không thể cấp quyền quản trị viên cho tài khoản khác.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="primary-action"><i class="fa-solid fa-plus"></i> Thêm người dùng</a>
+</section>
+
+@if (TempData["Message"] is string message)
+{
+    <section class="toolbar-panel">
+        <span>@message</span>
+    </section>
+}
+
+<section class="toolbar-panel">
+    <div class="search-bar-group">
+        <input type="search" class="form-input" placeholder="Tìm người dùng..." id="userSearch" />
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </div>
+    <select class="form-input" style="width: 180px;" id="roleFilter">
+        <option value="">Tất cả vai trò</option>
+        <option value="Admin">Quản trị viên</option>
+        <option value="User">Người dùng</option>
+    </select>
+</section>
+
+<section class="panel">
+    <div class="table-wrapper">
+        <table class="admin-table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Người dùng</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Đơn hàng</th>
+                    <th style="width: 120px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted" style="text-align: center; padding: 24px;">Chưa có tài khoản nào trong database.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var user in Model)
+                    {
+                        var initials = string.Join("", user.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).TakeLast(2).Select(part => part[0])).ToUpperInvariant();
+                        var isAdmin = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                        var roleText = isAdmin ? "Quản trị viên" : "Người dùng";
+                        var roleBadge = isAdmin ? "badge-danger" : "badge-info";
+                        <tr data-name="@user.FullName" data-email="@user.Email" data-role="@user.Role">
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">@initials</div>
+                                    <div>
+                                        <strong>@user.FullName</strong><br />
+                                        <span class="text-muted" style="font-size: 12px;">ID: @user.UserId</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@user.Email</td>
+                            <td>@user.PhoneNumber</td>
+                            <td><span class="badge @roleBadge">@roleText</span></td>
+                            <td><span class="status @(user.Status ? "active" : "inactive")">@(user.Status ? "Hoạt động" : "Khóa")</span></td>
+                            <td>@user.OrderCount</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-area="Admin" asp-controller="Users" asp-action="Detail" asp-route-id="@user.UserId" class="icon-action" title="Chi tiết"><i class="fa-solid fa-eye"></i></a>
+                                    @if (!isAdmin)
+                                    {
+                                        <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@user.UserId" class="icon-action" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></a>
+                                        <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.UserId" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="icon-action danger" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    const userSearch = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('roleFilter');
+    const userRows = Array.from(document.querySelectorAll('#usersTable tbody tr[data-name]'));
+
+    function filterUsers() {
+        const keyword = (userSearch?.value || '').trim().toLowerCase();
+        const role = roleFilter?.value || '';
+
+        userRows.forEach(row => {
+            const haystack = `${row.dataset.name} ${row.dataset.email}`.toLowerCase();
+            const matchesText = !keyword || haystack.includes(keyword);
+            const matchesRole = !role || row.dataset.role === role;
+            row.style.display = matchesText && matchesRole ? '' : 'none';
+        });
+    }
+
+    userSearch?.addEventListener('input', filterUsers);
+    roleFilter?.addEventListener('change', filterUsers);
+</script>

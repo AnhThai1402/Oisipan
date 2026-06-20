@@ -43,40 +43,51 @@ app.MapGet("/weatherforecast", () =>
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
-    var passwordHasher = new PasswordHasher<Account>();
-    const string adminEmail = "admin123@gmail.com";
-    const string adminPassword = "Admin@123";
-
-    var admin = context.Accounts.FirstOrDefault(a => a.Email == adminEmail);
-    if (admin is null)
+    try
     {
-        var adminPhone = Enumerable.Range(0, 10)
-            .Select(index => $"090000000{index}")
-            .First(phone => !context.Accounts.Any(a => a.PhoneNumber == phone));
+        var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
+        
+        // Ensure database is created and migrations are applied
+        context.Database.Migrate();
+        
+        var passwordHasher = new PasswordHasher<Account>();
+        const string adminEmail = "admin123@gmail.com";
+        const string adminPassword = "Admin@123";
 
-        admin = new Account
+        var admin = context.Accounts.FirstOrDefault(a => a.Email == adminEmail);
+        if (admin is null)
         {
-            FullName = "Administrator",
-            Email = adminEmail,
-            PhoneNumber = adminPhone,
-            Role = "Admin",
-            Status = true,
-            Address = "Oisipan"
-        };
+            var adminPhone = Enumerable.Range(0, 10)
+                .Select(index => $"090000000{index}")
+                .First(phone => !context.Accounts.Any(a => a.PhoneNumber == phone));
 
-        admin.Password = passwordHasher.HashPassword(admin, adminPassword);
-        context.Accounts.Add(admin);
+            admin = new Account
+            {
+                FullName = "Administrator",
+                Email = adminEmail,
+                PhoneNumber = adminPhone,
+                Role = "Admin",
+                Status = true,
+                Address = "Oisipan"
+            };
+
+            admin.Password = passwordHasher.HashPassword(admin, adminPassword);
+            context.Accounts.Add(admin);
+        }
+        else
+        {
+            admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
+            admin.Role = "Admin";
+            admin.Status = true;
+            admin.Password = passwordHasher.HashPassword(admin, adminPassword);
+        }
+
+        context.SaveChanges();
     }
-    else
+    catch (Exception ex)
     {
-        admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
-        admin.Role = "Admin";
-        admin.Status = true;
-        admin.Password = passwordHasher.HashPassword(admin, adminPassword);
+        Console.WriteLine($"Seeding error: {ex.Message}");
     }
-
-    context.SaveChanges();
 }
 
 app.Run();

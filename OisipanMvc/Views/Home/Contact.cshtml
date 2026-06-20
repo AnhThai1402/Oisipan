@@ -1,6 +1,51 @@
 @{
-    ViewData["Title"] = "Liên hệ";
+    ViewData["Title"] = "Liên Hệ";
 }
 
-<h1>Liên hệ</h1>
-<p>Thông tin liên hệ với Oisipan Bakery.</p>
+<section class="section-padding" style="background: var(--bg-page);">
+    <div class="section-header">
+        <span class="section-subtitle">Kết nối với chúng tôi</span>
+        <h2 class="section-title">Liên Hệ Oishipan</h2>
+        <p class="section-desc">Chúng tôi luôn sẵn sàng lắng nghe ý kiến và hỗ trợ bạn</p>
+    </div>
+    <div class="about-grid">
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="about-perk-card">
+                <div class="perk-icon-wrap" style="background: var(--accent-green-light);">
+                    <i class="fa-solid fa-map-marker-alt" style="color: var(--accent-green);"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-green); font-weight: 700; margin-bottom: 0.3rem;">Địa chỉ</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Quận 1, Thành phố Hồ Chí Minh, Việt Nam</p>
+                </div>
+            </div>
+            <div class="about-perk-card">
+                <div class="perk-icon-wrap" style="background: var(--accent-orange-light);">
+                    <i class="fa-solid fa-phone" style="color: var(--accent-orange);"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-green); font-weight: 700; margin-bottom: 0.3rem;">Điện thoại</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;"><a href="tel:0123456789" style="color: var(--accent-green); text-decoration: none;">0123 456 789</a></p>
+                </div>
+            </div>
+            <div class="about-perk-card">
+                <div class="perk-icon-wrap" style="background: var(--accent-red-light);">
+                    <i class="fa-solid fa-envelope" style="color: var(--accent-red);"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-green); font-weight: 700; margin-bottom: 0.3rem;">Email</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;"><a href="mailto:info@oishipan.com" style="color: var(--accent-green); text-decoration: none;">info@oishipan.com</a></p>
+                </div>
+            </div>
+        </div>
+        <div style="background: var(--bg-white); border-radius: 24px; padding: 2rem; min-height: 400px;">
+            <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--accent-green); margin-bottom: 1.5rem;">Gửi tin nhắn cho chúng tôi</h3>
+            <form style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="text" placeholder="Tên của bạn" class="form-control" style="padding: 0.8rem 1.2rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-page);" required>
+                <input type="email" placeholder="Email" class="form-control" style="padding: 0.8rem 1.2rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-page);" required>
+                <textarea placeholder="Tin nhắn của bạn" rows="5" class="form-control" style="padding: 0.8rem 1.2rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-page); font-family: inherit; resize: none;" required></textarea>
+                <button type="submit" class="btn-primary" style="margin-top: 1rem;">Gửi tin nhắn</button>
+            </form>
+        </div>
+    </div>
+</section>

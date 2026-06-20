@@ -1,6 +1,15 @@
+@model StorefrontViewModel
 @{
-    ViewData["Title"] = "Menu";
+    ViewData["Title"] = "Menu Bánh";
 }
 
-<h1>Menu</h1>
-<p>Danh sách sản phẩm sẽ được hiển thị tại đây.</p>
+<section id="menu" class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Bộ sưu tập</span>
+        <h2 class="section-title">Menu Bánh Đặc Biệt</h2>
+        <p class="section-desc">Mỗi chiếc bánh được lấy trực tiếp từ dữ liệu sản phẩm đang bán.</p>
+    </div>
+    <div class="menu-grid" id="products-grid">
+        @await Html.PartialAsync("_ProductGrid", Model.Products)
+    </div>
+</section>

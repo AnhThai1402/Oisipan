@@ -1,8 +1,122 @@
-﻿@{
-    ViewData["Title"] = "Trang chủ";
+@model StorefrontViewModel
+@{
+    ViewData["Title"] = "Trang Chủ";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Chào mừng đến với Oisipan Bakery</h1>
-    <p>Khám phá các loại bánh tươi ngon và dịch vụ dành cho bạn.</p>
-</div>
+<section id="hero">
+    <div class="hero-wrapper">
+        <span class="badge-crust-name">Bánh Mẫn Nhân</span>
+
+        <div class="hero-left">
+            <span class="tag-new">MỚI NHẤT</span>
+            <h1 class="hero-title">BST "MẤN NHÂN"</h1>
+            <p class="hero-desc">Tiệc hè thêm vui cùng hương vị bánh Nhật - chất lượng cao, hương vị tinh tế.</p>
+            
+            <div class="hero-cta">
+                <a href="#menu" class="btn-primary">Khám phá ngay</a>
+                <a href="#footer" class="btn-outline">Liên hệ</a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-breads">@Model.Products.Count+</div>
+                    <div class="stat-label">Loại bánh</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-clients">10k+</div>
+                    <div class="stat-label">Khách hàng</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-rating">4.9/5</div>
+                    <div class="stat-label">Đánh giá</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-right">
+            <div class="main-showcase-container">
+                <svg viewBox="0 0 512 512" class="main-showcase-img" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="crustGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FAE8B6" />
+                            <stop offset="50%" stop-color="#EAA64E" />
+                            <stop offset="100%" stop-color="#B86518" />
+                        </linearGradient>
+                        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#113C2B" flood-opacity="0.12"/>
+                        </filter>
+                    </defs>
+                    <circle cx="256" cy="256" r="180" fill="url(#crustGrad)" filter="url(#softShadow)"/>
+                    <path d="M150 256 C 180 180, 332 180, 362 256 C 332 332, 180 332, 150 256 Z" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.85"/>
+                    <circle cx="210" cy="230" r="12" fill="#5A3215"/>
+                    <circle cx="310" cy="230" r="12" fill="#5A3215"/>
+                    <circle cx="256" cy="300" r="16" fill="#D9383A"/>
+                    <circle cx="180" cy="270" r="8" fill="#5A3215"/>
+                    <circle cx="330" cy="270" r="8" fill="#5A3215"/>
+                </svg>
+            </div>
+            <div class="visual-footer-text">Hương vị tinh tế từ Nhật Bản</div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Câu Chuyện Của Chúng Tôi</span>
+        <h2 class="section-title">Về Oishipan Bakery</h2>
+        <p class="section-desc">Khởi nguồn từ niềm đam mê ẩm thực Nhật Bản thanh tao, Oishipan là sự kết tinh của nghệ thuật làm bánh thủ công truyền thống.</p>
+    </div>
+    <div class="about-grid" id="about-grid">
+        <div>
+            <h3 style="font-family: var(--font-serif); font-size: 1.8rem; color: var(--accent-green); margin-bottom: 1.2rem; font-weight: 700;">Nghệ Thuật Nhào Bột Thủ Công</h3>
+            <p style="color: var(--text-muted); line-height: 1.75; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                Tại Oishipan, mỗi ổ bánh đều là một tác phẩm nghệ thuật riêng biệt. Chúng tôi sử dụng men tự nhiên chuẩn Nhật Bản...
+            </p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="about-perk-card">
+                <div class="perk-icon-wrap"><i class="fa-solid fa-wheat-awn"></i></div>
+                <div>
+                    <h4 style="font-family: var(--font-serif); font-size: 1.15rem; color: var(--accent-green); font-weight: 700; margin-bottom: 0.3rem;">Bột Mì Hokkaido Thượng Hạng</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">Bột mì mịn màng dệt từ lúa mạch vụ xuân vùng tuyết lạnh Hokkaido.</p>
+                </div>
+            </div>
+            <div class="about-perk-card">
+                <div class="perk-icon-wrap"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                    <h4 style="font-family: var(--font-serif); font-size: 1.15rem; color: var(--accent-green); font-weight: 700; margin-bottom: 0.3rem;">Ủ Men Chậm 72 Giờ</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">Thời gian ủ men chậm lý tưởng giúp giải phóng toàn bộ hương thơm tinh khiết.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="menu" class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Thực Đơn Mùa Hè</span>
+        <h2 class="section-title">Tinh Hoa Bánh Nướng Oishipan</h2>
+    </div>
+    <div class="menu-grid" id="menu-items-container">
+        @await Html.PartialAsync("_ProductGrid", Model.Products)
+    </div>
+</section>
+
+<section id="news" class="section-padding" style="background-color: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+    <div class="section-header">
+        <span class="section-subtitle">Nhật Ký Oishipan</span>
+        <h2 class="section-title">Tin Tức & Sự Kiện</h2>
+    </div>
+    <div class="menu-grid">
+        <div class="product-card" style="cursor: pointer; background: var(--bg-white);">
+            <div style="height: 180px; background: #E2EAE4; display: flex; justify-content: center; align-items: center;">
+                <i class="fa-solid fa-store" style="font-size: 3.5rem; color: var(--accent-green); opacity: 0.85;"></i>
+            </div>
+            <div class="product-info" style="padding: 1.5rem;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-orange);">SỰ KIỆN KHAI TRƯƠNG</span>
+                <h3 style="font-family: var(--font-serif); font-size: 1.2rem; color: var(--accent-green); font-weight: 700; margin-top: 0.2rem;">Ra Mắt Không Gian Trải Nghiệm Mới Tại Quận 1</h3>
+                <p class="product-desc">Hệ thống Oishipan chính thức mở rộng không gian bếp lò kính tại Quận 1...</p>
+            </div>
+        </div>
+    </div>
+</section>

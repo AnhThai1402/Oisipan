@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj": {}
+    "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj": {}
   },
   "projects": {
-    "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj": {
+    "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
+        "projectUniqueName": "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
         "projectName": "FrontendMvc",
-        "projectPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
-        "packagesPath": "C:\\Users\\ACER NITRO\\.nuget\\packages\\",
-        "outputPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\obj\\",
+        "projectPath": "D:\\DATN\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
+        "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
+        "outputPath": "D:\\DATN\\Oisipan\\OisipanMvc\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ACER NITRO\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -51,12 +51,6 @@
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "dependencies": {
-            "CloudinaryDotNet": {
-              "target": "Package",
-              "version": "[1.29.2, )"
-            }
-          },
           "imports": [
             "net461",
             "net462",

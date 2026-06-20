@@ -1,53 +1,40 @@
-@model List<FrontendMvc.Models.NewsArticleViewModel>
-
 @{
-    ViewData["Title"] = "Tin tức";
+    ViewData["Title"] = "Tin Tức";
 }
 
-<section class="news-page">
-    <header class="news-header">
-        <p class="auth-eyebrow">Oisipan Bakery</p>
-        <h1>Tin tức</h1>
-        <p>Câu chuyện về bánh, nguyên liệu và những điều mới tại Oisipan.</p>
-    </header>
-
-    @if (Model.Any())
-    {
-        <div class="news-grid">
-            @foreach (var article in Model)
-            {
-                <article class="news-card">
-                    <a asp-action="NewsDetail" asp-route-id="@article.NewsArticleId" class="news-card-media">
-                        @if (!string.IsNullOrWhiteSpace(article.Image))
-                        {
-                            <img src="@article.Image" alt="@article.Title" />
-                        }
-                        else
-                        {
-                            <div class="news-image-placeholder">Oisipan</div>
-                        }
-                    </a>
-                    <div class="news-card-body">
-                        <time datetime="@article.PublishedAt?.ToString("yyyy-MM-dd")">
-                            @article.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy")
-                        </time>
-                        <h2>
-                            <a asp-action="NewsDetail" asp-route-id="@article.NewsArticleId">@article.Title</a>
-                        </h2>
-                        <p>@article.Summary</p>
-                        <a class="news-read-more" asp-action="NewsDetail" asp-route-id="@article.NewsArticleId">
-                            Đọc bài viết
-                        </a>
-                    </div>
-                </article>
-            }
+<section id="news" class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Blog</span>
+        <h2 class="section-title">Tin Tức Mới Nhất</h2>
+        <p class="section-desc">Cập nhật những thông tin và mẹo chế tác bánh mới nhất</p>
+    </div>
+    <div class="menu-grid">
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <i class="fa-solid fa-utensils" style="font-size: 3rem; color: var(--accent-green);"></i>
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">Cách chế tác bánh perfect</h3>
+                <p class="product-desc">Hướng dẫn chi tiết cách chế tác bánh mẫn nhân hoàn hảo cho những người mới bắt đầu</p>
+            </div>
         </div>
-    }
-    else
-    {
-        <div class="news-empty">
-            <h2>Chưa có bài viết</h2>
-            <p>Những câu chuyện mới sẽ sớm xuất hiện tại đây.</p>
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <i class="fa-solid fa-leaf" style="font-size: 3rem; color: var(--accent-orange);"></i>
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">Nguyên liệu tự nhiên</h3>
+                <p class="product-desc">Những lợi ích của việc sử dụng nguyên liệu tự nhiên trong sản xuất bánh</p>
+            </div>
         </div>
-    }
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <i class="fa-solid fa-gift" style="font-size: 3rem; color: var(--accent-red);"></i>
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">Khuyến mãi tháng này</h3>
+                <p class="product-desc">Nhận ngay ưu đãi đặc biệt khi mua 2 chiếc bánh trở lên</p>
+            </div>
+        </div>
+    </div>
 </section>

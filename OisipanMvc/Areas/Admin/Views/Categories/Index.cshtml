@@ -1,0 +1,157 @@
+@model IEnumerable<FrontendMvc.Models.CategoryAdminViewModel>
+@{
+    ViewData["Title"] = "Danh mục";
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">
+            @TempData["Message"]
+        </div>
+    </div>
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Danh mục</span>
+        <h1>Quản lý danh mục</h1>
+        <p>Thêm, chỉnh sửa và xóa các danh mục sản phẩm.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Create" class="primary-action">
+        <i class="bi bi-plus-circle"></i> Thêm danh mục
+    </a>
+</section>
+
+<section class="toolbar-panel">
+    <div class="search-bar-group">
+        <input type="search" class="form-input" placeholder="Tìm danh mục..." id="categorySearch" />
+        <i class="bi bi-search"></i>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="table-wrapper">
+        <table class="admin-table" id="categoryTable">
+            <thead>
+                <tr>
+                    <th>Tên danh mục</th>
+                    <th>Mô tả</th>
+                    <th>Số sản phẩm</th>
+                    <th style="width: 140px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() == true)
+                {
+                    @foreach (var category in Model)
+                    {
+                        <tr onclick="window.location='@Url.Action("Detail", "Categories", new { area = "Admin", id = category.CategoryId })';" style="cursor: pointer;">
+                            <td><strong>@category.CategoryName</strong></td>
+                            <td><span class="text-muted">@(string.IsNullOrWhiteSpace(category.Description) ? "—" : category.Description)</span></td>
+                            <td><span class="badge badge-info">@category.ProductCount sản phẩm</span></td>
+                            <td onclick="event.stopPropagation();">
+                                <div class="action-buttons">
+                                    <a asp-area="Admin" asp-controller="Categories" asp-action="Detail" asp-route-id="@category.CategoryId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                    <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@category.CategoryId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@category.CategoryName');">
+                                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px;">
+                            <i class="bi bi-inbox" style="font-size: 48px; color: var(--admin-line); margin-bottom: 16px; display: block;"></i>
+                            <strong>Chưa có danh mục</strong>
+                            <p style="color: var(--admin-muted);">Hãy tạo danh mục đầu tiên để bắt đầu</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa danh mục?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa danh mục <strong id="categoryName"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa danh mục</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingForm = null;
+
+        function showDeleteConfirm(event, categoryName) {
+            event.preventDefault();
+            pendingForm = event.target;
+            
+            // Update modal with category name
+            document.getElementById('categoryName').textContent = categoryName;
+            
+            // Show modal with animation
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
+        // Search functionality
+        document.getElementById('categorySearch')?.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#categoryTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            });
+        });
+    </script>
+}
+    </script>
+}
+        <p style="margin-bottom: 24px;">Bạn có chắc muốn xóa danh mục này? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button class="soft-action" data-close-modal>Hủy</button>
+            <button class="danger-action" id="confirmDelete">Xóa</button>
+        </div>
+    </div>
+</div>

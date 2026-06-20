@@ -23,7 +23,8 @@ public class AccountsController : ControllerBase
     {
         var accounts = await _context.Accounts
             .Include(a => a.Orders)
-            .OrderBy(a => a.FullName)
+            .OrderByDescending(a => a.Role == "Admin")
+            .ThenBy(a => a.FullName)
             .Select(a => new AccountResponse
             {
                 UserId = a.UserId,
@@ -47,13 +48,16 @@ public class AccountsController : ControllerBase
             .Include(a => a.Orders)
             .FirstOrDefaultAsync(a => a.UserId == id);
 
-        return account is null ? NotFound(new { message = "Không tìm thấy người dùng." }) : Ok(ToResponse(account));
+        return account is null
+            ? NotFound(new { message = "Không tìm thấy người dùng." })
+            : Ok(ToResponse(account));
     }
 
     [HttpPost]
     public async Task<ActionResult<AccountResponse>> Create(AccountCreateRequest request)
     {
         Normalize(request);
+        RejectAdminRole(request.Role);
         await ValidateUnique(request.Email, request.PhoneNumber);
 
         if (!ModelState.IsValid)
@@ -66,7 +70,7 @@ public class AccountsController : ControllerBase
             FullName = request.FullName.Trim(),
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
-            Role = request.Role,
+            Role = "User",
             Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
             Status = request.Status
         };
@@ -87,7 +91,13 @@ public class AccountsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy người dùng." });
         }
 
+        if (IsAdmin(account))
+        {
+            return BadRequest(new { message = "Không thể chỉnh sửa tài khoản quản trị viên." });
+        }
+
         Normalize(request);
+        RejectAdminRole(request.Role);
         await ValidateUnique(request.Email, request.PhoneNumber, id);
 
         if (!ModelState.IsValid)
@@ -98,7 +108,7 @@ public class AccountsController : ControllerBase
         account.FullName = request.FullName.Trim();
         account.Email = request.Email;
         account.PhoneNumber = request.PhoneNumber;
-        account.Role = request.Role;
+        account.Role = "User";
         account.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
         account.Status = request.Status;
 
@@ -123,6 +133,11 @@ public class AccountsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy người dùng." });
         }
 
+        if (IsAdmin(account))
+        {
+            return BadRequest(new { message = "Không thể xóa tài khoản quản trị viên." });
+        }
+
         if (account.Orders.Any())
         {
             return BadRequest(new { message = "Không thể xóa người dùng đã có đơn hàng. Bạn có thể khóa tài khoản thay thế." });
@@ -144,6 +159,19 @@ public class AccountsController : ControllerBase
         {
             ModelState.AddModelError(nameof(AccountCreateRequest.PhoneNumber), "Số điện thoại đã được sử dụng.");
         }
+    }
+
+    private void RejectAdminRole(string role)
+    {
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError(nameof(AccountCreateRequest.Role), "Không thể cấp quyền quản trị viên cho tài khoản khác.");
+        }
+    }
+
+    private static bool IsAdmin(Account account)
+    {
+        return string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void Normalize(AccountCreateRequest request)

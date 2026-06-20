@@ -92,48 +92,6 @@ namespace BackendApi.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("Oishipan.Models.NewsArticle", b =>
-                {
-                    b.Property<int>("NewsArticleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NewsArticleId"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Image")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("PublishedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Summary")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("NewsArticleId");
-
-                    b.ToTable("NewsArticles");
-                });
-
             modelBuilder.Entity("Oishipan.Models.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -149,6 +107,11 @@ namespace BackendApi.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -166,6 +129,43 @@ namespace BackendApi.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.OrderCancellationRequest", b =>
+                {
+                    b.Property<int>("CancellationRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CancellationRequestId"));
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ResponseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("CancellationRequestId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderCancellationRequests");
                 });
 
             modelBuilder.Entity("Oishipan.Models.OrderDetail", b =>
@@ -260,6 +260,11 @@ namespace BackendApi.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.HasKey("ProductId");
 
                     b.HasIndex("CategoryId");
@@ -318,42 +323,39 @@ namespace BackendApi.Migrations
                     b.ToTable("ProductValues");
                 });
 
-            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+            modelBuilder.Entity("Oishipan.Models.UserVoucher", b =>
                 {
-                    b.Property<int>("ProductVariantId")
+                    b.Property<int>("UserVoucherId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductVariantId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserVoucherId"));
 
-                    b.Property<decimal>("AdditionalPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTime>("AssignedDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("Filling")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("IsUsed")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ProductId")
+                    b.Property<DateTime?>("UsedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UsedInOrderId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Quantity")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Size")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
 
-                    b.HasKey("ProductVariantId");
+                    b.HasKey("UserVoucherId");
 
-                    b.HasIndex("ProductId", "Size", "Filling")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
-                    b.ToTable("ProductVariants");
+                    b.HasIndex("VoucherId");
+
+                    b.ToTable("UserVouchers");
                 });
 
             modelBuilder.Entity("Oishipan.Models.Voucher", b =>
@@ -369,11 +371,19 @@ namespace BackendApi.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("DiscountValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("VoucherId");
 
@@ -392,6 +402,17 @@ namespace BackendApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.OrderCancellationRequest", b =>
+                {
+                    b.HasOne("Oishipan.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Oishipan.Models.OrderDetail", b =>
@@ -457,15 +478,23 @@ namespace BackendApi.Migrations
                     b.Navigation("ProductOption");
                 });
 
-            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+            modelBuilder.Entity("Oishipan.Models.UserVoucher", b =>
                 {
-                    b.HasOne("Oishipan.Models.Product", "Product")
-                        .WithMany("ProductVariants")
-                        .HasForeignKey("ProductId")
+                    b.HasOne("Oishipan.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("Oishipan.Models.Voucher", "Voucher")
+                        .WithMany()
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("Oishipan.Models.Account", b =>
@@ -488,8 +517,6 @@ namespace BackendApi.Migrations
             modelBuilder.Entity("Oishipan.Models.Product", b =>
                 {
                     b.Navigation("ProductOptions");
-
-                    b.Navigation("ProductVariants");
                 });
 
             modelBuilder.Entity("Oishipan.Models.ProductOption", b =>
