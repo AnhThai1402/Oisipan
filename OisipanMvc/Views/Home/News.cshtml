@@ -1,6 +1,53 @@
+@model List<FrontendMvc.Models.NewsArticleViewModel>
+
 @{
     ViewData["Title"] = "Tin tức";
 }
 
-<h1>Tin tức</h1>
-<p>Các bài viết và thông tin mới nhất sẽ được hiển thị tại đây.</p>
+<section class="news-page">
+    <header class="news-header">
+        <p class="auth-eyebrow">Oisipan Bakery</p>
+        <h1>Tin tức</h1>
+        <p>Câu chuyện về bánh, nguyên liệu và những điều mới tại Oisipan.</p>
+    </header>
+
+    @if (Model.Any())
+    {
+        <div class="news-grid">
+            @foreach (var article in Model)
+            {
+                <article class="news-card">
+                    <a asp-action="NewsDetail" asp-route-id="@article.NewsArticleId" class="news-card-media">
+                        @if (!string.IsNullOrWhiteSpace(article.Image))
+                        {
+                            <img src="@article.Image" alt="@article.Title" />
+                        }
+                        else
+                        {
+                            <div class="news-image-placeholder">Oisipan</div>
+                        }
+                    </a>
+                    <div class="news-card-body">
+                        <time datetime="@article.PublishedAt?.ToString("yyyy-MM-dd")">
+                            @article.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy")
+                        </time>
+                        <h2>
+                            <a asp-action="NewsDetail" asp-route-id="@article.NewsArticleId">@article.Title</a>
+                        </h2>
+                        <p>@article.Summary</p>
+                        <a class="news-read-more" asp-action="NewsDetail" asp-route-id="@article.NewsArticleId">
+                            Đọc bài viết
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="news-empty">
+            <h2>Chưa có bài viết</h2>
+            <p>Những câu chuyện mới sẽ sớm xuất hiện tại đây.</p>
+        </div>
+    }
+</section>

@@ -16,14 +16,14 @@
     <div class="col-md-6">
         <label asp-for="CategoryId" class="form-label"></label>
         <select asp-for="CategoryId" asp-items="Model.Categories" class="form-select">
-            <option value="0">-- Chon danh muc --</option>
+            <option value="0">-- Chọn danh mục --</option>
         </select>
         <span asp-validation-for="CategoryId" class="text-danger"></span>
     </div>
 
     <div class="col-md-6">
-        <label asp-for="Quantity" class="form-label"></label>
-        <input asp-for="Quantity" class="form-control" type="number" min="0" />
+        <label asp-for="Quantity" class="form-label">Tổng tồn kho</label>
+        <input asp-for="Quantity" class="form-control" type="number" readonly />
         <span asp-validation-for="Quantity" class="text-danger"></span>
     </div>
 
@@ -45,4 +45,105 @@
         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
+
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Biến thể sản phẩm</h2>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-product-variant">
+                Thêm biến thể
+            </button>
+        </div>
+
+        <span asp-validation-for="ProductVariants" class="text-danger d-block mb-2"></span>
+
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Nhân bánh</th>
+                        <th style="width: 170px;">Giá cộng thêm</th>
+                        <th style="width: 130px;">Tồn kho</th>
+                        <th style="width: 110px;">Đang bán</th>
+                        <th style="width: 80px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="product-variant-list">
+                    @for (var index = 0; index < Model.ProductVariants.Count; index++)
+                    {
+                        <tr class="product-variant-row">
+                            <td>
+                                <input asp-for="ProductVariants[index].ProductVariantId" class="variant-id" type="hidden" />
+                                <input asp-for="ProductVariants[index].Size" class="form-control variant-size" placeholder="S, M, L..." />
+                                <span asp-validation-for="ProductVariants[index].Size" class="text-danger"></span>
+                            </td>
+                            <td>
+                                <input asp-for="ProductVariants[index].Filling" class="form-control variant-filling" placeholder="Phô mai, socola..." />
+                                <span asp-validation-for="ProductVariants[index].Filling" class="text-danger"></span>
+                            </td>
+                            <td>
+                                <input asp-for="ProductVariants[index].AdditionalPrice"
+                                       class="form-control variant-price"
+                                       type="number"
+                                       min="0"
+                                       step="1000" />
+                            </td>
+                            <td>
+                                <input asp-for="ProductVariants[index].Quantity"
+                                       class="form-control variant-quantity"
+                                       type="number"
+                                       min="0" />
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    <input type="checkbox"
+                                           class="form-check-input variant-active"
+                                           name="ProductVariants[@index].IsActive"
+                                           value="true"
+                                           checked="@Model.ProductVariants[index].IsActive" />
+                                    <input type="hidden"
+                                           class="variant-active-fallback"
+                                           name="ProductVariants[@index].IsActive"
+                                           value="false" />
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-product-variant">
+                                    Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<template id="product-variant-template">
+    <tr class="product-variant-row">
+        <td>
+            <input class="form-control variant-size" maxlength="100" placeholder="S, M, L..." />
+        </td>
+        <td>
+            <input class="form-control variant-filling" maxlength="100" placeholder="Phô mai, socola..." />
+        </td>
+        <td>
+            <input class="form-control variant-price" type="number" min="0" step="1000" value="0" />
+        </td>
+        <td>
+            <input class="form-control variant-quantity" type="number" min="0" value="0" />
+        </td>
+        <td class="text-center">
+            <div class="form-check form-switch d-inline-block">
+                <input class="form-check-input variant-active" type="checkbox" value="true" checked />
+                <input class="variant-active-fallback" type="hidden" value="false" />
+            </div>
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-product-variant">
+                Xóa
+            </button>
+        </td>
+    </tr>
+</template>

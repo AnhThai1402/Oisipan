@@ -30,7 +30,10 @@ public class AdminProductsController : Controller
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var model = new ProductAdminViewModel();
+        var model = new ProductAdminViewModel
+        {
+            ProductVariants = [new() { IsActive = true }]
+        };
         await LoadOptions(model);
         return View(model);
     }
@@ -39,6 +42,7 @@ public class AdminProductsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProductAdminViewModel model)
     {
+        NormalizeAndValidateProductVariants(model);
         await SaveImageIfValid(model);
 
         if (!ModelState.IsValid)
@@ -68,6 +72,10 @@ public class AdminProductsController : Controller
             return NotFound();
         }
 
+        if (product.ProductVariants.Count == 0)
+        {
+            product.ProductVariants.Add(new ProductVariantAdminViewModel { IsActive = true });
+        }
         await LoadOptions(product);
         return View(product);
     }
@@ -81,6 +89,7 @@ public class AdminProductsController : Controller
             return BadRequest();
         }
 
+        NormalizeAndValidateProductVariants(model);
         await SaveImageIfValid(model);
 
         if (!ModelState.IsValid)
@@ -128,8 +137,109 @@ public class AdminProductsController : Controller
             model.Image,
             model.Quantity,
             model.CategoryId,
-            model.Description
+            model.Description,
+            ProductVariants = model.ProductVariants.Select(variant => new
+            {
+                variant.ProductVariantId,
+                variant.Size,
+                variant.Filling,
+                variant.AdditionalPrice,
+                variant.Quantity,
+                variant.IsActive
+            })
         };
+    }
+
+    private void NormalizeAndValidateProductVariants(ProductAdminViewModel model)
+    {
+        model.ProductVariants ??= new();
+        model.ProductVariants = model.ProductVariants
+            .Where(variant =>
+                !string.IsNullOrWhiteSpace(variant.Size) ||
+                !string.IsNullOrWhiteSpace(variant.Filling))
+            .ToList();
+
+        if (model.ProductVariants.Count == 0)
+        {
+            ModelState.AddModelError(
+                nameof(model.ProductVariants),
+                "Vui lòng thêm ít nhất một biến thể sản phẩm.");
+            return;
+        }
+
+        var hasDuplicates = model.ProductVariants
+            .GroupBy(
+                variant => $"{variant.Size.Trim()}|{variant.Filling.Trim()}",
+                StringComparer.OrdinalIgnoreCase)
+            .Any(group => group.Count() > 1);
+
+        if (hasDuplicates)
+        {
+            ModelState.AddModelError(
+                nameof(model.ProductVariants),
+                "Tổ hợp size và nhân bánh không được trùng nhau.");
+        }
+
+        model.Quantity = model.ProductVariants.Sum(variant => variant.Quantity);
+    }
+
+    private void NormalizeAndValidateProductOptions(ProductAdminViewModel model)
+    {
+        model.ProductOptions ??= new();
+
+        foreach (var option in model.ProductOptions)
+        {
+            option.ProductValues ??= new();
+            option.ProductValues = option.ProductValues
+                .Where(value => !string.IsNullOrWhiteSpace(value.ValueName))
+                .ToList();
+        }
+
+        foreach (var requiredOption in new[] { "Size", "Nhân bánh" })
+        {
+            var option = model.ProductOptions.FirstOrDefault(item =>
+                string.Equals(item.OptionName, requiredOption, StringComparison.OrdinalIgnoreCase));
+
+            if (option is null || option.ProductValues.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ProductOptions),
+                    $"Vui lòng thêm ít nhất một giá trị cho {requiredOption}.");
+            }
+        }
+    }
+
+    private static List<ProductOptionAdminViewModel> CreateDefaultProductOptions()
+    {
+        return
+        [
+            new()
+            {
+                OptionName = "Size",
+                ProductValues = [new()]
+            },
+            new()
+            {
+                OptionName = "Nhân bánh",
+                ProductValues = [new()]
+            }
+        ];
+    }
+
+    private static void EnsureRequiredProductOptions(ProductAdminViewModel model)
+    {
+        foreach (var defaultOption in CreateDefaultProductOptions())
+        {
+            if (!model.ProductOptions.Any(option =>
+                string.Equals(option.OptionName, defaultOption.OptionName, StringComparison.OrdinalIgnoreCase)))
+            {
+                model.ProductOptions.Add(defaultOption);
+            }
+        }
+
+        model.ProductOptions = model.ProductOptions
+            .OrderBy(option => option.OptionName == "Size" ? 0 : 1)
+            .ToList();
     }
 
     private async Task LoadOptions(ProductAdminViewModel model)

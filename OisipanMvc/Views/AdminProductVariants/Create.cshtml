@@ -1,0 +1,23 @@
+@model FrontendMvc.Models.ProductVariantAdminViewModel
+
+@{
+    ViewData["Title"] = "Thêm biến thể";
+}
+
+<div class="admin-form">
+    <h1>Thêm biến thể</h1>
+
+    <form asp-action="Create" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <partial name="_VariantForm" model="Model" />
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

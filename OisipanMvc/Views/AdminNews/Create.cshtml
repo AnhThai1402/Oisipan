@@ -1,0 +1,21 @@
+@model FrontendMvc.Models.NewsArticleViewModel
+
+@{
+    ViewData["Title"] = "Thêm bài viết";
+}
+
+<div class="admin-form admin-form-wide">
+    <h1>Thêm bài viết</h1>
+    <form asp-action="Create" method="post" enctype="multipart/form-data" novalidate>
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <partial name="_NewsForm" model="Model" />
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

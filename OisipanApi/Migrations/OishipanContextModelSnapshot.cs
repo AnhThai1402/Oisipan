@@ -92,6 +92,48 @@ namespace BackendApi.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Oishipan.Models.NewsArticle", b =>
+                {
+                    b.Property<int>("NewsArticleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NewsArticleId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Image")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("NewsArticleId");
+
+                    b.ToTable("NewsArticles");
+                });
+
             modelBuilder.Entity("Oishipan.Models.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -276,6 +318,44 @@ namespace BackendApi.Migrations
                     b.ToTable("ProductValues");
                 });
 
+            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+                {
+                    b.Property<int>("ProductVariantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductVariantId"));
+
+                    b.Property<decimal>("AdditionalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Filling")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ProductVariantId");
+
+                    b.HasIndex("ProductId", "Size", "Filling")
+                        .IsUnique();
+
+                    b.ToTable("ProductVariants");
+                });
+
             modelBuilder.Entity("Oishipan.Models.Voucher", b =>
                 {
                     b.Property<int>("VoucherId")
@@ -377,6 +457,17 @@ namespace BackendApi.Migrations
                     b.Navigation("ProductOption");
                 });
 
+            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+                {
+                    b.HasOne("Oishipan.Models.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Oishipan.Models.Account", b =>
                 {
                     b.Navigation("Orders");
@@ -397,6 +488,8 @@ namespace BackendApi.Migrations
             modelBuilder.Entity("Oishipan.Models.Product", b =>
                 {
                     b.Navigation("ProductOptions");
+
+                    b.Navigation("ProductVariants");
                 });
 
             modelBuilder.Entity("Oishipan.Models.ProductOption", b =>

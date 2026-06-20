@@ -1,0 +1,31 @@
+@model FrontendMvc.Models.NewsArticleViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<article class="news-detail">
+    <a class="news-back-link" asp-action="News">← Tin tức</a>
+
+    <header class="news-detail-header">
+        <time datetime="@Model.PublishedAt?.ToString("yyyy-MM-dd")">
+            @Model.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy")
+        </time>
+        <h1>@Model.Title</h1>
+        <p>@Model.Summary</p>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Image))
+    {
+        <img class="news-detail-image" src="@Model.Image" alt="@Model.Title" />
+    }
+
+    <div class="news-content">
+        @foreach (var paragraph in Model.Content.Split(
+            new[] { "\r\n\r\n", "\n\n" },
+            StringSplitOptions.RemoveEmptyEntries))
+        {
+            <p>@paragraph</p>
+        }
+    </div>
+</article>

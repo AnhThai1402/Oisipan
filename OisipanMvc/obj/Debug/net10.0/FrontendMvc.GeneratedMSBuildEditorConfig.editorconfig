@@ -47,6 +47,22 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5DYXRlZ29yaWVzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminNews/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5OZXdzXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminNews/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5OZXdzXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminNews/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5OZXdzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminNews/_NewsForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5OZXdzXF9OZXdzRm9ybS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProducts/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0c1xDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -61,6 +77,22 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProducts/_ProductForm.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0c1xfUHJvZHVjdEZvcm0uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProductVariants/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0VmFyaWFudHNcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProductVariants/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0VmFyaWFudHNcRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProductVariants/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0VmFyaWFudHNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminProductVariants/_VariantForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Qcm9kdWN0VmFyaWFudHNcX1ZhcmlhbnRGb3JtLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN_Oisipan_2026/OisipanMvc/Views/AdminUsers/Create.cshtml]
@@ -101,6 +133,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DATN_Oisipan_2026/OisipanMvc/Views/Home/News.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxOZXdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN_Oisipan_2026/OisipanMvc/Views/Home/NewsDetail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxOZXdzRGV0YWlsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN_Oisipan_2026/OisipanMvc/Views/Home/Privacy.cshtml]

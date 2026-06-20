@@ -10,11 +10,13 @@ namespace Oishipan.Models
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductOption> ProductOptions { get; set; }
         public DbSet<ProductValue> ProductValues { get; set; }
+        public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<NewsArticle> NewsArticles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +36,10 @@ namespace Oishipan.Models
 
             modelBuilder.Entity<ProductValue>()
                 .HasIndex(pv => new { pv.ProductOptionId, pv.ValueName })
+                .IsUnique();
+
+            modelBuilder.Entity<ProductVariant>()
+                .HasIndex(pv => new { pv.ProductId, pv.Size, pv.Filling })
                 .IsUnique();
         }
     }

@@ -16,6 +16,22 @@ public class CloudinaryImageStorageService : IImageStorageService
 
     public async Task<string> UploadProductImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
     {
+        return await UploadImageAsync(imageFile, _settings.Folder, cancellationToken);
+    }
+
+    public async Task<string> UploadNewsImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
+    {
+        var folder = string.IsNullOrWhiteSpace(_settings.Folder)
+            ? "oisipan/news"
+            : $"{_settings.Folder.TrimEnd('/')}/news";
+        return await UploadImageAsync(imageFile, folder, cancellationToken);
+    }
+
+    private async Task<string> UploadImageAsync(
+        IFormFile imageFile,
+        string folder,
+        CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(_settings.CloudName) ||
             string.IsNullOrWhiteSpace(_settings.ApiKey) ||
             string.IsNullOrWhiteSpace(_settings.ApiSecret))
@@ -35,7 +51,7 @@ public class CloudinaryImageStorageService : IImageStorageService
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(imageFile.FileName, stream),
-            Folder = _settings.Folder,
+            Folder = folder,
             PublicId = publicId,
             Overwrite = false
         };

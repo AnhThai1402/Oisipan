@@ -26,5 +26,6 @@ namespace Oishipan.Models
         public string? Description { get; set; }
 
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
     }
 }
