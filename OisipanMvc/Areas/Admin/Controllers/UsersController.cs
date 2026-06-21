@@ -34,28 +34,16 @@ public class UsersController : Controller
 
     public IActionResult Create()
     {
-        return View("CreateEdit", new UserAdminViewModel { Role = "User", Status = true });
+        TempData["ErrorMessage"] = "Admin không được tạo tài khoản tại đây.";
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(UserAdminViewModel model)
+    public Task<IActionResult> Create(UserAdminViewModel model)
     {
-        model.Role = "User";
-        if (!ModelState.IsValid)
-        {
-            return View("CreateEdit", model);
-        }
-
-        var response = await Api.PostAsJsonAsync("api/accounts", model);
-        if (!response.IsSuccessStatusCode)
-        {
-            await AddApiErrors(response);
-            return View("CreateEdit", model);
-        }
-
-        TempData["Message"] = "Tạo tài khoản thành công.";
-        return RedirectToAction(nameof(Index));
+        TempData["ErrorMessage"] = "Admin không được tạo tài khoản tại đây.";
+        return Task.FromResult<IActionResult>(RedirectToAction(nameof(Index)));
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -81,7 +69,6 @@ public class UsersController : Controller
     public async Task<IActionResult> Edit(int id, UserAdminViewModel model)
     {
         model.UserId = id;
-        model.Role = "User";
         ModelState.Remove(nameof(UserAdminViewModel.Password));
 
         if (!ModelState.IsValid)

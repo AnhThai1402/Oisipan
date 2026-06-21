@@ -15,9 +15,7 @@
 
 <section class="page-title-row">
     <div>
-        <span class="eyebrow">Sản phẩm</span>
         <h1>Quản lý sản phẩm</h1>
-        <p>Dữ liệu được lấy trực tiếp từ API sản phẩm.</p>
     </div>
     <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="primary-action">
         <i class="bi bi-plus-circle"></i> Thêm sản phẩm
@@ -51,7 +49,7 @@
             var statusText = status == "hidden" ? "Hết hàng" : status == "low-stock" ? "Sắp hết" : "Đang bán";
 
             <article class="product-admin-card" data-status="@status" onclick="window.location='@Url.Action("Detail", "Products", new { area = "Admin", id = product.ProductId })'">
-                <div class="product-thumb">
+                <div class="product-thumb @(!string.IsNullOrWhiteSpace(product.ImageUrl) ? "has-image" : "no-image")">
                     @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                     {
                         <img src="@product.ImageUrl" alt="@product.ProductName" />

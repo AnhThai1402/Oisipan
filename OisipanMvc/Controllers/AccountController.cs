@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FrontendMvc.Controllers;
@@ -101,6 +102,29 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync("OisipanCookie");
         return RedirectToAction("Index", "Home");
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Profile()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            await HttpContext.SignOutAsync("OisipanCookie");
+            return RedirectToAction(nameof(Login));
+        }
+
+        try
+        {
+            var profile = await Api.GetFromJsonAsync<UserAdminViewModel>($"api/accounts/{userId}");
+            return profile is null ? NotFound() : View(profile);
+        }
+        catch (HttpRequestException)
+        {
+            TempData["CartError"] = "Không thể tải hồ sơ. Vui lòng thử lại.";
+            return RedirectToAction("Index", "Home");
+        }
     }
 
     [HttpGet]

@@ -84,11 +84,25 @@ public class ProductAdminViewModel
 
     [Display(Name = "Biến thể sản phẩm")]
     public List<ProductVariantAdminViewModel> Variants { get; set; } = new();
+
+    public List<ProductOptionAdminViewModel> ProductOptions { get; set; } = new();
+
+    public List<ProductVariantAdminViewModel> ProductVariants
+    {
+        get => Variants;
+        set => Variants = value ?? new();
+    }
 }
 
 public class ProductVariantAdminViewModel
 {
-    public int Id { get; set; }
+    public int ProductVariantId { get; set; }
+
+    public int Id
+    {
+        get => ProductVariantId;
+        set => ProductVariantId = value;
+    }
 
     [Display(Name = "Tên tùy chọn")]
     public string OptionName { get; set; } = string.Empty;
@@ -97,4 +111,53 @@ public class ProductVariantAdminViewModel
     public string Value { get; set; } = string.Empty;
 
     public int ProductId { get; set; }
+
+    public string? ProductName { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string Size { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    public string Filling { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal AdditionalPrice { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int Quantity { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public List<SelectListItem> Products { get; set; } = new();
+}
+
+public class ProductOptionAdminViewModel
+{
+    public int ProductOptionId { get; set; }
+    public int ProductId { get; set; }
+    public string OptionName { get; set; } = string.Empty;
+    public List<ProductValueAdminViewModel> ProductValues { get; set; } = new();
+}
+
+public class ProductValueAdminViewModel
+{
+    public int ProductValueId { get; set; }
+    public int ProductOptionId { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string ValueName { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal AdditionalPrice { get; set; }
+}
+
+public class ProductOptionManagementViewModel
+{
+    public int? SelectedProductId { get; set; }
+    public string? SelectedProductName { get; set; }
+    public List<SelectListItem> Products { get; set; } = new();
+    public List<ProductOptionAdminViewModel> Options { get; set; } = new();
 }

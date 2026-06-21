@@ -377,3 +377,4 @@ D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\refint\BackendApi.dll
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\BackendApi.pdb
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\BackendApi.genruntimeconfig.cache
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\ref\BackendApi.dll
+D:\DATN_Oisipan_2026\OisipanApi\obj\Debug\net10.0\BackendApi.sourcelink.json

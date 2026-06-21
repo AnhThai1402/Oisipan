@@ -34,9 +34,39 @@ public class HomeController : Controller
         return View(await BuildStorefrontModel());
     }
 
-    public IActionResult News()
+    public async Task<IActionResult> ProductDetail(int id)
     {
-        return View();
+        var response = await Api.GetAsync($"api/products/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return response.StatusCode == System.Net.HttpStatusCode.NotFound
+                ? NotFound()
+                : StatusCode((int)response.StatusCode);
+        }
+
+        var product = await response.Content.ReadFromJsonAsync<ProductCatalogViewModel>();
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        product.ProductVariants = await Api.GetFromJsonAsync<List<ProductVariantCatalogViewModel>>(
+            $"api/productvariants?productId={id}") ?? new();
+
+        return View(product);
+    }
+
+    public async Task<IActionResult> News()
+    {
+        var articles = await Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles")
+            ?? new List<NewsArticleViewModel>();
+        return View(articles);
+    }
+
+    public async Task<IActionResult> NewsDetail(int id)
+    {
+        var article = await Api.GetFromJsonAsync<NewsArticleViewModel>($"api/newsarticles/{id}");
+        return article is null ? NotFound() : View(article);
     }
 
     public IActionResult Contact()

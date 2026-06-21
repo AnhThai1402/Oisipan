@@ -8,10 +8,14 @@ namespace FrontendMvc.Services;
 public class CloudinaryImageStorageService : IImageStorageService
 {
     private readonly CloudinarySettings _settings;
+    private readonly IWebHostEnvironment _environment;
 
-    public CloudinaryImageStorageService(IOptions<CloudinarySettings> settings)
+    public CloudinaryImageStorageService(
+        IOptions<CloudinarySettings> settings,
+        IWebHostEnvironment environment)
     {
         _settings = settings.Value;
+        _environment = environment;
     }
 
     public async Task<string> UploadProductImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
@@ -36,7 +40,7 @@ public class CloudinaryImageStorageService : IImageStorageService
             string.IsNullOrWhiteSpace(_settings.ApiKey) ||
             string.IsNullOrWhiteSpace(_settings.ApiSecret))
         {
-            throw new InvalidOperationException("Cloudinary chua duoc cau hinh day du.");
+            return await SaveImageLocally(imageFile, folder, cancellationToken);
         }
 
         var account = new Account(_settings.CloudName, _settings.ApiKey, _settings.ApiSecret);
@@ -64,5 +68,28 @@ public class CloudinaryImageStorageService : IImageStorageService
 
         return result.SecureUrl?.ToString()
             ?? throw new InvalidOperationException("Cloudinary khong tra ve URL anh.");
+    }
+
+    private async Task<string> SaveImageLocally(
+        IFormFile imageFile,
+        string folder,
+        CancellationToken cancellationToken)
+    {
+        var relativeFolder = string.IsNullOrWhiteSpace(folder)
+            ? "uploads"
+            : folder.Trim('/').Replace('\\', '/');
+        var physicalFolder = Path.Combine(
+            _environment.WebRootPath,
+            relativeFolder.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(physicalFolder);
+
+        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var filePath = Path.Combine(physicalFolder, fileName);
+
+        await using var output = new FileStream(filePath, FileMode.CreateNew);
+        await imageFile.CopyToAsync(output, cancellationToken);
+
+        return $"/{relativeFolder}/{fileName}";
     }
 }

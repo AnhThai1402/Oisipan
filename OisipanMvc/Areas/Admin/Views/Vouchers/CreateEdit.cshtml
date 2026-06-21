@@ -40,8 +40,8 @@
                 <label for="discountValue">Giá trị giảm giá (₫) <span class="required">*</span></label>
                 <div class="input-with-icon">
                     <span class="input-prefix">₫</span>
-                    <input type="number" id="discountValue" name="DiscountValue" class="form-input" 
-                           value="@Model?.DiscountValue" placeholder="50000" required step="0.01" min="0.01" />
+                    <input type="text" id="discountValue" name="DiscountValue" class="form-input money-input"
+                           inputmode="numeric" value="@Model?.DiscountValue.ToString("0")" placeholder="50.000" required />
                 </div>
                 <small class="form-hint">Nhập số tiền giảm giá</small>
             </div>
@@ -123,7 +123,7 @@
 
         // Update preview amount
         discountInput.addEventListener('input', function() {
-            const amount = parseFloat(this.value) || 0;
+            const amount = window.getMoneyInputValue(this);
             previewAmount.textContent = formatNumber(amount) + '₫';
         });
 

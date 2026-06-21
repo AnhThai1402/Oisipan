@@ -28,7 +28,7 @@ public class UserAdminViewModel
     public string? Address { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
-    [RegularExpression("^User$", ErrorMessage = "Không thể cấp quyền quản trị viên cho tài khoản khác.")]
+    [RegularExpression("^(User|Admin)$", ErrorMessage = "Vai trò không hợp lệ.")]
     [Display(Name = "Vai trò")]
     public string Role { get; set; } = "User";
 
@@ -47,6 +47,7 @@ public class UserAdminViewModel
 
     public List<SelectListItem> Roles { get; set; } = new()
     {
-        new SelectListItem("Người dùng", "User")
+        new SelectListItem("Người dùng", "User"),
+        new SelectListItem("Quản trị viên", "Admin")
     };
 }

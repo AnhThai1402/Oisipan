@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const row = template.content.firstElementChild.cloneNode(true);
         list.appendChild(row);
         reindex();
+        window.initializeMoneyInputs?.(row);
         row.querySelector(".variant-size").focus();
     });
 

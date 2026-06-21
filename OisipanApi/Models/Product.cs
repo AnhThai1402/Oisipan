@@ -30,6 +30,7 @@ namespace Oishipan.Models
         public string Status { get; set; } = "Available";
 
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
     }
 }
 

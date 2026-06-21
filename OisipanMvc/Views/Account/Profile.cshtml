@@ -1,0 +1,64 @@
+@model FrontendMvc.Models.UserAdminViewModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<section class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Tài khoản Oishipan</span>
+        <h1 class="section-title">Hồ sơ cá nhân</h1>
+        <p class="section-desc">Thông tin tài khoản đang đăng nhập của bạn.</p>
+    </div>
+
+    <div class="about-grid">
+        <article class="about-perk-card">
+            <div class="perk-icon-wrap">
+                <i class="bi bi-person"></i>
+            </div>
+            <div>
+                <small>Họ và tên</small>
+                <h2 class="product-title">@Model.FullName</h2>
+            </div>
+        </article>
+
+        <article class="about-perk-card">
+            <div class="perk-icon-wrap">
+                <i class="bi bi-envelope"></i>
+            </div>
+            <div>
+                <small>Email</small>
+                <strong>@Model.Email</strong>
+            </div>
+        </article>
+
+        <article class="about-perk-card">
+            <div class="perk-icon-wrap">
+                <i class="bi bi-telephone"></i>
+            </div>
+            <div>
+                <small>Số điện thoại</small>
+                <strong>@Model.PhoneNumber</strong>
+            </div>
+        </article>
+
+        <article class="about-perk-card">
+            <div class="perk-icon-wrap">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+            <div>
+                <small>Địa chỉ</small>
+                <strong>@(string.IsNullOrWhiteSpace(Model.Address) ? "Chưa cập nhật" : Model.Address)</strong>
+            </div>
+        </article>
+
+        <article class="about-perk-card">
+            <div class="perk-icon-wrap">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div>
+                <small>Đơn hàng</small>
+                <strong>@Model.OrderCount đơn</strong>
+            </div>
+        </article>
+    </div>
+</section>

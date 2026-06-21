@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj": {}
+    "D:\\DATN_Oisipan_2026\\OisipanApi\\BackendApi.csproj": {}
   },
   "projects": {
-    "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj": {
+    "D:\\DATN_Oisipan_2026\\OisipanApi\\BackendApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+        "projectUniqueName": "D:\\DATN_Oisipan_2026\\OisipanApi\\BackendApi.csproj",
         "projectName": "BackendApi",
-        "projectPath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
-        "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
-        "outputPath": "D:\\DATN\\Oisipan\\OisipanApi\\obj\\",
+        "projectPath": "D:\\DATN_Oisipan_2026\\OisipanApi\\BackendApi.csproj",
+        "packagesPath": "C:\\Users\\ACER NITRO\\.nuget\\packages\\",
+        "outputPath": "D:\\DATN_Oisipan_2026\\OisipanApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ACER NITRO\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

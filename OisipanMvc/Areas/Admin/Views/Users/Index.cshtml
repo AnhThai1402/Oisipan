@@ -5,11 +5,8 @@
 
 <section class="page-title-row">
     <div>
-        <span class="eyebrow">Danh mục</span>
         <h1>Quản lý người dùng</h1>
-        <p>Admin chỉ được tạo tài khoản người dùng, không thể cấp quyền quản trị viên cho tài khoản khác.</p>
     </div>
-    <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="primary-action"><i class="fa-solid fa-plus"></i> Thêm người dùng</a>
 </section>
 
 @if (TempData["Message"] is string message)

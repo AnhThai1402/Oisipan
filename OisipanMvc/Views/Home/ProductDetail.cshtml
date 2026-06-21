@@ -1,0 +1,121 @@
+@model ProductCatalogViewModel
+@{
+    ViewData["Title"] = Model.Name;
+    var selectableOptions = Model.ProductOptions
+        .Where(option =>
+            (string.Equals(option.OptionName, "Size", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(option.OptionName, "Nhân bánh", StringComparison.OrdinalIgnoreCase)) &&
+            option.ProductValues.Any())
+        .OrderBy(option => string.Equals(option.OptionName, "Size", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+        .ToList();
+}
+
+<section class="product-detail-page" data-product-detail data-base-price="@Model.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">
+    <a class="product-detail-back" asp-controller="Home" asp-action="Menu">
+        <i class="bi bi-arrow-left"></i> Quay lại menu bánh
+    </a>
+
+    <div class="product-detail-grid">
+        <div class="product-detail-visual">
+            @if (!string.IsNullOrWhiteSpace(Model.Image))
+            {
+                <img src="@Model.Image" alt="@Model.Name" />
+            }
+            else
+            {
+                <div class="product-detail-fallback" aria-hidden="true">
+                    <i class="bi bi-cake2"></i>
+                </div>
+            }
+        </div>
+
+        <div class="product-detail-info">
+            @if (!string.IsNullOrWhiteSpace(Model.CategoryName))
+            {
+                <span class="product-detail-category">@Model.CategoryName</span>
+            }
+
+            <h1>@Model.Name</h1>
+            <div class="product-detail-price" data-product-total-price>@Model.Price.ToString("N0")đ</div>
+            <small class="product-detail-price-note">Giá sẽ thay đổi theo size và nhân bánh đã chọn.</small>
+            <p class="product-detail-description">
+                @(string.IsNullOrWhiteSpace(Model.Description)
+                    ? "Bánh tươi được làm mới mỗi ngày từ những nguyên liệu tuyển chọn tại Oishipan."
+                    : Model.Description)
+            </p>
+
+            <div class="product-detail-meta">
+                <div>
+                    <i class="bi bi-box-seam"></i>
+                    <span>Tồn kho</span>
+                    <strong>@Model.Quantity sản phẩm</strong>
+                </div>
+                <div>
+                    <i class="bi bi-patch-check"></i>
+                    <span>Chất lượng</span>
+                    <strong>Làm mới mỗi ngày</strong>
+                </div>
+            </div>
+
+            @if (selectableOptions.Any())
+            {
+                <div class="product-detail-options">
+                    <h2>Lựa chọn cho bánh</h2>
+                    @foreach (var option in selectableOptions)
+                    {
+                        <fieldset class="product-option-selector" data-option-group>
+                            <legend>Chọn @option.OptionName.ToLowerInvariant()</legend>
+                            <div class="product-option-buttons">
+                                @for (var index = 0; index < option.ProductValues.Count; index++)
+                                {
+                                    var value = option.ProductValues[index];
+                                    var inputId = $"option-{option.ProductOptionId}-{value.ProductValueId}";
+                                    <label class="product-option-button" for="@inputId">
+                                        <input type="radio"
+                                               id="@inputId"
+                                               name="option-@option.ProductOptionId"
+                                               value="@value.ProductValueId"
+                                               data-option-name="@option.OptionName"
+                                               data-value-name="@value.ValueName"
+                                               data-additional-price="@value.AdditionalPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                               checked="@(index == 0)" />
+                                        <span>
+                                            <strong>@value.ValueName</strong>
+                                            <small>
+                                                @(value.AdditionalPrice > 0
+                                                    ? $"+{value.AdditionalPrice:N0}đ"
+                                                    : "Không cộng giá")
+                                            </small>
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        </fieldset>
+                    }
+
+                    <div class="product-selection-summary">
+                        <div>
+                            <span>Lựa chọn của bạn</span>
+                            <strong data-selection-text>Chưa chọn đầy đủ</strong>
+                        </div>
+                        <div>
+                            <span>Tổng giá</span>
+                            <strong data-selection-total>@Model.Price.ToString("N0")đ</strong>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="product-options-empty">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Sản phẩm này chưa thiết lập size và nhân bánh.</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/product-detail.js" asp-append-version="true"></script>
+}

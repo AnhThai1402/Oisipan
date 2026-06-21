@@ -1,0 +1,55 @@
+@model IEnumerable<FrontendMvc.Models.ProductCatalogViewModel>
+
+@if (Model.Any())
+{
+    foreach (var product in Model)
+    {
+        <article class="product-card">
+            <a class="product-card-link"
+               asp-controller="Home"
+               asp-action="ProductDetail"
+               asp-route-id="@product.ProductId"
+               aria-label="Xem chi tiết @product.Name">
+                <div class="product-img-wrap">
+                    @if (!string.IsNullOrWhiteSpace(product.Image))
+                    {
+                        <img class="product-img" src="@product.Image" alt="@product.Name" loading="lazy" />
+                    }
+                    else
+                    {
+                        <div class="product-img product-img-fallback" aria-hidden="true">
+                            <i class="bi bi-cake2"></i>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(product.CategoryName))
+                    {
+                        <span class="product-tag">@product.CategoryName</span>
+                    }
+                </div>
+
+                <div class="product-info">
+                    <h3 class="product-title">@product.Name</h3>
+                    <p class="product-desc">
+                        @(string.IsNullOrWhiteSpace(product.Description)
+                            ? "Bánh tươi được làm mới mỗi ngày tại Oishipan."
+                            : product.Description)
+                    </p>
+                    <div class="product-footer">
+                        <span class="product-price">@product.Price.ToString("N0")đ</span>
+                        <span class="product-view-link">Xem chi tiết <i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </div>
+            </a>
+        </article>
+    }
+}
+else
+{
+    <div class="product-card">
+        <div class="product-info">
+            <h3 class="product-title">Chưa có sản phẩm</h3>
+            <p class="product-desc">Danh sách bánh đang được cập nhật.</p>
+        </div>
+    </div>
+}

@@ -39,6 +39,8 @@
 }
 
 <form method="post" enctype="multipart/form-data" class="product-form-container">
+    <input asp-for="ProductId" type="hidden" />
+    <input asp-for="Image" type="hidden" />
     <div class="admin-grid two-columns">
         <!-- Left Column: Basic Info -->
         <article class="panel">
@@ -76,7 +78,10 @@
             <div class="form-group">
                 <label for="productImage">Hình ảnh sản phẩm</label>
                 <div class="file-upload-area">
-                    <input type="file" id="productImage" name="ImageFile" accept="image/*" />
+                    <input type="file"
+                           id="productImage"
+                           name="ImageFile"
+                           accept="image/jpeg,image/png,image/webp,image/gif" />
                     <label for="productImage" class="file-upload-label">
                         <div class="upload-icon">
                             <i class="bi bi-cloud-arrow-up"></i>
@@ -94,6 +99,7 @@
                         </div>
                     }
                 </div>
+                <span asp-validation-for="ImageFile" class="field-validation-error"></span>
             </div>
         </article>
 
@@ -107,7 +113,7 @@
                 <label for="productPrice">Giá bán (đ) <span class="required">*</span></label>
                 <div class="input-with-icon">
                     <span class="input-prefix">₫</span>
-                    <input type="number" id="productPrice" name="Price" class="form-input" value="@Model?.Price" placeholder="89000" required />
+                    <input type="text" id="productPrice" name="Price" class="form-input money-input" inputmode="numeric" value="@Model?.Price.ToString("0")" placeholder="89.000" required />
                 </div>
             </div>
 
@@ -167,7 +173,7 @@
     <script>
         // Update display price
         document.getElementById('productPrice')?.addEventListener('change', function() {
-            const price = parseInt(this.value) || 0;
+            const price = window.getMoneyInputValue(this);
             document.getElementById('displayPrice').textContent = price.toLocaleString('vi-VN') + 'đ';
         });
 

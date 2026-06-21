@@ -8,6 +8,7 @@ namespace Oishipan.Models
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductOption> ProductOptions { get; set; }
         public DbSet<ProductValue> ProductValues { get; set; }
         public DbSet<Account> Accounts { get; set; }
@@ -15,6 +16,7 @@ namespace Oishipan.Models
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
 
@@ -36,6 +38,10 @@ namespace Oishipan.Models
 
             modelBuilder.Entity<ProductValue>()
                 .HasIndex(pv => new { pv.ProductOptionId, pv.ValueName })
+                .IsUnique();
+
+            modelBuilder.Entity<ProductVariant>()
+                .HasIndex(variant => new { variant.ProductId, variant.Size, variant.Filling })
                 .IsUnique();
 
             // UserVoucher relationships

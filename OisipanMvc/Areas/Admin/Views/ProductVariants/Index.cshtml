@@ -1,0 +1,160 @@
+@model ProductOptionManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý biến thể";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var requiredOptions = new[] { "Size", "Nhân bánh" };
+}
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Sản phẩm</span>
+        <h1>Quản lý biến thể</h1>
+        <p>Size và nhân bánh được khách hàng lựa chọn độc lập; mỗi lựa chọn có giá cộng thêm riêng.</p>
+    </div>
+</section>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">@successMessage</div>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-error">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <div class="alert-content">@errorMessage</div>
+    </div>
+}
+
+<form method="get"
+      asp-area="Admin"
+      asp-controller="ProductVariants"
+      asp-action="Index"
+      class="toolbar-panel variant-toolbar">
+    <div class="form-group variant-filter">
+        <label asp-for="SelectedProductId">Chọn sản phẩm</label>
+        <select name="productId"
+                asp-for="SelectedProductId"
+                asp-items="Model.Products"
+                class="form-select"
+                onchange="this.form.submit()">
+            <option value="">-- Chọn sản phẩm --</option>
+        </select>
+    </div>
+</form>
+
+@if (Model.SelectedProductId.HasValue)
+{
+    <div class="option-management-grid">
+        @foreach (var optionName in requiredOptions)
+        {
+            var option = Model.Options.FirstOrDefault(item =>
+                string.Equals(item.OptionName, optionName, StringComparison.OrdinalIgnoreCase));
+            var values = option?.ProductValues ?? new List<ProductValueAdminViewModel>();
+
+            <section class="panel option-management-card">
+                <div class="panel-head">
+                    <div>
+                        <span class="option-management-icon">
+                            <i class="bi @(optionName == "Size" ? "bi-arrows-angle-expand" : "bi-cake2")"></i>
+                        </span>
+                        <div>
+                            <h2>@optionName</h2>
+                            <p>Giá cộng thêm riêng cho từng @optionName.ToLowerInvariant().</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post"
+                      asp-area="Admin"
+                      asp-controller="ProductVariants"
+                      asp-action="AddOptionValue"
+                      class="option-add-form">
+                    <input type="hidden" name="productId" value="@Model.SelectedProductId" />
+                    <input type="hidden" name="optionName" value="@optionName" />
+                    <div class="form-group">
+                        <label for="new-@optionName.Replace(" ", "-")">Tên lựa chọn</label>
+                        <input id="new-@optionName.Replace(" ", "-")"
+                               name="valueName"
+                               class="form-input"
+                               placeholder="@(optionName == "Size" ? "Ví dụ: S, M, L" : "Ví dụ: Phô mai, Socola")"
+                               required />
+                    </div>
+                    <div class="form-group">
+                        <label>Giá cộng thêm</label>
+                        <div class="input-with-icon">
+                            <span class="input-prefix">₫</span>
+                            <input name="additionalPrice"
+                                   class="form-input money-input"
+                                   inputmode="numeric"
+                                   value="0"
+                                   required />
+                        </div>
+                    </div>
+                    <button type="submit" class="primary-action">
+                        <i class="bi bi-plus-circle"></i> Thêm
+                    </button>
+                </form>
+
+                <div class="option-value-list">
+                    @if (values.Any())
+                    {
+                        @foreach (var value in values)
+                        {
+                            <form method="post"
+                                  asp-area="Admin"
+                                  asp-controller="ProductVariants"
+                                  asp-action="UpdateOptionValue"
+                                  class="option-value-row">
+                                <input type="hidden" name="productId" value="@Model.SelectedProductId" />
+                                <input type="hidden" name="productValueId" value="@value.ProductValueId" />
+                                <input type="hidden" name="productOptionId" value="@value.ProductOptionId" />
+                                <input name="valueName"
+                                       class="form-input"
+                                       value="@value.ValueName"
+                                       aria-label="Tên @optionName" />
+                                <div class="input-with-icon">
+                                    <span class="input-prefix">₫</span>
+                                    <input name="additionalPrice"
+                                           class="form-input money-input"
+                                           inputmode="numeric"
+                                           value="@value.AdditionalPrice.ToString("0")"
+                                           aria-label="Giá cộng thêm" />
+                                </div>
+                                <button type="submit" class="icon-action" title="Lưu">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button type="submit"
+                                        class="icon-action danger"
+                                        title="Xóa"
+                                        formaction="@Url.Action("DeleteOptionValue", "ProductVariants", new { area = "Admin" })"
+                                        name="productValueId"
+                                        value="@value.ProductValueId"
+                                        onclick="return confirm('Bạn có chắc muốn xóa lựa chọn này?');">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        }
+                    }
+                    else
+                    {
+                        <div class="option-empty">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Chưa có lựa chọn @optionName.ToLowerInvariant().</span>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+}
+else
+{
+    <section class="panel variant-empty-state">
+        <i class="bi bi-boxes"></i>
+        <strong>Hãy chọn một sản phẩm</strong>
+        <span>Sau đó bạn có thể thiết lập size và nhân bánh độc lập.</span>
+    </section>
+}

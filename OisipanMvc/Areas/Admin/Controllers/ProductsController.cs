@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using FrontendMvc.Models;
+using FrontendMvc.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,11 +12,16 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 [Authorize(Roles = "Admin")]
 public class ProductsController : Controller
 {
+    private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IImageStorageService _imageStorageService;
 
-    public ProductsController(IHttpClientFactory httpClientFactory)
+    public ProductsController(
+        IHttpClientFactory httpClientFactory,
+        IImageStorageService imageStorageService)
     {
         _httpClientFactory = httpClientFactory;
+        _imageStorageService = imageStorageService;
     }
 
     public async Task<IActionResult> Index()
@@ -34,13 +41,14 @@ public class ProductsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProductAdminViewModel model)
     {
+        await SaveImageIfValid(model);
         if (!ModelState.IsValid)
         {
             await PopulateCategories(model);
             return View("CreateEdit", model);
         }
 
-        var response = await Api.PostAsJsonAsync("api/products", model);
+        var response = await Api.PostAsJsonAsync("api/products", ToRequest(model));
         if (!response.IsSuccessStatusCode)
         {
             // Try to parse error details from API response
@@ -101,13 +109,19 @@ public class ProductsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ProductAdminViewModel model)
     {
+        if (id != model.ProductId)
+        {
+            return BadRequest();
+        }
+
+        await SaveImageIfValid(model);
         if (!ModelState.IsValid)
         {
             await PopulateCategories(model);
             return View("CreateEdit", model);
         }
 
-        var response = await Api.PutAsJsonAsync($"api/products/{id}", model);
+        var response = await Api.PutAsJsonAsync($"api/products/{id}", ToRequest(model));
         if (!response.IsSuccessStatusCode)
         {
             ModelState.AddModelError(string.Empty, "Không thể cập nhật sản phẩm.");
@@ -147,6 +161,52 @@ public class ProductsController : Controller
             Text = category.CategoryName,
             Selected = category.CategoryId == model.CategoryId
         }).ToList();
+    }
+
+    private static object ToRequest(ProductAdminViewModel model) => new
+    {
+        model.Name,
+        model.Price,
+        model.Image,
+        model.Quantity,
+        model.CategoryId,
+        model.Description
+    };
+
+    private async Task SaveImageIfValid(ProductAdminViewModel model)
+    {
+        if (model.ImageFile is null || model.ImageFile.Length == 0)
+        {
+            return;
+        }
+
+        if (!AllowedImageTypes.Contains(model.ImageFile.ContentType))
+        {
+            ModelState.AddModelError(
+                nameof(model.ImageFile),
+                "Ảnh sản phẩm phải là JPG, PNG, WEBP hoặc GIF.");
+            return;
+        }
+
+        if (model.ImageFile.Length > 5 * 1024 * 1024)
+        {
+            ModelState.AddModelError(
+                nameof(model.ImageFile),
+                "Dung lượng ảnh không được vượt quá 5MB.");
+            return;
+        }
+
+        try
+        {
+            model.Image = await _imageStorageService.UploadProductImageAsync(
+                model.ImageFile,
+                HttpContext.RequestAborted);
+            ModelState.Remove(nameof(model.Image));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            ModelState.AddModelError(nameof(model.ImageFile), $"Không thể tải ảnh: {ex.Message}");
+        }
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");

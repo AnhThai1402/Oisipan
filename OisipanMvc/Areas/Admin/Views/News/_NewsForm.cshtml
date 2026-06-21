@@ -1,0 +1,122 @@
+@model FrontendMvc.Models.NewsArticleViewModel
+
+<div class="news-form-fields">
+    <div class="form-group">
+        <label asp-for="Title">Tiêu đề <span class="required">*</span></label>
+        <input asp-for="Title"
+               class="form-input"
+               placeholder="Nhập tiêu đề bài viết" />
+        <span asp-validation-for="Title" class="field-validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Summary">Mô tả ngắn <span class="required">*</span></label>
+        <textarea asp-for="Summary"
+                  class="form-textarea"
+                  rows="4"
+                  placeholder="Tóm tắt nội dung chính của bài viết"></textarea>
+        <span asp-validation-for="Summary" class="field-validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Content">Nội dung <span class="required">*</span></label>
+        <textarea asp-for="Content"
+                  class="rich-editor-source"
+                  aria-hidden="true"
+                  tabindex="-1"></textarea>
+        <div class="rich-editor" data-rich-editor>
+            <div class="rich-editor-toolbar" role="toolbar" aria-label="Công cụ soạn thảo nội dung">
+                <button type="button" data-command="undo" title="Hoàn tác" aria-label="Hoàn tác">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                <button type="button" data-command="redo" title="Làm lại" aria-label="Làm lại">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+                <span class="rich-editor-separator"></span>
+
+                <select data-block-format aria-label="Kiểu văn bản" title="Kiểu văn bản">
+                    <option value="p">Đoạn văn</option>
+                    <option value="h2">Heading 2</option>
+                    <option value="h3">Heading 3</option>
+                    <option value="h4">Heading 4</option>
+                </select>
+                <button type="button" data-command="bold" title="In đậm" aria-label="In đậm">
+                    <i class="bi bi-type-bold"></i>
+                </button>
+                <button type="button" data-command="italic" title="In nghiêng" aria-label="In nghiêng">
+                    <i class="bi bi-type-italic"></i>
+                </button>
+                <button type="button" data-command="underline" title="Gạch chân" aria-label="Gạch chân">
+                    <i class="bi bi-type-underline"></i>
+                </button>
+
+                <span class="rich-editor-separator"></span>
+
+                <button type="button" data-command="createLink" title="Chèn liên kết" aria-label="Chèn liên kết">
+                    <i class="bi bi-link-45deg"></i>
+                </button>
+                <button type="button" data-command="insertImage" title="Chèn ảnh bằng URL" aria-label="Chèn ảnh">
+                    <i class="bi bi-image"></i>
+                </button>
+                <button type="button" data-command="formatBlock" data-value="blockquote" title="Trích dẫn" aria-label="Trích dẫn">
+                    <i class="bi bi-quote"></i>
+                </button>
+
+                <span class="rich-editor-separator"></span>
+
+                <button type="button" data-command="insertUnorderedList" title="Danh sách dấu chấm" aria-label="Danh sách dấu chấm">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+                <button type="button" data-command="insertOrderedList" title="Danh sách đánh số" aria-label="Danh sách đánh số">
+                    <i class="bi bi-list-ol"></i>
+                </button>
+                <button type="button" data-command="justifyLeft" title="Căn trái" aria-label="Căn trái">
+                    <i class="bi bi-text-left"></i>
+                </button>
+                <button type="button" data-command="justifyCenter" title="Căn giữa" aria-label="Căn giữa">
+                    <i class="bi bi-text-center"></i>
+                </button>
+                <button type="button" data-command="justifyRight" title="Căn phải" aria-label="Căn phải">
+                    <i class="bi bi-text-right"></i>
+                </button>
+                <button type="button" data-command="removeFormat" title="Xóa định dạng" aria-label="Xóa định dạng">
+                    <i class="bi bi-eraser"></i>
+                </button>
+            </div>
+            <div class="rich-editor-content"
+                 contenteditable="true"
+                 role="textbox"
+                 aria-multiline="true"
+                 data-placeholder="Nhập nội dung chi tiết của bài viết"></div>
+        </div>
+        <span asp-validation-for="Content" class="field-validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ImageFile">Ảnh đại diện</label>
+        <input asp-for="ImageFile"
+               class="form-input news-file-input"
+               type="file"
+               accept="image/jpeg,image/png,image/webp,image/gif" />
+        <input asp-for="Image" type="hidden" />
+        <small class="form-hint">Hỗ trợ JPG, PNG, WEBP hoặc GIF; dung lượng tối đa 4MB.</small>
+        <span asp-validation-for="ImageFile" class="field-validation-error"></span>
+        @if (!string.IsNullOrWhiteSpace(Model.Image))
+        {
+            <img src="@Model.Image" alt="@Model.Title" class="news-admin-preview" />
+        }
+    </div>
+
+    <div class="form-group">
+        <input asp-for="PublishedAt" type="hidden" />
+        <label class="news-publish-option" asp-for="IsPublished">
+            <input asp-for="IsPublished" />
+            <span class="news-publish-switch" aria-hidden="true"></span>
+            <span>
+                <strong>Xuất bản bài viết</strong>
+                <small>Bài viết sẽ hiển thị trên trang tin tức khi được bật.</small>
+            </span>
+        </label>
+    </div>
+</div>

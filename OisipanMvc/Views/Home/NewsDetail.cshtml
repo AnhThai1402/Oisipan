@@ -21,11 +21,18 @@
     }
 
     <div class="news-content">
-        @foreach (var paragraph in Model.Content.Split(
-            new[] { "\r\n\r\n", "\n\n" },
-            StringSplitOptions.RemoveEmptyEntries))
+        @if (System.Text.RegularExpressions.Regex.IsMatch(Model.Content, @"</?[a-z][\s\S]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
         {
-            <p>@paragraph</p>
+            @Html.Raw(Model.Content)
+        }
+        else
+        {
+            @foreach (var paragraph in Model.Content.Split(
+                new[] { "\r\n\r\n", "\n\n" },
+                StringSplitOptions.RemoveEmptyEntries))
+            {
+                <p>@paragraph</p>
+            }
         }
     </div>
 </article>

@@ -1,3 +1,6 @@
+using FrontendMvc.Options;
+using FrontendMvc.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -12,6 +15,8 @@ builder.Services.AddHttpClient("OisipanApi", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5188");
 });
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 builder.Services
     .AddAuthentication("OisipanCookie")
     .AddCookie("OisipanCookie", options =>
@@ -39,6 +44,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
