@@ -75,10 +75,10 @@
                                                id="@inputId"
                                                name="option-@option.ProductOptionId"
                                                value="@value.ProductValueId"
+                                               autocomplete="off"
                                                data-option-name="@option.OptionName"
                                                data-value-name="@value.ValueName"
-                                               data-additional-price="@value.AdditionalPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
-                                               checked="@(index == 0)" />
+                                               data-additional-price="@value.AdditionalPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
                                         <span>
                                             <strong>@value.ValueName</strong>
                                             <small>

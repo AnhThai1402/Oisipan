@@ -31,6 +31,14 @@ public class CloudinaryImageStorageService : IImageStorageService
         return await UploadImageAsync(imageFile, folder, cancellationToken);
     }
 
+    public async Task<string> UploadCategoryImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
+    {
+        var folder = string.IsNullOrWhiteSpace(_settings.Folder)
+            ? "oisipan/categories"
+            : $"{_settings.Folder.TrimEnd('/')}/categories";
+        return await UploadImageAsync(imageFile, folder, cancellationToken);
+    }
+
     private async Task<string> UploadImageAsync(
         IFormFile imageFile,
         string folder,

@@ -4,6 +4,18 @@
 {
     foreach (var product in Model)
     {
+        var priceOptions = product.ProductOptions
+            .Where(option =>
+                (string.Equals(option.OptionName, "Size", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(option.OptionName, "Nhân bánh", StringComparison.OrdinalIgnoreCase)) &&
+                option.ProductValues.Any())
+            .ToList();
+        var minimumPrice = product.Price + priceOptions.Sum(option => option.ProductValues.Min(value => value.AdditionalPrice));
+        var maximumPrice = product.Price + priceOptions.Sum(option => option.ProductValues.Max(value => value.AdditionalPrice));
+        var displayPrice = minimumPrice == maximumPrice
+            ? $"{minimumPrice:N0}đ"
+            : $"{minimumPrice:N0}đ - {maximumPrice:N0}đ";
+
         <article class="product-card">
             <a class="product-card-link"
                asp-controller="Home"
@@ -36,7 +48,7 @@
                             : product.Description)
                     </p>
                     <div class="product-footer">
-                        <span class="product-price">@product.Price.ToString("N0")đ</span>
+                        <span class="product-price">@displayPrice</span>
                         <span class="product-view-link">Xem chi tiết <i class="bi bi-arrow-right"></i></span>
                     </div>
                 </div>

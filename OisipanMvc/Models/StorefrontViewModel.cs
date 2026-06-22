@@ -3,6 +3,7 @@ namespace FrontendMvc.Models;
 public class StorefrontViewModel
 {
     public List<ProductCatalogViewModel> Products { get; set; } = new();
+    public List<NewsArticleViewModel> NewsArticles { get; set; } = new();
 }
 
 public class ProductCatalogViewModel

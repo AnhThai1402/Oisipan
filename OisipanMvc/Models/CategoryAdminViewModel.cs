@@ -11,8 +11,11 @@ public class CategoryAdminViewModel
     [Display(Name = "Tên danh mục")]
     public string CategoryName { get; set; } = string.Empty;
 
-    [Display(Name = "Mô tả")]
-    public string? Description { get; set; }
+    [Display(Name = "Hình ảnh")]
+    public string? Image { get; set; }
+
+    [Display(Name = "Hình ảnh")]
+    public IFormFile? ImageFile { get; set; }
 
     public int ProductCount { get; set; }
 }

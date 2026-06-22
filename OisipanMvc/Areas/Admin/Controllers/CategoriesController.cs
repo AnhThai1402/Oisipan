@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using FrontendMvc.Models;
+using FrontendMvc.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,11 +10,16 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 [Authorize(Roles = "Admin")]
 public class CategoriesController : Controller
 {
+    private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IImageStorageService _imageStorageService;
 
-    public CategoriesController(IHttpClientFactory httpClientFactory)
+    public CategoriesController(
+        IHttpClientFactory httpClientFactory,
+        IImageStorageService imageStorageService)
     {
         _httpClientFactory = httpClientFactory;
+        _imageStorageService = imageStorageService;
     }
 
     public async Task<IActionResult> Index()
@@ -31,9 +37,10 @@ public class CategoriesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CategoryAdminViewModel model)
     {
+        await SaveImageIfValid(model);
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
-        var response = await Api.PostAsJsonAsync("api/categories", model);
+        var response = await Api.PostAsJsonAsync("api/categories", ToRequest(model));
         TempData["Message"] = response.IsSuccessStatusCode
             ? "Tạo danh mục thành công"
             : "Không thể tạo danh mục";
@@ -53,9 +60,10 @@ public class CategoriesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, CategoryAdminViewModel model)
     {
+        await SaveImageIfValid(model);
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
-        var response = await Api.PutAsJsonAsync($"api/categories/{id}", model);
+        var response = await Api.PutAsJsonAsync($"api/categories/{id}", ToRequest(model));
         TempData["Message"] = response.IsSuccessStatusCode
             ? "Cập nhật danh mục thành công"
             : "Không thể cập nhật danh mục";
@@ -83,4 +91,38 @@ public class CategoriesController : Controller
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
+
+    private static object ToRequest(CategoryAdminViewModel model) => new
+    {
+        model.CategoryName,
+        model.Image
+    };
+
+    private async Task SaveImageIfValid(CategoryAdminViewModel model)
+    {
+        if (model.ImageFile is null || model.ImageFile.Length == 0) return;
+
+        if (!AllowedImageTypes.Contains(model.ImageFile.ContentType))
+        {
+            ModelState.AddModelError(nameof(model.ImageFile), "Ảnh phải là JPG, PNG, WEBP hoặc GIF.");
+            return;
+        }
+
+        if (model.ImageFile.Length > 4 * 1024 * 1024)
+        {
+            ModelState.AddModelError(nameof(model.ImageFile), "Dung lượng ảnh không được vượt quá 4MB.");
+            return;
+        }
+
+        try
+        {
+            model.Image = await _imageStorageService.UploadCategoryImageAsync(
+                model.ImageFile, HttpContext.RequestAborted);
+            ModelState.Remove(nameof(model.Image));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            ModelState.AddModelError(nameof(model.ImageFile), $"Không thể tải ảnh: {ex.Message}");
+        }
+    }
 }

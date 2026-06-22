@@ -21,75 +21,12 @@
     <div class="form-group">
         <label asp-for="Content">Nội dung <span class="required">*</span></label>
         <textarea asp-for="Content"
-                  class="rich-editor-source"
-                  aria-hidden="true"
-                  tabindex="-1"></textarea>
-        <div class="rich-editor" data-rich-editor>
-            <div class="rich-editor-toolbar" role="toolbar" aria-label="Công cụ soạn thảo nội dung">
-                <button type="button" data-command="undo" title="Hoàn tác" aria-label="Hoàn tác">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                </button>
-                <button type="button" data-command="redo" title="Làm lại" aria-label="Làm lại">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-
-                <span class="rich-editor-separator"></span>
-
-                <select data-block-format aria-label="Kiểu văn bản" title="Kiểu văn bản">
-                    <option value="p">Đoạn văn</option>
-                    <option value="h2">Heading 2</option>
-                    <option value="h3">Heading 3</option>
-                    <option value="h4">Heading 4</option>
-                </select>
-                <button type="button" data-command="bold" title="In đậm" aria-label="In đậm">
-                    <i class="bi bi-type-bold"></i>
-                </button>
-                <button type="button" data-command="italic" title="In nghiêng" aria-label="In nghiêng">
-                    <i class="bi bi-type-italic"></i>
-                </button>
-                <button type="button" data-command="underline" title="Gạch chân" aria-label="Gạch chân">
-                    <i class="bi bi-type-underline"></i>
-                </button>
-
-                <span class="rich-editor-separator"></span>
-
-                <button type="button" data-command="createLink" title="Chèn liên kết" aria-label="Chèn liên kết">
-                    <i class="bi bi-link-45deg"></i>
-                </button>
-                <button type="button" data-command="insertImage" title="Chèn ảnh bằng URL" aria-label="Chèn ảnh">
-                    <i class="bi bi-image"></i>
-                </button>
-                <button type="button" data-command="formatBlock" data-value="blockquote" title="Trích dẫn" aria-label="Trích dẫn">
-                    <i class="bi bi-quote"></i>
-                </button>
-
-                <span class="rich-editor-separator"></span>
-
-                <button type="button" data-command="insertUnorderedList" title="Danh sách dấu chấm" aria-label="Danh sách dấu chấm">
-                    <i class="bi bi-list-ul"></i>
-                </button>
-                <button type="button" data-command="insertOrderedList" title="Danh sách đánh số" aria-label="Danh sách đánh số">
-                    <i class="bi bi-list-ol"></i>
-                </button>
-                <button type="button" data-command="justifyLeft" title="Căn trái" aria-label="Căn trái">
-                    <i class="bi bi-text-left"></i>
-                </button>
-                <button type="button" data-command="justifyCenter" title="Căn giữa" aria-label="Căn giữa">
-                    <i class="bi bi-text-center"></i>
-                </button>
-                <button type="button" data-command="justifyRight" title="Căn phải" aria-label="Căn phải">
-                    <i class="bi bi-text-right"></i>
-                </button>
-                <button type="button" data-command="removeFormat" title="Xóa định dạng" aria-label="Xóa định dạng">
-                    <i class="bi bi-eraser"></i>
-                </button>
-            </div>
-            <div class="rich-editor-content"
-                 contenteditable="true"
-                 role="textbox"
-                 aria-multiline="true"
-                 data-placeholder="Nhập nội dung chi tiết của bài viết"></div>
-        </div>
+                  id="news-content-editor"
+                  class="form-textarea ckeditor-source"
+                  rows="14"
+                  data-upload-url="@Url.Action("UploadContentImage", "News", new { area = "Admin" })"
+                  placeholder="Nhập nội dung chi tiết của bài viết"></textarea>
+        <small class="form-hint">Có thể chèn tiêu đề, liên kết, danh sách, bảng và tải ảnh trực tiếp trong bài.</small>
         <span asp-validation-for="Content" class="field-validation-error"></span>
     </div>
 

@@ -105,18 +105,45 @@
 <section id="news" class="section-padding" style="background-color: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
     <div class="section-header">
         <span class="section-subtitle">Nhật Ký Oishipan</span>
-        <h2 class="section-title">Tin Tức & Sự Kiện</h2>
+        <h2 class="section-title">Tin Tức &amp; Sự Kiện</h2>
     </div>
-    <div class="menu-grid">
-        <div class="product-card" style="cursor: pointer; background: var(--bg-white);">
-            <div style="height: 180px; background: #E2EAE4; display: flex; justify-content: center; align-items: center;">
-                <i class="fa-solid fa-store" style="font-size: 3.5rem; color: var(--accent-green); opacity: 0.85;"></i>
-            </div>
-            <div class="product-info" style="padding: 1.5rem;">
-                <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-orange);">SỰ KIỆN KHAI TRƯƠNG</span>
-                <h3 style="font-family: var(--font-serif); font-size: 1.2rem; color: var(--accent-green); font-weight: 700; margin-top: 0.2rem;">Ra Mắt Không Gian Trải Nghiệm Mới Tại Quận 1</h3>
-                <p class="product-desc">Hệ thống Oishipan chính thức mở rộng không gian bếp lò kính tại Quận 1...</p>
-            </div>
+    @if (Model.NewsArticles.Any())
+    {
+        <div class="menu-grid">
+            @foreach (var article in Model.NewsArticles.Take(3))
+            {
+                <article class="product-card">
+                    <a class="product-card-link"
+                       asp-action="NewsDetail"
+                       asp-route-id="@article.NewsArticleId">
+                        <div class="product-img-wrap">
+                            @if (!string.IsNullOrWhiteSpace(article.Image))
+                            {
+                                <img class="product-img" src="@article.Image" alt="@article.Title" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="product-img product-img-fallback" aria-hidden="true">
+                                    <i class="bi bi-newspaper"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-title">@article.Title</h3>
+                            <p class="product-desc">@article.Summary</p>
+                            <span class="product-view-link">Xem chi tiết <i class="bi bi-arrow-right"></i></span>
+                        </div>
+                    </a>
+                </article>
+            }
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="product-options-empty">
+            <i class="bi bi-newspaper"></i>
+            <span>Chưa có tin tức và sự kiện mới.</span>
+        </div>
+    }
 </section>
+

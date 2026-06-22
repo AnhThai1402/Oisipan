@@ -34,8 +34,7 @@
         <table class="admin-table" id="categoryTable">
             <thead>
                 <tr>
-                    <th>Tên danh mục</th>
-                    <th>Mô tả</th>
+                    <th>Danh mục</th>
                     <th>Số sản phẩm</th>
                     <th style="width: 140px;">Hành động</th>
                 </tr>
@@ -46,8 +45,19 @@
                     @foreach (var category in Model)
                     {
                         <tr onclick="window.location='@Url.Action("Detail", "Categories", new { area = "Admin", id = category.CategoryId })';" style="cursor: pointer;">
-                            <td><strong>@category.CategoryName</strong></td>
-                            <td><span class="text-muted">@(string.IsNullOrWhiteSpace(category.Description) ? "—" : category.Description)</span></td>
+                            <td>
+                                <div class="category-admin-cell">
+                                    @if (!string.IsNullOrWhiteSpace(category.Image))
+                                    {
+                                        <img src="@category.Image" alt="@category.CategoryName" />
+                                    }
+                                    else
+                                    {
+                                        <span class="category-admin-fallback"><i class="bi bi-image"></i></span>
+                                    }
+                                    <strong>@category.CategoryName</strong>
+                                </div>
+                            </td>
                             <td><span class="badge badge-info">@category.ProductCount sản phẩm</span></td>
                             <td onclick="event.stopPropagation();">
                                 <div class="action-buttons">
@@ -64,7 +74,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px;">
+                        <td colspan="3" style="text-align: center; padding: 40px;">
                             <i class="bi bi-inbox" style="font-size: 48px; color: var(--admin-line); margin-bottom: 16px; display: block;"></i>
                             <strong>Chưa có danh mục</strong>
                             <p style="color: var(--admin-muted);">Hãy tạo danh mục đầu tiên để bắt đầu</p>

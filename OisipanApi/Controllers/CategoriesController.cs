@@ -26,7 +26,7 @@ public class CategoriesController : ControllerBase
             {
                 CategoryId = c.CategoryId,
                 CategoryName = c.CategoryName,
-                Description = c.Description,
+                Image = c.Image,
                 ProductCount = c.Products.Count
             })
             .ToListAsync();
@@ -50,7 +50,7 @@ public class CategoriesController : ControllerBase
         var category = new Category
         {
             CategoryName = request.CategoryName.Trim(),
-            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim()
+            Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim()
         };
 
         _context.Categories.Add(category);
@@ -69,7 +69,7 @@ public class CategoriesController : ControllerBase
         }
 
         category.CategoryName = request.CategoryName.Trim();
-        category.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        category.Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim();
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -104,7 +104,7 @@ public class CategoriesController : ControllerBase
         {
             CategoryId = category.CategoryId,
             CategoryName = category.CategoryName,
-            Description = category.Description,
+            Image = category.Image,
             ProductCount = category.Products.Count
         };
     }

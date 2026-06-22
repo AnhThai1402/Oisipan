@@ -373,7 +373,6 @@ D:\DATN_Oisipan_2026\.tmp\news-editor-build-final\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\.tmp\news-editor-build-final\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\.tmp\news-editor-build-final\FrontendMvc.dll
 D:\DATN_Oisipan_2026\.tmp\news-editor-build-final\FrontendMvc.pdb
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\zgiqty961a-{0}-bnc3iireyu-bnc3iireyu.gz
 D:\DATN_Oisipan_2026\.tmp\admin-navbar-build\appsettings.Development.json
 D:\DATN_Oisipan_2026\.tmp\admin-navbar-build\appsettings.json
 D:\DATN_Oisipan_2026\.tmp\admin-navbar-build\FrontendMvc.staticwebassets.runtime.json
@@ -410,9 +409,7 @@ D:\DATN_Oisipan_2026\.tmp\options-money-build\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\.tmp\options-money-build\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\.tmp\options-money-build\FrontendMvc.dll
 D:\DATN_Oisipan_2026\.tmp\options-money-build\FrontendMvc.pdb
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-8yserhkoaq-8yserhkoaq.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\j94i15i4wi-{0}-pnfn6txm1g-pnfn6txm1g.gz
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\sx2mz8rznn-{0}-ldihuejw4p-ldihuejw4p.gz
 D:\DATN_Oisipan_2026\.tmp\options-money-final-build\appsettings.Development.json
 D:\DATN_Oisipan_2026\.tmp\options-money-final-build\appsettings.json
 D:\DATN_Oisipan_2026\.tmp\options-money-final-build\FrontendMvc.staticwebassets.runtime.json
@@ -441,7 +438,6 @@ D:\DATN_Oisipan_2026\.tmp\product-thumb-build\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\.tmp\product-thumb-build\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\.tmp\product-thumb-build\FrontendMvc.dll
 D:\DATN_Oisipan_2026\.tmp\product-thumb-build\FrontendMvc.pdb
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-1vvvs83ua3-1vvvs83ua3.gz
 D:\DATN_Oisipan_2026\.tmp\cleanup-admin-views-build\appsettings.Development.json
 D:\DATN_Oisipan_2026\.tmp\cleanup-admin-views-build\appsettings.json
 D:\DATN_Oisipan_2026\.tmp\cleanup-admin-views-build\FrontendMvc.staticwebassets.runtime.json
@@ -479,3 +475,15 @@ D:\DATN_Oisipan_2026\.tmp\ide-check-build\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\.tmp\ide-check-build\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\.tmp\ide-check-build\FrontendMvc.dll
 D:\DATN_Oisipan_2026\.tmp\ide-check-build\FrontendMvc.pdb
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\appsettings.Development.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\appsettings.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.staticwebassets.runtime.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.staticwebassets.endpoints.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.deps.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.runtimeconfig.json
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.dll
+D:\DATN_Oisipan_2026\.tmp\frontend-verify\FrontendMvc.pdb
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\sx2mz8rznn-{0}-kz85v6as7w-kz85v6as7w.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\zgiqty961a-{0}-fz7ykn4miq-fz7ykn4miq.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-pcxa4u94sk-pcxa4u94sk.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-d8k37xqedv-d8k37xqedv.gz

@@ -87,6 +87,37 @@ public class NewsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadContentImage(IFormFile upload)
+    {
+        if (upload is null || upload.Length == 0)
+        {
+            return BadRequest(new { error = new { message = "Vui lòng chọn ảnh để tải lên." } });
+        }
+
+        if (!AllowedImageTypes.Contains(upload.ContentType))
+        {
+            return BadRequest(new { error = new { message = "Ảnh phải là JPG, PNG, WEBP hoặc GIF." } });
+        }
+
+        if (upload.Length > 4 * 1024 * 1024)
+        {
+            return BadRequest(new { error = new { message = "Dung lượng ảnh không được vượt quá 4MB." } });
+        }
+
+        try
+        {
+            var url = await _imageStorageService.UploadNewsImageAsync(
+                upload, HttpContext.RequestAborted);
+            return Ok(new { url });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = new { message = $"Không thể tải ảnh: {ex.Message}" } });
+        }
+    }
+
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 
     private static object ToRequest(NewsArticleViewModel model) => new

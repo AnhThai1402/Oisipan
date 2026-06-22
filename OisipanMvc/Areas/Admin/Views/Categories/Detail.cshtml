@@ -39,10 +39,13 @@
                 <span class="detail-label">Tên danh mục</span>
                 <strong>@Model?.CategoryName</strong>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Mô tả</span>
-                <p>@(string.IsNullOrWhiteSpace(Model?.Description) ? "—" : Model.Description)</p>
-            </div>
+            @if (!string.IsNullOrWhiteSpace(Model?.Image))
+            {
+                <div class="detail-row">
+                    <span class="detail-label">Hình ảnh</span>
+                    <img src="@Model.Image" alt="@Model.CategoryName" class="category-admin-preview" />
+                </div>
+            }
             <div class="detail-row">
                 <span class="detail-label">Số sản phẩm</span>
                 <span class="badge badge-info">@Model?.ProductCount sản phẩm</span>

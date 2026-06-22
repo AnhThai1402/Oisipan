@@ -82,12 +82,17 @@ public class HomeController : Controller
 
     private async Task<StorefrontViewModel> BuildStorefrontModel()
     {
-        var products = await Api.GetFromJsonAsync<List<ProductCatalogViewModel>>("api/products")
-            ?? new List<ProductCatalogViewModel>();
+        var productsTask = Api.GetFromJsonAsync<List<ProductCatalogViewModel>>("api/products");
+        var newsTask = Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles");
+        await Task.WhenAll(productsTask, newsTask);
+
+        var products = await productsTask ?? new List<ProductCatalogViewModel>();
+        var newsArticles = await newsTask ?? new List<NewsArticleViewModel>();
 
         return new StorefrontViewModel
         {
-            Products = products.Where(product => product.Quantity > 0).ToList()
+            Products = products.Where(product => product.Quantity > 0).ToList(),
+            NewsArticles = newsArticles
         };
     }
 
