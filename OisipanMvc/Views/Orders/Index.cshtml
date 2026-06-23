@@ -1,0 +1,86 @@
+@model IEnumerable<OrderAdminViewModel>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+}
+
+<section class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Tài khoản của bạn</span>
+        <h2 class="section-title">Lịch sử đơn hàng</h2>
+        <p class="section-desc">Theo dõi trạng thái các đơn bánh đã đặt tại Oishipan.</p>
+    </div>
+
+    <div class="table-wrapper" style="max-width: 1100px; margin: 0 auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày đặt</th>
+                    <th>Sản phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() == true)
+                {
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td><strong>#OP-@order.OrderId.ToString("0000")</strong></td>
+                            <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @foreach (var item in order.OrderItems)
+                                {
+                                    <div>@item.ProductName x @item.Quantity</div>
+                                }
+                            </td>
+                            <td><strong>@order.TotalAmount.ToString("N0")đ</strong></td>
+                            <td>@order.PaymentMethod</td>
+                            <td><span class="status pending">@order.Status</span></td>
+                            <td>
+                                <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;">
+                                    <i class="bi bi-eye"></i> Xem chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="bi bi-receipt" style="font-size: 44px; display: block; margin-bottom: 12px;"></i>
+                            <strong>Bạn chưa có đơn hàng nào</strong>
+                            <div style="margin-top: 12px;">
+                                <a asp-controller="Home" asp-action="Index" asp-fragment="menu" class="btn-primary">Chọn bánh ngay</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .btn-small {
+        display: inline-block;
+        background: var(--accent-green);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-small:hover {
+        background: #155a3e;
+        transform: translateY(-2px);
+    }
+</style>
+

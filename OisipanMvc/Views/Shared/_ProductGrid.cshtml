@@ -1,0 +1,51 @@
+@model IEnumerable<ProductCatalogViewModel>
+
+@if (Model?.Any() == true)
+{
+    @foreach (var product in Model)
+    {
+        <article class="product-card">
+            <div class="product-img-wrap">
+                <span class="product-tag">@(product.CategoryName ?? "Oishipan")</span>
+                @if (!string.IsNullOrWhiteSpace(product.Image))
+                {
+                    <img src="@product.Image" alt="@product.Name" class="product-img" />
+                }
+                else
+                {
+                    <div class="product-img product-img-fallback">
+                        <i class="bi bi-cake2"></i>
+                    </div>
+                }
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">@product.Name</h3>
+                <p class="product-desc">@(string.IsNullOrWhiteSpace(product.Description) ? "Bánh tươi Oishipan được làm mới mỗi ngày." : product.Description)</p>
+                <div class="product-footer">
+                    <span class="product-price">@product.Price.ToString("N0")đ</span>
+                    <div class="product-actions">
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId" class="btn-view-detail" title="Xem chi tiết">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <form method="post" asp-controller="Cart" asp-action="Add">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.ProductId" />
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                            <button type="submit" class="btn-add-cart" title="Thêm vào giỏ">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </article>
+    }
+}
+else
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <strong>Chưa có sản phẩm</strong>
+        <span>Hãy thêm sản phẩm trong trang quản trị để hiển thị menu.</span>
+    </div>
+}

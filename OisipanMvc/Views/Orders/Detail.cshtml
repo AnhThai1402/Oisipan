@@ -1,0 +1,320 @@
+@model FrontendMvc.Models.OrderAdminViewModel
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:0000}";
+}
+
+<section class="section-padding" style="max-width: 900px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 style="font-size: 1.8rem; margin: 0 0 0.5rem 0;">Chi tiết đơn hàng #OP-@Model.OrderId.ToString("0000")</h2>
+            <p style="color: var(--text-muted);">Đặt hàng vào @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+        <a asp-controller="Orders" asp-action="Index" class="btn-primary" style="padding: 0.7rem 1.5rem;">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="admin-grid two-columns">
+        <article class="panel">
+            <div class="panel-head">
+                <h3><i class="bi bi-info-circle"></i> Thông tin đơn hàng</h3>
+            </div>
+            <div class="detail-group">
+                <div class="detail-row">
+                    <span class="detail-label">Trạng thái</span>
+                    <span class="status pending">@Model.Status</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phương thức thanh toán</span>
+                    <strong>@Model.PaymentMethod</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Địa chỉ giao hàng</span>
+                    <strong>@Model.ShippingAddress</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Số điện thoại</span>
+                    <strong>@Model.CustomerPhone</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-head">
+                <h3><i class="bi bi-calculator"></i> Tổng tiền</h3>
+            </div>
+            <div class="detail-group">
+                <div class="detail-row">
+                    <span class="detail-label">Tổng sản phẩm</span>
+                    <strong>@Model.TotalAmount.ToString("N0")đ</strong>
+                </div>
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="detail-row" style="color: var(--accent-green);">
+                        <span class="detail-label">Giảm giá</span>
+                        <strong>-@Model.DiscountAmount.ToString("N0")đ</strong>
+                    </div>
+                }
+                <div class="detail-row" style="border-top: 1px solid var(--border-color); padding-top: 0.8rem; margin-top: 0.8rem; font-size: 1.2rem;">
+                    <span class="detail-label">Thanh toán</span>
+                    <strong style="color: var(--accent-green); font-size: 1.3rem;">@Model.FinalAmount.ToString("N0")đ</strong>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <!-- Cancellation Request Section -->
+    @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy" && Model.Status != "Đang giao")
+    {
+        <article class="panel cancellation-panel" style="margin-top: 2rem; border-left: 5px solid #dc3545;">
+            <div class="panel-head">
+                <h3><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h3>
+            </div>
+            <div style="padding: 1.5rem; background: rgba(220, 53, 69, 0.03);">
+                @if (Model.CancellationRequests.Any())
+                {
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 1rem 0; font-size: 1rem;">Lịch sử yêu cầu</h4>
+                        @foreach (var req in Model.CancellationRequests.OrderByDescending(r => r.RequestDate))
+                        {
+                            var statusColor = req.Status == "Approved" ? "rgba(31, 111, 80, 0.1)" : req.Status == "Rejected" ? "rgba(220, 53, 69, 0.1)" : "rgba(255, 193, 7, 0.1)";
+                            var statusIcon = req.Status == "Approved" ? "bi-check-circle-fill" : req.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
+                            var statusBadge = req.Status == "Approved" ? "Đã chấp nhận" : req.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
+                            
+                            <div style="padding: 1rem; background: @statusColor; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid @(req.Status == "Approved" ? "#1f6f50" : req.Status == "Rejected" ? "#dc3545" : "#ffc107");">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                                                <i class="bi @statusIcon"></i> @statusBadge
+                                            </span>
+                                        </div>
+                                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                                            Gửi: @req.RequestDate.ToString("dd/MM/yyyy HH:mm")
+                                        </p>
+                                        <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 4px;">
+                                            <strong style="display: block; margin-bottom: 0.3rem;">Lý do:</strong>
+                                            <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.Reason</p>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(req.AdminNote))
+                                        {
+                                            <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 4px; border-left: 3px solid @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">
+                                                <strong style="display: block; margin-bottom: 0.3rem; color: @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">Ghi chú từ admin:</strong>
+                                                <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.AdminNote</p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                
+                @if (!Model.CancellationRequests.Any(r => r.Status == "Pending") && (Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận"))
+                {
+                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
+                            <i class="bi bi-info-circle"></i> Bạn có thể yêu cầu hủy đơn hàng ở trạng thái: 
+                            <strong>Chờ xác nhận</strong> hoặc <strong>Đã xác nhận</strong>
+                        </p>
+                    </div>
+                    <button onclick="openCancellationModal()" class="btn-cancel" style="width: 100%; padding: 0.8rem;">
+                        <i class="bi bi-x-circle"></i> Gửi yêu cầu hủy đơn
+                    </button>
+                }
+                else if (!Model.CancellationRequests.Any(r => r.Status == "Pending"))
+                {
+                    <div style="padding: 0.8rem; background: rgba(220, 53, 69, 0.1); border-radius: 6px; border-left: 4px solid #dc3545;">
+                        <i class="bi bi-lock"></i> <strong>Không thể hủy đơn hàng</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                            Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận" hoặc "Đã xác nhận". Trạng thái hiện tại: <strong>@Model.Status</strong>
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div style="padding: 0.8rem; background: rgba(255, 193, 7, 0.1); border-radius: 6px; border-left: 4px solid #ffc107;">
+                        <i class="bi bi-hourglass-split"></i> <strong>Bạn đã gửi yêu cầu hủy đơn</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                            Vui lòng chờ phản hồi từ admin. Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.
+                        </p>
+                    </div>
+                }
+            </div>
+        </article>
+    }
+
+    <!-- Payment Section -->
+    @if (Model.PaymentMethod == "Bank" && Model.Status != "Đã hủy")
+    {
+        <article class="panel" style="margin-top: 2rem; border: 2px solid var(--accent-green);">
+            <div class="panel-head">
+                <h3><i class="bi bi-bank"></i> Thanh toán chuyển khoản</h3>
+            </div>
+            <div style="padding: 1.5rem; background: rgba(31, 111, 80, 0.05);">
+                <div style="margin-bottom: 1.5rem;">
+                    <small style="color: var(--text-muted); font-weight: 500;">Chuyển khoản đến</small>
+                    <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Oishipan Bakery</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <small style="color: var(--text-muted); font-weight: 500;">Số tài khoản</small>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+                        <p style="margin: 0; font-family: monospace; font-size: 1.1rem; font-weight: 600; flex: 1;">1234567890</p>
+                        <button type="button" class="icon-btn" onclick="copyToClipboard('1234567890')" title="Sao chép">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <small style="color: var(--text-muted); font-weight: 500;">Ngân hàng</small>
+                    <p style="margin: 0.5rem 0;">Vietcombank</p>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <small style="color: var(--text-muted); font-weight: 500;">Nội dung chuyển khoản</small>
+                    <p style="margin: 0.5rem 0; font-family: monospace; font-weight: 600; word-break: break-all;">OP@Model.OrderId.ToString("0000")</p>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 8px; text-align: center;">
+                    <small style="color: var(--text-muted);">Tổng thanh toán</small>
+                    <p style="margin: 0.5rem 0; font-size: 1.3rem; font-weight: 700; color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</p>
+                </div>
+            </div>
+        </article>
+    }
+
+    <!-- Products Section -->
+    <article class="panel" style="margin-top: 2rem;">
+        <div class="panel-head">
+            <h3><i class="bi bi-basket-fill"></i> Chi tiết sản phẩm</h3>
+        </div>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th style="text-align: center;">Số lượng</th>
+                        <th style="text-align: right;">Giá</th>
+                        <th style="text-align: right;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr>
+                            <td><strong>@item.ProductName</strong></td>
+                            <td style="text-align: center;">@item.Quantity</td>
+                            <td style="text-align: right;">@item.Price.ToString("N0")đ</td>
+                            <td style="text-align: right; font-weight: 600;">@item.Total.ToString("N0")đ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+
+<!-- Cancellation Modal -->
+<div class="modal-overlay" id="cancellation-modal-overlay" style="display: none;">
+    <div class="custom-modal" style="max-width: 500px;">
+        <button class="modal-close-btn" type="button" onclick="closeCancellationModal()"><i class="bi bi-x-lg"></i></button>
+        <h3 class="modal-title">Gửi yêu cầu hủy đơn</h3>
+        <form id="cancellation-form" method="post" asp-controller="Orders" asp-action="RequestCancellation" asp-route-id="@Model.OrderId">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="cancellation-reason">Lý do hủy đơn</label>
+                <textarea id="cancellation-reason" name="reason" class="form-control" placeholder="Vui lòng cho biết lý do hủy đơn hàng..." rows="5" required minlength="10" maxlength="500"></textarea>
+                <small style="color: var(--text-muted);">Tối thiểu 10 ký tự, tối đa 500 ký tự</small>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" onclick="closeCancellationModal()" class="soft-action" style="flex: 1;">Hủy</button>
+                <button type="submit" class="primary-action" style="flex: 1;">Gửi yêu cầu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .detail-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.8rem;
+    }
+
+    .detail-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-overlay.open {
+        display: flex;
+    }
+
+    .custom-modal {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        position: relative;
+        max-width: 90%;
+    }
+
+    .modal-close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+    }
+
+    .modal-title {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.3rem;
+    }
+</style>
+
+<script>
+    function openCancellationModal() {
+        document.getElementById('cancellation-modal-overlay').style.display = 'flex';
+    }
+
+    function closeCancellationModal() {
+        document.getElementById('cancellation-modal-overlay').style.display = 'none';
+        document.getElementById('cancellation-form').reset();
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Đã sao chép vào clipboard');
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Đã sao chép vào clipboard');
+        });
+    }
+</script>
