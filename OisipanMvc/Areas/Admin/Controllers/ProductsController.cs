@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +20,7 @@ public class ProductsController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var products = await Api.GetFromJsonAsync<List<ProductAdminViewModel>>("api/products") ?? new();
+        var products = await Api.GetFromJsonAsyncWithOptions<List<ProductAdminViewModel>>("api/products/admin/products") ?? new();
         return View(products);
     }
 
@@ -89,7 +90,7 @@ public class ProductsController : Controller
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> Edit(int id)
     {
-        var model = await Api.GetFromJsonAsync<ProductAdminViewModel>($"api/products/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
         if (model is null) return NotFound();
 
         await PopulateCategories(model);
@@ -121,7 +122,7 @@ public class ProductsController : Controller
 
     public async Task<IActionResult> Detail(int id)
     {
-        var model = await Api.GetFromJsonAsync<ProductAdminViewModel>($"api/products/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
         return model is null ? NotFound() : View(model);
     }
 
@@ -138,9 +139,31 @@ public class ProductsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateQuantity(int id, int quantity)
+    {
+        // Get current product
+        var product = await Api.GetFromJsonAsync<ProductAdminViewModel>($"api/products/admin/{id}");
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        // Update quantity
+        product.Quantity = quantity;
+        var response = await Api.PutAsJsonAsync($"api/products/{id}", product);
+
+        TempData["Message"] = response.IsSuccessStatusCode
+            ? "Cập nhật tồn kho thành công."
+            : "Không thể cập nhật. Vui lòng thử lại.";
+
+        return RedirectToAction(nameof(Index));
+    }
+
     private async Task PopulateCategories(ProductAdminViewModel model)
     {
-        var categories = await Api.GetFromJsonAsync<List<CategoryAdminViewModel>>("api/categories") ?? new();
+        var categories = await Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories") ?? new();
         model.Categories = categories.Select(category => new SelectListItem
         {
             Value = category.CategoryId.ToString(),

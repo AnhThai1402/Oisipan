@@ -15,9 +15,7 @@
 
 <section class="page-title-row">
     <div>
-        <span class="eyebrow">Sản phẩm</span>
         <h1>Quản lý sản phẩm</h1>
-        <p>Dữ liệu được lấy trực tiếp từ API sản phẩm.</p>
     </div>
     <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="primary-action">
         <i class="bi bi-plus-circle"></i> Thêm sản phẩm
@@ -68,6 +66,9 @@
                     <div class="price-row"><strong>@product.Price.ToString("N0")đ</strong><span>Tồn @product.Quantity</span></div>
                 </div>
                 <div class="product-card-actions" onclick="event.stopPropagation()">
+                    <button type="button" class="icon-action" title="Chỉnh sửa tồn kho" onclick="openEditQuantityModal(@product.ProductId, '@product.ProductName', @product.Quantity)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
                     <a asp-area="Admin" asp-controller="Products" asp-action="Detail" asp-route-id="@product.ProductId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
                     <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@product.ProductId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
                     <form method="post" asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@product.ProductId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@product.ProductName');">
@@ -88,6 +89,41 @@
     }
 </section>
 
+<!-- Edit Quantity Modal -->
+<div class="modal-overlay" id="editQuantityModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.2rem;">Chỉnh sửa tồn kho</h3>
+            <button type="button" onclick="closeEditQuantityModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form method="post" asp-area="Admin" asp-controller="Products" asp-action="UpdateQuantity" id="editQuantityForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="product-id" value="0" />
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);" id="product-name-label"></label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" class="quantity-btn" onclick="decreaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">−</button>
+                    <input type="number" name="quantity" id="product-quantity" min="0" max="9999" style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; text-align: center; font-size: 1rem; font-weight: 600;" required />
+                    <button type="button" class="quantity-btn" onclick="increaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">+</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" onclick="closeEditQuantityModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Hủy bỏ
+                </button>
+                <button type="submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Lưu
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-dialog modal-dialog-danger">
@@ -106,6 +142,30 @@
 @section Scripts {
     <script>
         let pendingForm = null;
+
+        function openEditQuantityModal(productId, productName, quantity) {
+            document.getElementById('product-id').value = productId;
+            document.getElementById('product-name-label').textContent = productName;
+            document.getElementById('product-quantity').value = quantity;
+            document.getElementById('editQuantityModal').style.display = 'flex';
+        }
+
+        function closeEditQuantityModal() {
+            document.getElementById('editQuantityModal').style.display = 'none';
+        }
+
+        function increaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            input.value = parseInt(input.value || 0) + 1;
+        }
+
+        function decreaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            const current = parseInt(input.value || 0);
+            if (current > 0) {
+                input.value = current - 1;
+            }
+        }
 
         function showDeleteConfirm(event, productName) {
             event.preventDefault();

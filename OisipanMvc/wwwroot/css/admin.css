@@ -177,6 +177,7 @@ button { cursor: pointer; }
     border-radius: 50%;
 }
 .admin-hero > * { position: relative; z-index: 1; }
+.admin-hero .primary-action { margin-right: 8px; }
 .eyebrow { color: var(--admin-gold); font-weight: 800; text-transform: uppercase; letter-spacing: 0; font-size: 0.74rem; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 10px; font-size: clamp(2rem, 4vw, 4.4rem); line-height: 0.98; font-family: "Playfair Display", serif; }
@@ -191,6 +192,7 @@ p { color: var(--admin-muted); line-height: 1.65; }
     justify-content: space-between;
     gap: 18px;
 }
+.page-title-row .primary-action { margin-right: 8px; }
 .page-title-row h1 { font-size: clamp(2rem, 3vw, 3.2rem); }
 .page-title-row p { margin-bottom: 0; }
 
@@ -1830,6 +1832,7 @@ p { color: var(--admin-muted); line-height: 1.65; }
     .admin-search { order: 3; flex-basis: 100%; }
     .admin-content { padding: 16px; }
     .admin-hero, .page-title-row { align-items: stretch; flex-direction: column; padding: 22px; }
+    .page-title-row .primary-action { align-self: center; }
     .metric-grid, .product-admin-grid, .brand-grid, .voucher-grid, .order-flow, .customer-strip { grid-template-columns: 1fr; }
     .category-node { grid-template-columns: 44px 1fr; }
     .category-node .soft-action { grid-column: 1 / -1; }

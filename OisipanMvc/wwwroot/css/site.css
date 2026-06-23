@@ -148,6 +148,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin: 28px 0 20px;
+  flex-wrap: wrap;
 }
 
 .admin-page-header h1,
@@ -155,6 +156,12 @@ body {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
+}
+
+.admin-page-header .btn {
+  white-space: nowrap;
+  padding: 0.5rem 1rem !important;
+  font-size: 14px !important;
 }
 
 .admin-table-wrap,

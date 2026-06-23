@@ -330,6 +330,10 @@ nav a:hover::after, nav a.active::after { width: 100%; }
 .product-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; }
 .product-price { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: var(--accent-green); }
 
+.product-actions { display: flex; gap: 0.8rem; align-items: center; }
+.btn-view-detail { width: 38px; height: 38px; background: var(--accent-green-light); border: 1px solid var(--accent-green); color: var(--accent-green); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: var(--transition-smooth); text-decoration: none; }
+.btn-view-detail:hover { background: var(--accent-green); color: var(--bg-white); border-color: var(--accent-green); }
+
 .btn-add-cart { width: 38px; height: 38px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--accent-green); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: var(--transition-smooth); }
 .btn-add-cart:hover { background: var(--accent-green); color: var(--bg-white); border-color: transparent; }
 

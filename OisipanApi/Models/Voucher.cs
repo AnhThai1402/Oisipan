@@ -15,6 +15,8 @@ namespace Oishipan.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal DiscountValue { get; set; }
 
+        public int MinimumItems { get; set; } = 0; // Minimum number of items required to apply this voucher
+
         public DateTime ExpiryDate { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;

@@ -1,17 +1,35 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+var jsonOptions = new JsonSerializerOptions
+{
+    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+    PropertyNameCaseInsensitive = true
+};
+
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromDays(7);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
 builder.Services.AddHttpClient("OisipanApi", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5188");
-});
+})
+.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());
 builder.Services
     .AddAuthentication("OisipanCookie")
     .AddCookie("OisipanCookie", options =>

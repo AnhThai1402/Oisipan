@@ -252,8 +252,14 @@ D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\scopedcss\bundle\FrontendMvc.styles.css
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\scopedcss\projectbundle\FrontendMvc.bundle.scp.css
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\gn68u8xr4c-{0}-r2vpugr6k8-r2vpugr6k8.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-3gxo2d7s8a-3gxo2d7s8a.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\1utnfzj6jq-{0}-kdvqean29u-kdvqean29u.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-b1i72oui3u-b1i72oui3u.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\gn68u8xr4c-{0}-wbc3pwvlot-wbc3pwvlot.gz
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\jjldbwkasr-{0}-61n19gt1b8-61n19gt1b8.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\4qmeljphaa-{0}-sq5owum81q-sq5owum81q.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\xhe9dpwwzr-{0}-rer8bp0oke-rer8bp0oke.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\kpqpoi8jex-{0}-gnt0znubpg-gnt0znubpg.gz
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\bzpdoculdo-{0}-k6ziycra07-k6ziycra07.gz
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\ez7l95ym3b-{0}-t1cqhe9u97-t1cqhe9u97.gz
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\egzvzlalcg-{0}-c2jlpeoesf-c2jlpeoesf.gz
@@ -326,9 +332,3 @@ D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\refint\FrontendMvc.dll
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.pdb
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.genruntimeconfig.cache
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\ref\FrontendMvc.dll
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\4qmeljphaa-{0}-sq5owum81q-sq5owum81q.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\xhe9dpwwzr-{0}-rer8bp0oke-rer8bp0oke.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\1utnfzj6jq-{0}-kdvqean29u-kdvqean29u.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-4xqlocn9ao-4xqlocn9ao.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-n0nfto2dk1-n0nfto2dk1.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\kpqpoi8jex-{0}-gnt0znubpg-gnt0znubpg.gz

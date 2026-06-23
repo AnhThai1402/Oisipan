@@ -19,9 +19,6 @@ public class ProductAdminViewModel
         set => Name = value;
     }
 
-    [StringLength(50)]
-    public string? Sku { get; set; }
-
     [Range(0.01, double.MaxValue, ErrorMessage = "Giá sản phẩm phải lớn hơn 0.")]
     [Display(Name = "Giá")]
     public decimal Price { get; set; }

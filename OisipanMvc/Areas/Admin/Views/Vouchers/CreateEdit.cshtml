@@ -23,6 +23,7 @@
 
 <div class="admin-grid two-columns">
     <form method="post" class="form-container">
+        @Html.AntiForgeryToken()
         <!-- Voucher Code -->
         <article class="panel">
             <div class="panel-head">
@@ -44,6 +45,13 @@
                            value="@Model?.DiscountValue" placeholder="50000" required step="0.01" min="0.01" />
                 </div>
                 <small class="form-hint">Nhập số tiền giảm giá</small>
+            </div>
+
+            <div class="form-group">
+                <label for="minimumItems">Số lượng sản phẩm tối thiểu <span class="required">*</span></label>
+                <input type="number" id="minimumItems" name="MinimumItems" class="form-input" 
+                       value="@(Model?.MinimumItems ?? 0)" placeholder="3" required step="1" min="0" />
+                <small class="form-hint">Khách hàng cần mua ít nhất bao nhiêu sản phẩm để dùng voucher</small>
             </div>
 
             <div class="form-group">
