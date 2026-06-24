@@ -20,4 +20,9 @@ public class ProductRequest
     public int CategoryId { get; set; }
 
     public string? Description { get; set; }
+
+    public int? MinimumStock { get; set; }
+
+    [StringLength(30)]
+    public string Status { get; set; } = "active";
 }

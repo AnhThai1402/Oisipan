@@ -25,12 +25,19 @@ namespace Oishipan.Models
 
         public string? Description { get; set; }
 
-        // Status: Incoming, Available, Out of Stock, Discontinued
+        [StringLength(50)]
+        public string? Sku { get; set; }
+
+        public int? MinimumStock { get; set; }
+
+        // Status: active, inactive
         [StringLength(30)]
-        public string Status { get; set; } = "Available";
+        public string Status { get; set; } = "active";
 
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
         public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; }
     }
 }
 

@@ -10,5 +10,7 @@ public class ProductResponse
     public int CategoryId { get; set; }
     public string? CategoryName { get; set; }
     public string? Description { get; set; }
+    public int? MinimumStock { get; set; }
+    public string Status { get; set; } = "active";
     public List<ProductOptionResponse> ProductOptions { get; set; } = new();
 }

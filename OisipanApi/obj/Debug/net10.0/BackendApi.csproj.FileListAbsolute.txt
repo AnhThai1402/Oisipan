@@ -377,12 +377,4 @@ D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\refint\BackendApi.dll
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\BackendApi.pdb
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\BackendApi.genruntimeconfig.cache
 D:\DATN\Oisipan\OisipanApi\obj\Debug\net10.0\ref\BackendApi.dll
-D:\DATN_Oisipan_2026\OisipanApi\obj\Debug\net10.0\BackendApi.sourcelink.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\appsettings.Development.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\appsettings.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\dotnet-tools.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\BackendApi.staticwebassets.endpoints.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\BackendApi.deps.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\BackendApi.runtimeconfig.json
-D:\DATN_Oisipan_2026\.tmp\api-verify\BackendApi.dll
-D:\DATN_Oisipan_2026\.tmp\api-verify\BackendApi.pdb
+D:\DATN\Oisipan\OisipanApi\bin\Debug\net10.0\CloudinaryDotNet.dll

@@ -63,7 +63,8 @@
                                 <div class="action-buttons">
                                     <a asp-area="Admin" asp-controller="Categories" asp-action="Detail" asp-route-id="@category.CategoryId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
                                     <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@category.CategoryId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
-                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@category.CategoryName');">
+                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form">
+                                        @Html.AntiForgeryToken()
                                         <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
                                     </form>
                                 </div>
@@ -86,63 +87,8 @@
     </div>
 </section>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal-overlay" id="deleteModal">
-    <div class="modal-dialog modal-dialog-danger">
-        <div class="modal-icon">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-        </div>
-        <h2 class="modal-title">Xóa danh mục?</h2>
-        <p class="modal-message">Bạn có chắc chắn muốn xóa danh mục <strong id="categoryName"></strong>? Hành động này không thể hoàn tác.</p>
-        <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
-            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa danh mục</button>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        let pendingForm = null;
-
-        function showDeleteConfirm(event, categoryName) {
-            event.preventDefault();
-            pendingForm = event.target;
-            
-            // Update modal with category name
-            document.getElementById('categoryName').textContent = categoryName;
-            
-            // Show modal with animation
-            const modal = document.getElementById('deleteModal');
-            modal.classList.add('active');
-        }
-
-        function closeDeleteModal() {
-            const modal = document.getElementById('deleteModal');
-            modal.classList.remove('active');
-            pendingForm = null;
-        }
-
-        function confirmDelete() {
-            if (pendingForm) {
-                pendingForm.submit();
-            }
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeDeleteModal();
-            }
-        });
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeDeleteModal();
-            }
-        });
-
         // Search functionality
         document.getElementById('categorySearch')?.addEventListener('input', function() {
             const keyword = this.value.toLowerCase();
@@ -154,12 +100,5 @@
         });
     </script>
 }
-    </script>
-}
-        <p style="margin-bottom: 24px;">Bạn có chắc muốn xóa danh mục này? Hành động này không thể hoàn tác.</p>
-        <div class="modal-actions">
-            <button class="soft-action" data-close-modal>Hủy</button>
-            <button class="danger-action" id="confirmDelete">Xóa</button>
-        </div>
     </div>
 </div>

@@ -1,0 +1,347 @@
+@model ProductCatalogViewModel
+@{
+    ViewData["Title"] = $"Chi tiết sản phẩm - {Model.Name}";
+}
+
+<section class="product-detail-section">
+    <div class="container">
+        <a href="/" class="back-link">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
+
+        <div class="product-detail-grid">
+            <div class="product-detail-image">
+                @if (!string.IsNullOrWhiteSpace(Model.Image))
+                {
+                    <img src="@Model.Image" alt="@Model.Name" class="detail-img" />
+                }
+                else
+                {
+                    <div class="detail-img detail-img-fallback">
+                        <i class="bi bi-cake2"></i>
+                    </div>
+                }
+                <span class="product-category-badge">@(Model.CategoryName ?? "Oishipan")</span>
+            </div>
+
+            <div class="product-detail-info">
+                <h1 class="product-detail-title">@Model.Name</h1>
+                
+                <div class="product-detail-price">
+                    <span class="price-value">@Model.Price.ToString("N0")đ</span>
+                    @if (Model.Quantity <= 0)
+                    {
+                        <span class="stock-status out-of-stock">Hết hàng</span>
+                    }
+                    else if (Model.Quantity <= 5)
+                    {
+                        <span class="stock-status low-stock">Sắp hết (còn @Model.Quantity)</span>
+                    }
+                    else
+                    {
+                        <span class="stock-status in-stock">Còn hàng (@Model.Quantity sản phẩm)</span>
+                    }
+                </div>
+
+                <div class="product-detail-description">
+                    <h3>Mô tả sản phẩm</h3>
+                    <p>@(string.IsNullOrWhiteSpace(Model.Description) ? "Bánh tươi Oishipan được làm mới mỗi ngày, với nguyên liệu chất lượng cao và công thức độc đáo." : Model.Description)</p>
+                </div>
+
+                <div class="product-detail-actions">
+                    @if (Model.Quantity > 0)
+                    {
+                        <form method="post" asp-controller="Cart" asp-action="Add" class="add-to-cart-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@Model.ProductId" />
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                            <div class="quantity-selector">
+                                <label for="quantity">Số lượng:</label>
+                                <div class="quantity-input-group">
+                                    <button type="button" class="qty-btn qty-minus" onclick="decreaseQty()">−</button>
+                                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Quantity" class="qty-input" />
+                                    <button type="button" class="qty-btn qty-plus" onclick="increaseQty()">+</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary btn-large">
+                                <i class="bi bi-plus-circle"></i> Thêm vào giỏ hàng
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn-primary btn-large" disabled>
+                            <i class="bi bi-exclamation-circle"></i> Hết hàng
+                        </button>
+                    }
+                </div>
+
+                <div class="product-detail-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Danh mục:</span>
+                        <span class="meta-value">@(Model.CategoryName ?? "Oishipan")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.product-detail-section {
+    padding: 40px 20px;
+    min-height: 70vh;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-green);
+    text-decoration: none;
+    margin-bottom: 30px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.back-link:hover {
+    opacity: 0.8;
+}
+
+.product-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-top: 30px;
+}
+
+.product-detail-image {
+    position: relative;
+}
+
+.detail-img {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #f5f5f5;
+}
+
+.detail-img-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 120px;
+    color: #ddd;
+}
+
+.product-category-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--accent-green);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.product-detail-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.product-detail-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+
+.product-detail-price {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.price-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-green);
+}
+
+.stock-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.in-stock {
+    background: rgba(31, 111, 80, 0.1);
+    color: #1f6f50;
+}
+
+.low-stock {
+    background: rgba(255, 193, 7, 0.1);
+    color: #f57f17;
+}
+
+.out-of-stock {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.product-detail-description {
+    margin-bottom: 30px;
+}
+
+.product-detail-description h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-main);
+}
+
+.product-detail-description p {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.product-detail-actions {
+    margin-bottom: 30px;
+}
+
+.add-to-cart-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.quantity-selector label {
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 80px;
+}
+
+.quantity-input-group {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: #f5f5f5;
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.qty-btn:hover {
+    background: #eee;
+}
+
+.qty-input {
+    width: 60px;
+    text-align: center;
+    border: none;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.qty-input:focus {
+    outline: none;
+}
+
+.btn-large {
+    padding: 16px 32px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.product-detail-meta {
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.meta-label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.meta-value {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+@@media (max-width: 768px) {
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .product-detail-title {
+        font-size: 1.8rem;
+    }
+
+    .price-value {
+        font-size: 1.5rem;
+    }
+
+    .detail-img {
+        height: 300px;
+    }
+
+    .quantity-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+function decreaseQty() {
+    const input = document.getElementById('quantity');
+    const value = parseInt(input.value);
+    if (value > 1) {
+        input.value = value - 1;
+    }
+}
+
+function increaseQty() {
+    const input = document.getElementById('quantity');
+    const max = parseInt(input.max);
+    const value = parseInt(input.value);
+    if (value < max) {
+        input.value = value + 1;
+    }
+}
+</script>

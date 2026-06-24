@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,7 @@ public class UsersController : Controller
     {
         try
         {
-            var users = await Api.GetFromJsonAsync<List<UserAdminViewModel>>("api/accounts") ?? new();
+            var users = await Api.GetFromJsonAsyncWithOptions<List<UserAdminViewModel>>("api/accounts") ?? new();
             return View(users);
         }
         catch (HttpRequestException)
@@ -146,7 +147,7 @@ public class UsersController : Controller
     {
         try
         {
-            return await Api.GetFromJsonAsync<UserAdminViewModel>($"api/accounts/{id}");
+            return await Api.GetFromJsonAsyncWithOptions<UserAdminViewModel>($"api/accounts/{id}");
         }
         catch (HttpRequestException)
         {

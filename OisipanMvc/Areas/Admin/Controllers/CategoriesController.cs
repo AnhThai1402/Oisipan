@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using FrontendMvc.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,7 @@ public class CategoriesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var categories = await Api.GetFromJsonAsync<List<CategoryAdminViewModel>>("api/categories") ?? new();
+        var categories = await Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories") ?? new();
         return View(categories);
     }
 
@@ -51,7 +52,7 @@ public class CategoriesController : Controller
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> Edit(int id)
     {
-        var model = await Api.GetFromJsonAsync<CategoryAdminViewModel>($"api/categories/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<CategoryAdminViewModel>($"api/categories/{id}");
         return model is null ? NotFound() : View("CreateEdit", model);
     }
 
@@ -73,7 +74,7 @@ public class CategoriesController : Controller
 
     public async Task<IActionResult> Detail(int id)
     {
-        var model = await Api.GetFromJsonAsync<CategoryAdminViewModel>($"api/categories/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<CategoryAdminViewModel>($"api/categories/{id}");
         return model is null ? NotFound() : View(model);
     }
 

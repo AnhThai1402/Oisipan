@@ -49,10 +49,10 @@
         </div>
         <div class="button-group" style="display: flex; flex-wrap: wrap; gap: 10px;">
             @{
-                var statusOrder = new[] { "Đã duyệt", "Đang chuẩn bị", "Đang giao", "Hoàn thành" };
+                var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Đã giao" };
                 var currentIndex = Array.IndexOf(statusOrder, Model.Status);
-                var isCompleted = Model.Status == "Hoàn thành" || Model.Status == "Đã hủy";
-                var isShipping = Model.Status == "Đang giao";
+                var isCompleted = Model.Status == "Đã giao" || Model.Status == "Đã hủy";
+                var canCancel = Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận";
             }
             
             @if (!isCompleted)
@@ -70,8 +70,8 @@
                     </form>
                 }
                 
-                // Show cancel button only if not shipping
-                @if (!isShipping)
+                // Show cancel button only if status is "Chờ xác nhận" or "Đã xác nhận"
+                @if (canCancel)
                 {
                     <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId">
                         @Html.AntiForgeryToken()
@@ -87,9 +87,9 @@
                 <div style="padding: 0.8rem 1rem; background: rgba(31, 111, 80, 0.1); border-radius: 6px; border-left: 4px solid var(--accent-green); width: 100%;">
                     <strong style="color: var(--text-main);">@Model.Status</strong>
                     <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-top: 0.3rem;">
-                        @if (Model.Status == "Hoàn thành")
+                        @if (Model.Status == "Đã giao")
                         {
-                            <span><i class="bi bi-check-circle"></i> Đơn hàng đã hoàn thành</span>
+                            <span><i class="bi bi-check-circle"></i> Đơn hàng đã giao thành công</span>
                         }
                         else
                         {
@@ -142,3 +142,118 @@
         </table>
     </div>
 </article>
+
+@if (Model.CancellationRequests.Any())
+{
+    <article class="panel" style="border-left: 5px solid #ffc107;">
+        <div class="panel-head">
+            <h2><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h2>
+        </div>
+        
+        @foreach (var cancReq in Model.CancellationRequests.OrderByDescending(r => r.RequestDate))
+        {
+            var statusColor = cancReq.Status == "Approved" ? "rgba(31, 111, 80, 0.05)" : cancReq.Status == "Rejected" ? "rgba(220, 53, 69, 0.05)" : "rgba(255, 193, 7, 0.05)";
+            var statusBadgeColor = cancReq.Status == "Approved" ? "#1f6f50" : cancReq.Status == "Rejected" ? "#dc3545" : "#ffc107";
+            var statusText = cancReq.Status == "Approved" ? "Đã chấp nhận" : cancReq.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
+            var statusIcon = cancReq.Status == "Approved" ? "bi-check-circle-fill" : cancReq.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
+            
+            <div style="padding: 1.5rem; background: @statusColor; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid @statusBadgeColor;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div>
+                        <span style="display: inline-block; padding: 0.4rem 0.9rem; background: white; border-radius: 4px; font-weight: 600; color: @statusBadgeColor; font-size: 0.9rem;">
+                            <i class="bi @statusIcon"></i> @statusText
+                        </span>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                            Gửi: @cancReq.RequestDate.ToString("dd/MM/yyyy HH:mm")
+                        </p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-main);">Lý do yêu cầu:</strong>
+                    <p style="margin: 0; color: var(--text-main); line-height: 1.6;">@cancReq.Reason</p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(cancReq.AdminNote))
+                {
+                    <div style="padding: 0.8rem; background: white; border-radius: 4px; border-left: 3px solid @statusBadgeColor;">
+                        <strong style="display: block; margin-bottom: 0.3rem; color: @statusBadgeColor;">Ghi chú từ admin:</strong>
+                        <p style="margin: 0; color: var(--text-main);">@cancReq.AdminNote</p>
+                    </div>
+                }
+
+                @if (cancReq.Status == "Pending")
+                {
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.CancellationRequestId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 6px; cursor: pointer;">
+                            <i class="bi bi-check-circle"></i> Chấp nhận
+                        </button>
+                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.CancellationRequestId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 6px; cursor: pointer;">
+                            <i class="bi bi-x-circle"></i> Từ chối
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+}
+
+<!-- Response Modal -->
+<div id="response-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.2rem;" id="modal-title">Phản hồi yêu cầu hủy đơn</h3>
+            <button type="button" onclick="closeResponseModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="response-form" method="post" asp-area="Admin" asp-controller="Orders" asp-action="RespondCancellation" onsubmit="submitResponse(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="cancellationRequestId" id="cancellation-id" value="0" />
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
+            <input type="hidden" name="approve" id="approve-input" value="false" />
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);">Ghi chú (tùy chọn)</label>
+                <textarea name="adminNote" id="response-note" placeholder="Ghi chú cho khách hàng..." rows="4" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 0.9rem;" maxlength="500"></textarea>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">Tối đa 500 ký tự</small>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" onclick="closeResponseModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Hủy bỏ
+                </button>
+                <button type="submit" id="response-submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Gửi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .btn-approve:hover { background: #0d4d2e !important; }
+    .btn-reject:hover { background: #bb2d3b !important; }
+</style>
+
+<script>
+    function showResponseModal(cancellationRequestId, approve) {
+        document.getElementById('cancellation-id').value = cancellationRequestId;
+        document.getElementById('approve-input').value = approve ? 'true' : 'false';
+        document.getElementById('modal-title').textContent = approve ? 'Chấp nhận yêu cầu hủy đơn' : 'Từ chối yêu cầu hủy đơn';
+        document.getElementById('response-submit').textContent = approve ? 'Chấp nhận' : 'Từ chối';
+        document.getElementById('response-submit').style.background = approve ? '#1f6f50' : '#dc3545';
+        document.getElementById('response-modal').style.display = 'flex';
+    }
+
+    function closeResponseModal() {
+        document.getElementById('response-modal').style.display = 'none';
+        document.getElementById('response-form').reset();
+    }
+
+    function submitResponse(event) {
+        event.preventDefault();
+        document.getElementById('response-form').submit();
+    }
+</script>

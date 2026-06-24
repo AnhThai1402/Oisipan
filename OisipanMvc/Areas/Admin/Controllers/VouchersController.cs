@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,7 @@ public class VouchersController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var vouchers = await Api.GetFromJsonAsync<List<VoucherAdminViewModel>>("api/vouchers") ?? new();
+        var vouchers = await Api.GetFromJsonAsyncWithOptions<List<VoucherAdminViewModel>>("api/vouchers") ?? new();
         return View(vouchers);
     }
 
@@ -50,7 +51,7 @@ public class VouchersController : Controller
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> Edit(int id)
     {
-        var model = await Api.GetFromJsonAsync<VoucherAdminViewModel>($"api/vouchers/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<VoucherAdminViewModel>($"api/vouchers/{id}");
         if (model is null) return NotFound();
 
         return View("CreateEdit", model);
@@ -79,7 +80,7 @@ public class VouchersController : Controller
 
     public async Task<IActionResult> Detail(int id)
     {
-        var model = await Api.GetFromJsonAsync<VoucherAdminViewModel>($"api/vouchers/{id}");
+        var model = await Api.GetFromJsonAsyncWithOptions<VoucherAdminViewModel>($"api/vouchers/{id}");
         return model is null ? NotFound() : View(model);
     }
 
