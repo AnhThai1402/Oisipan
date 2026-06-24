@@ -115,9 +115,7 @@ D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\FrontendMvc.RazorAssemblyInfo.
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\rjimswa.dswa.cache.json
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
-D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\scopedcss\bundle\FrontendMvc.styles.css
-D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\scopedcss\projectbundle\FrontendMvc.bundle.scp.css
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\jjldbwkasr-{0}-61n19gt1b8-61n19gt1b8.gz
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\ez7l95ym3b-{0}-bqjiyaj88i-bqjiyaj88i.gz
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\egzvzlalcg-{0}-c2jlpeoesf-c2jlpeoesf.gz
@@ -178,8 +176,6 @@ D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\o7r6dfm5qq-{0}-2z0n
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\eaymxa7rbt-{0}-muycvpuwrr-muycvpuwrr.gz
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\8actj7wy4y-{0}-87fc7y1x7t-87fc7y1x7t.gz
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\x2zbr4kltx-{0}-mlv21k5csn-mlv21k5csn.gz
-D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\kt17t6iy4r-{0}-l90k9rlvts-l90k9rlvts.gz
-D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\compressed\o2wnqceyaw-{0}-l90k9rlvts-l90k9rlvts.gz
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\staticwebassets.build.json
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\staticwebassets.build.json.cache
 D:\DATN_Oisipan_2026\OisipanMVC\obj\Debug\net10.0\staticwebassets.development.json
@@ -218,7 +214,6 @@ D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand\FrontendMvc.deps.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand\FrontendMvc.runtimeconfig.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand\FrontendMvc.dll
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand\FrontendMvc.pdb
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\gn68u8xr4c-{0}-stmzy2rs8u-stmzy2rs8u.gz
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\appsettings.Development.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\appsettings.json
 D:\DATN_Oisipan_2026\tmp-buildcheck\mvc-nobrand-final\FrontendMvc.staticwebassets.runtime.json
@@ -332,3 +327,20 @@ D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\refint\FrontendMvc.dll
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.pdb
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.genruntimeconfig.cache
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\ref\FrontendMvc.dll
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\FrontendMvc.csproj.AssemblyReference.cache
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\FrontendMvc.sourcelink.json
+D:\DATN_Oisipan_2026\OisipanMvc\bin\Debug\net10.0\CloudinaryDotNet.dll
+D:\DATN_Oisipan_2026\OisipanMvc\bin\Debug\net10.0\Newtonsoft.Json.dll
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-2dxh41dz70-2dxh41dz70.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\1utnfzj6jq-{0}-qqv0hekcch-qqv0hekcch.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-6w03zy7184-6w03zy7184.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\47baeq72kp-{0}-xv1yjnrcxb-xv1yjnrcxb.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\gn68u8xr4c-{0}-wbc3pwvlot-wbc3pwvlot.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\4qmeljphaa-{0}-3mr1drr7hh-3mr1drr7hh.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\xhe9dpwwzr-{0}-rer8bp0oke-rer8bp0oke.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\kpqpoi8jex-{0}-kbtwp391w0-kbtwp391w0.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\j94i15i4wi-{0}-pnfn6txm1g-pnfn6txm1g.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\zgiqty961a-{0}-fz7ykn4miq-fz7ykn4miq.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\sx2mz8rznn-{0}-kz85v6as7w-kz85v6as7w.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\uqbcaonlpe-{0}-vi84eldzgz-vi84eldzgz.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\Frontend.102078B3.Up2Date

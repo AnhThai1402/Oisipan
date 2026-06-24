@@ -2,32 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FrontendMvc.Models;
 
-public class StorefrontViewModel
-{
-    public List<ProductCatalogViewModel> Products { get; set; } = new();
-}
-
-public class ProductCatalogViewModel
-{
-    public int ProductId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public decimal Price { get; set; }
-    public string? Image { get; set; }
-    public int Quantity { get; set; }
-    public int CategoryId { get; set; }
-    public string? CategoryName { get; set; }
-    public string? Description { get; set; }
-}
-
-public class CartItemViewModel
-{
-    public int ProductId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public decimal UnitPrice { get; set; }
-    public string? Image { get; set; }
-    public int Quantity { get; set; }
-    public decimal LineTotal => UnitPrice * Quantity;
-}
 
 public class CartViewModel
 {

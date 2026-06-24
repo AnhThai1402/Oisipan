@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 using FrontendMvc.Options;
 using FrontendMvc.Services;
-=======
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
->>>>>>> origin/dev2
 
 var builder = WebApplication.CreateBuilder(args);
 
