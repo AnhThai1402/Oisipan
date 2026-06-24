@@ -29,10 +29,11 @@ public class OrdersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderResponse>>> GetAll()
     {
-        var orders = await BuildOrderQuery()
+        var ordersData = await BuildOrderQuery()
             .OrderByDescending(o => o.OrderDate)
-            .Select(o => ToResponse(o))
             .ToListAsync();
+
+        var orders = ordersData.Select(o => ToResponse(o)).ToList();
 
         return Ok(orders);
     }
@@ -87,11 +88,12 @@ public class OrdersController : ControllerBase
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUser(int userId)
     {
-        var orders = await BuildOrderQuery()
+        var ordersData = await BuildOrderQuery()
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.OrderDate)
-            .Select(o => ToResponse(o))
             .ToListAsync();
+
+        var orders = ordersData.Select(o => ToResponse(o)).ToList();
 
         return Ok(orders);
     }

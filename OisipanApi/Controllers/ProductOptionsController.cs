@@ -24,10 +24,11 @@ public class ProductOptionsController : ControllerBase
             .Include(po => po.ProductValues)
             .OrderBy(po => po.Product == null ? string.Empty : po.Product.Name)
             .ThenBy(po => po.OptionName)
-            .Select(po => ToResponse(po))
             .ToListAsync();
 
-        return Ok(options);
+        var response = options.Select(po => ToResponse(po)).ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
@@ -54,10 +55,11 @@ public class ProductOptionsController : ControllerBase
             .Include(po => po.ProductValues)
             .Where(po => po.ProductId == productId)
             .OrderBy(po => po.OptionName)
-            .Select(po => ToResponse(po))
             .ToListAsync();
 
-        return Ok(options);
+        var response = options.Select(po => ToResponse(po)).ToList();
+
+        return Ok(response);
     }
 
     [HttpPost]

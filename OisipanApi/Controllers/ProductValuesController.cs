@@ -19,10 +19,11 @@ public class ProductValuesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetAll()
     {
-        var values = await _context.ProductValues
+        var valuesData = await _context.ProductValues
             .OrderBy(pv => pv.ValueName)
-            .Select(pv => ToResponse(pv))
             .ToListAsync();
+
+        var values = valuesData.Select(pv => ToResponse(pv)).ToList();
 
         return Ok(values);
     }
@@ -43,11 +44,12 @@ public class ProductValuesController : ControllerBase
             return NotFound(new { message = "Khong tim thay tuy chon san pham." });
         }
 
-        var values = await _context.ProductValues
+        var valuesData = await _context.ProductValues
             .Where(pv => pv.ProductOptionId == productOptionId)
             .OrderBy(pv => pv.ValueName)
-            .Select(pv => ToResponse(pv))
             .ToListAsync();
+
+        var values = valuesData.Select(pv => ToResponse(pv)).ToList();
 
         return Ok(values);
     }

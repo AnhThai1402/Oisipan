@@ -29,10 +29,11 @@ public class NewsArticlesController : ControllerBase
                 article.PublishedAt <= DateTime.UtcNow);
         }
 
-        var articles = await query
+        var articlesData = await query
             .OrderByDescending(article => article.PublishedAt ?? article.CreatedAt)
-            .Select(article => ToResponse(article))
             .ToListAsync();
+
+        var articles = articlesData.Select(article => ToResponse(article)).ToList();
 
         return Ok(articles);
     }

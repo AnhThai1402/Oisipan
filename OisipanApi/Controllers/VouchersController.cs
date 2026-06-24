@@ -19,10 +19,11 @@ public class VouchersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<VoucherResponse>>> GetAll()
     {
-        var vouchers = await _context.Vouchers
+        var vouchersData = await _context.Vouchers
             .OrderByDescending(v => v.CreatedDate)
-            .Select(v => ToResponse(v))
             .ToListAsync();
+
+        var vouchers = vouchersData.Select(v => ToResponse(v)).ToList();
 
         return Ok(vouchers);
     }

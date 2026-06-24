@@ -28,12 +28,13 @@ public class ProductVariantsController : ControllerBase
             query = query.Where(variant => variant.ProductId == productId.Value);
         }
 
-        var variants = await query
+        var variantsData = await query
             .OrderBy(variant => variant.Product == null ? string.Empty : variant.Product.Name)
             .ThenBy(variant => variant.Size)
             .ThenBy(variant => variant.Filling)
-            .Select(variant => ToResponse(variant))
             .ToListAsync();
+
+        var variants = variantsData.Select(variant => ToResponse(variant)).ToList();
 
         return Ok(variants);
     }
