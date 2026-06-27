@@ -47,7 +47,14 @@ public class CloudinaryService : ICloudinaryService
             };
 
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-            
+
+            // Log status for diagnostics
+            Console.WriteLine($"Cloudinary upload status: {uploadResult.StatusCode}");
+            if (uploadResult.Error != null)
+            {
+                Console.WriteLine($"Cloudinary upload error: {uploadResult.Error.Message}");
+            }
+
             if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 return uploadResult.SecureUrl.ToString();

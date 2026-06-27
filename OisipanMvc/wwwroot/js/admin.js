@@ -84,4 +84,18 @@
             row.classList.add("active");
         });
     });
+
+    const initAutoHideToasts = () => {
+        document.querySelectorAll("[data-admin-flash]").forEach((toast) => {
+            const hideToast = () => {
+                toast.classList.add("is-hiding");
+                window.setTimeout(() => toast.remove(), 320);
+            };
+
+            toast.addEventListener("click", hideToast);
+            window.setTimeout(hideToast, 3200);
+        });
+    };
+
+    initAutoHideToasts();
 })();

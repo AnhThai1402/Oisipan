@@ -1,3 +1,5 @@
+using System.IO;
+using System.Net.Http;
 using System.Net.Http.Json;
 using FrontendMvc.Extensions;
 using FrontendMvc.Models;
@@ -9,7 +11,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class ProductsController : Controller
+public class ProductsController : AdminBaseController
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -41,7 +43,70 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        var response = await Api.PostAsJsonAsync("api/products", model);
+        // If an image file was uploaded, send it first to the API upload endpoint
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            using var ms = new MemoryStream();
+            await model.ImageFile.CopyToAsync(ms);
+            ms.Position = 0;
+
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(ms);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(model.ImageFile.ContentType ?? "application/octet-stream");
+            content.Add(fileContent, "file", model.ImageFile.FileName);
+
+            try
+            {
+                var uploadResp = await Api.PostAsync("api/upload/image", content);
+                if (!uploadResp.IsSuccessStatusCode)
+                {
+                    var contentText = await uploadResp.Content.ReadAsStringAsync();
+                    string err = "Không thể tải ảnh lên. Vui lòng thử lại.";
+                    try
+                    {
+                        using var docErr = System.Text.Json.JsonDocument.Parse(contentText);
+                        if (docErr.RootElement.TryGetProperty("message", out var m)) err = m.GetString() ?? err;
+                    }
+                    catch { err = string.IsNullOrWhiteSpace(contentText) ? err : contentText; }
+
+                    ModelState.AddModelError("ImageFile", err);
+                    await PopulateCategories(model);
+                    return View("CreateEdit", model);
+                }
+
+                // Parse returned URL
+                var uploadJson = await uploadResp.Content.ReadAsStringAsync();
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(uploadJson);
+                    if (doc.RootElement.TryGetProperty("url", out var u) || doc.RootElement.TryGetProperty("Url", out u))
+                    {
+                        model.Image = u.GetString();
+                    }
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("ImageFile", "Lỗi khi tải ảnh: " + ex.Message);
+                await PopulateCategories(model);
+                return View("CreateEdit", model);
+            }
+        }
+
+        var payload = new
+        {
+            Name = model.Name,
+            Price = model.Price,
+            Image = model.Image,
+            Quantity = model.Quantity,
+            CategoryId = model.CategoryId,
+            Description = model.Description,
+            MinimumStock = model.MinimumStock,
+            Status = model.Status
+        };
+
+        var response = await Api.PostAsJsonAsync("api/products", payload);
         if (!response.IsSuccessStatusCode)
         {
             // Try to parse error details from API response
@@ -83,7 +148,7 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Tạo sản phẩm thành công";
+        SetFlashMessage("Tạo sản phẩm thành công", "create");
         return RedirectToAction(nameof(Index));
     }
 
@@ -108,7 +173,69 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        var response = await Api.PutAsJsonAsync($"api/products/{id}", model);
+        // Handle image file upload if present
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            using var ms = new MemoryStream();
+            await model.ImageFile.CopyToAsync(ms);
+            ms.Position = 0;
+
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(ms);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(model.ImageFile.ContentType ?? "application/octet-stream");
+            content.Add(fileContent, "file", model.ImageFile.FileName);
+
+            try
+            {
+                var uploadResp = await Api.PostAsync("api/upload/image", content);
+                if (!uploadResp.IsSuccessStatusCode)
+                {
+                    var contentText = await uploadResp.Content.ReadAsStringAsync();
+                    string err = "Không thể tải ảnh lên. Vui lòng thử lại.";
+                    try
+                    {
+                        using var docErr = System.Text.Json.JsonDocument.Parse(contentText);
+                        if (docErr.RootElement.TryGetProperty("message", out var m)) err = m.GetString() ?? err;
+                    }
+                    catch { err = string.IsNullOrWhiteSpace(contentText) ? err : contentText; }
+
+                    ModelState.AddModelError("ImageFile", err);
+                    await PopulateCategories(model);
+                    return View("CreateEdit", model);
+                }
+
+                var uploadJson = await uploadResp.Content.ReadAsStringAsync();
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(uploadJson);
+                    if (doc.RootElement.TryGetProperty("url", out var u) || doc.RootElement.TryGetProperty("Url", out u))
+                    {
+                        model.Image = u.GetString();
+                    }
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("ImageFile", "Lỗi khi tải ảnh: " + ex.Message);
+                await PopulateCategories(model);
+                return View("CreateEdit", model);
+            }
+        }
+
+        var payload = new
+        {
+            Name = model.Name,
+            Price = model.Price,
+            Image = model.Image,
+            Quantity = model.Quantity,
+            CategoryId = model.CategoryId,
+            Description = model.Description,
+            MinimumStock = model.MinimumStock,
+            Status = model.Status
+        };
+
+        var response = await Api.PutAsJsonAsync($"api/products/{id}", payload);
         if (!response.IsSuccessStatusCode)
         {
             ModelState.AddModelError(string.Empty, "Không thể cập nhật sản phẩm.");
@@ -116,7 +243,7 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Cập nhật sản phẩm thành công";
+        SetFlashMessage("Cập nhật sản phẩm thành công", "edit");
         return RedirectToAction(nameof(Index));
     }
 
@@ -132,9 +259,9 @@ public class ProductsController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var response = await Api.DeleteAsync($"api/products/{id}");
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Xóa sản phẩm thành công"
-            : "Không thể xóa sản phẩm";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Xóa sản phẩm thành công" : "Không thể xóa sản phẩm.",
+            response.IsSuccessStatusCode ? "delete" : "error");
 
         return RedirectToAction(nameof(Index));
     }
@@ -154,9 +281,9 @@ public class ProductsController : Controller
         product.Quantity = quantity;
         var response = await Api.PutAsJsonAsync($"api/products/{id}", product);
 
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Cập nhật tồn kho thành công."
-            : "Không thể cập nhật. Vui lòng thử lại.";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Cập nhật tồn kho thành công." : "Không thể cập nhật. Vui lòng thử lại.",
+            response.IsSuccessStatusCode ? "edit" : "error");
 
         return RedirectToAction(nameof(Index));
     }

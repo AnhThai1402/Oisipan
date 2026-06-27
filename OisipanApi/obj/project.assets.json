@@ -3162,11 +3162,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
+      "projectUniqueName": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
       "projectName": "BackendApi",
-      "projectPath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
+      "projectPath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
       "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
-      "outputPath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\obj\\",
+      "outputPath": "D:\\DATN\\Oisipan\\OisipanApi\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -3664,6 +3664,16 @@
       "warningLevel": 1,
       "message": "BackendApi depends on CloudinaryDotNet (>= 1.22.1) but CloudinaryDotNet 1.22.1 was not found. CloudinaryDotNet 1.23.0 was resolved instead.",
       "libraryId": "CloudinaryDotNet",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
+      "libraryId": "Microsoft.OpenApi",
       "targetGraphs": [
         "net10.0"
       ]

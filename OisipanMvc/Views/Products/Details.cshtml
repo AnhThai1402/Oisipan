@@ -49,30 +49,39 @@
                 </div>
 
                 <div class="product-detail-actions">
-                    @if (Model.Quantity > 0)
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <form method="post" asp-controller="Cart" asp-action="Add" class="add-to-cart-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="productId" value="@Model.ProductId" />
-                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                            <div class="quantity-selector">
-                                <label for="quantity">Số lượng:</label>
-                                <div class="quantity-input-group">
-                                    <button type="button" class="qty-btn qty-minus" onclick="decreaseQty()">−</button>
-                                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Quantity" class="qty-input" />
-                                    <button type="button" class="qty-btn qty-plus" onclick="increaseQty()">+</button>
+                        @if (Model.Quantity > 0)
+                        {
+                            <form method="post" asp-controller="Cart" asp-action="Add" class="add-to-cart-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@Model.ProductId" />
+                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                <div class="quantity-selector">
+                                    <label for="quantity">Số lượng:</label>
+                                    <div class="quantity-input-group">
+                                        <button type="button" class="qty-btn qty-minus" onclick="decreaseQty()">−</button>
+                                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Quantity" class="qty-input" />
+                                        <button type="button" class="qty-btn qty-plus" onclick="increaseQty()">+</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <button type="submit" class="btn-primary btn-large">
-                                <i class="bi bi-plus-circle"></i> Thêm vào giỏ hàng
+                                <button type="submit" class="btn-primary btn-large">
+                                    <i class="bi bi-plus-circle"></i> Thêm vào giỏ hàng
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn-primary btn-large" disabled>
+                                <i class="bi bi-exclamation-circle"></i> Hết hàng
                             </button>
-                        </form>
+                        }
                     }
                     else
                     {
-                        <button type="button" class="btn-primary btn-large" disabled>
-                            <i class="bi bi-exclamation-circle"></i> Hết hàng
-                        </button>
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn-primary btn-large">
+                            <i class="bi bi-box-arrow-in-right"></i> Đăng nhập để thêm vào giỏ hàng
+                        </a>
                     }
                 </div>
 

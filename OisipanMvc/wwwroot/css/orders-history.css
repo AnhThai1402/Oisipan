@@ -1,0 +1,191 @@
+.btn-small {
+    display: inline-block;
+    background: var(--accent-green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-small:hover {
+    background: #155a3e;
+    transform: translateY(-2px);
+}
+
+.order-progress-row td {
+    padding-top: 0;
+    border-top: none;
+}
+
+.shipping-progress-card {
+    background: #f9fcf8;
+    border: 1px solid #dcefe0;
+    border-radius: 14px;
+    padding: 0.85rem 1rem 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.shipping-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.shipping-progress-title {
+    font-weight: 700;
+    color: #153b2e;
+    margin-bottom: 0.2rem;
+}
+
+.shipping-progress-subtitle {
+    color: #5b7b6b;
+    font-size: 0.92rem;
+}
+
+.shipping-badge {
+    background: #eaf7ee;
+    color: #1b6c45;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.shipping-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 0.5rem;
+}
+
+.shipping-steps::before {
+    content: '';
+    position: absolute;
+    left: 0.8rem;
+    right: 0.8rem;
+    top: 16px;
+    height: 3px;
+    background: #dcefe0;
+    border-radius: 999px;
+}
+
+.shipping-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0;
+    width: 80px;
+    min-width: 80px;
+    text-align: center;
+    z-index: 1;
+    background: transparent;
+    border: none;
+}
+.shipping-step-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #253a2f;
+    max-width: 90px;
+    margin-top: 0.2rem;
+}
+
+.shipping-step-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #6c816f;
+    border: 2px solid #dcefe0;
+    font-size: 1rem;
+    transition: all 0.25s ease;
+}
+
+.shipping-step.is-done .shipping-step-icon,
+.shipping-step.is-active .shipping-step-icon {
+    border-color: #2d8f5b;
+    background: #2d8f5b;
+    color: #fff;
+}
+
+.shipping-step-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #253a2f;
+    max-width: 90px;
+}
+
+.shipping-step.is-done .shipping-step-label,
+.shipping-step.is-active .shipping-step-label {
+    color: #1b6c45;
+}
+
+.shipping-progress-card.is-canceled .shipping-badge {
+    background: #fde8e8;
+    color: #b42318;
+}
+
+.shipping-progress-card.is-canceled .shipping-step-number {
+    border-color: #b42318;
+}
+
+@media (max-width: 768px) {
+    .shipping-progress-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .shipping-steps {
+        flex-wrap: wrap;
+        padding: 0 0.25rem;
+    }
+
+    .shipping-step {
+        min-width: 84px;
+        margin-bottom: 0.8rem;
+    }
+
+    .shipping-steps::before {
+        top: 24px;
+    }
+}
+
+.shipping-progress-card.is-canceled .shipping-badge {
+    background: #fde8e8;
+    color: #b42318;
+}
+
+/* For canceled orders only color the step dot, not the whole step container */
+.shipping-progress-card.is-canceled .shipping-step-number {
+    border-color: #b42318;
+    background: #b42318;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .shipping-progress-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .shipping-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .shipping-step::after {
+        display: none;
+    }
+}
