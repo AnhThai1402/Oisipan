@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj": {}
+    "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj": {}
   },
   "projects": {
-    "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj": {
+    "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+        "projectUniqueName": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
         "projectName": "BackendApi",
-        "projectPath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+        "projectPath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
         "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
-        "outputPath": "D:\\DATN\\Oisipan\\OisipanApi\\obj\\",
+        "outputPath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/oQH/s0Yq1Y=",
+  "dgSpecHash": "htzFoiiri58=",
   "success": true,
-  "projectFilePath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+  "projectFilePath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\GALLERIA\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\GALLERIA\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
@@ -59,9 +59,9 @@
       "code": "NU1603",
       "level": "Warning",
       "message": "BackendApi depends on CloudinaryDotNet (>= 1.22.1) but CloudinaryDotNet 1.22.1 was not found. CloudinaryDotNet 1.23.0 was resolved instead.",
-      "projectPath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+      "projectPath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
       "warningLevel": 1,
-      "filePath": "D:\\DATN\\Oisipan\\OisipanApi\\BackendApi.csproj",
+      "filePath": "D:\\DATN\\Oisipan2\\Oisipan\\OisipanApi\\BackendApi.csproj",
       "libraryId": "CloudinaryDotNet",
       "targetGraphs": [
         "net10.0"
