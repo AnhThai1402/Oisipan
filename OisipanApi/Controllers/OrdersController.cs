@@ -134,6 +134,8 @@ public class OrdersController : ControllerBase
         var order = new Order
         {
             UserId = request.UserId,
+            CustomerName = request.CustomerName.Trim(),
+            CustomerPhone = request.CustomerPhone.Trim(),
             OrderDate = DateTime.Now,
             Status = "Chờ xác nhận",
             PaymentMethod = request.PaymentMethod.Trim(),
@@ -219,7 +221,7 @@ public class OrdersController : ControllerBase
         }
 
         // Check if order can be cancelled
-        if (order.Status == "Đang giao" || order.Status == "Đã giao" || order.Status == "Đã hủy")
+        if (order.Status == "Đã giao" || order.Status == "Đã hủy")
         {
             return BadRequest(new { message = $"Không thể hủy đơn hàng ở trạng thái '{order.Status}'." });
         }
@@ -384,8 +386,8 @@ public class OrdersController : ControllerBase
         {
             OrderId = order.OrderId,
             UserId = order.UserId,
-            CustomerName = order.Account?.FullName,
-            CustomerPhone = order.Account?.PhoneNumber,
+            CustomerName = !string.IsNullOrWhiteSpace(order.CustomerName) ? order.CustomerName : order.Account?.FullName,
+            CustomerPhone = !string.IsNullOrWhiteSpace(order.CustomerPhone) ? order.CustomerPhone : order.Account?.PhoneNumber,
             ShippingAddress = order.ShippingAddress,
             OrderDate = order.OrderDate,
             TotalAmount = order.TotalAmount,
@@ -418,9 +420,9 @@ public class OrdersController : ControllerBase
         {
             OrderId = order.OrderId,
             UserId = order.UserId,
-            CustomerName = account?.FullName,
+            CustomerName = !string.IsNullOrWhiteSpace(order.CustomerName) ? order.CustomerName : account?.FullName,
             CustomerEmail = account?.Email,
-            CustomerPhone = account?.PhoneNumber,
+            CustomerPhone = !string.IsNullOrWhiteSpace(order.CustomerPhone) ? order.CustomerPhone : account?.PhoneNumber,
             ShippingAddress = order.ShippingAddress,
             OrderDate = order.OrderDate,
             TotalAmount = order.TotalAmount,

@@ -23,11 +23,30 @@
 </section>
 
 <section class="toolbar-panel">
-    <div class="toolbar-left">
+    <div class="toolbar-left" style="display: flex; gap: 1rem; align-items: center;">
         <div class="search-bar-group">
             <input type="search" class="form-input" placeholder="Tìm sản phẩm..." id="productSearch" />
             <i class="bi bi-search"></i>
         </div>
+        <form method="get" id="categoryFilterForm" style="margin: 0;">
+            <select name="categoryId" onchange="document.getElementById('categoryFilterForm').submit();" class="form-input" style="padding-right: 2.5rem; cursor: pointer;">
+                <option value="">Tất cả danh mục</option>
+                @if (ViewBag.Categories != null)
+                {
+                    foreach (var cat in ViewBag.Categories as List<FrontendMvc.Models.CategoryAdminViewModel>)
+                    {
+                        if (ViewBag.SelectedCategoryId == cat.CategoryId)
+                        {
+                            <option value="@cat.CategoryId" selected>@cat.CategoryName</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.CategoryId">@cat.CategoryName</option>
+                        }
+                    }
+                }
+            </select>
+        </form>
     </div>
     <div class="toolbar-right">
         <div class="segmented">
@@ -91,7 +110,7 @@
 
 <!-- Edit Quantity Modal -->
 <div class="modal-overlay" id="editQuantityModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1001; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+    <div style="background: white; border-radius: 5px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 style="margin: 0; font-size: 1.2rem;">Chỉnh sửa tồn kho</h3>
             <button type="button" onclick="closeEditQuantityModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
@@ -106,17 +125,17 @@
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);" id="product-name-label"></label>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button type="button" class="quantity-btn" onclick="decreaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">−</button>
-                    <input type="number" name="quantity" id="product-quantity" min="0" max="9999" style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; text-align: center; font-size: 1rem; font-weight: 600;" required />
-                    <button type="button" class="quantity-btn" onclick="increaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">+</button>
+                    <button type="button" class="quantity-btn" onclick="decreaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">−</button>
+                    <input type="number" name="quantity" id="product-quantity" min="0" max="9999" style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px; text-align: center; font-size: 1rem; font-weight: 600;" required />
+                    <button type="button" class="quantity-btn" onclick="increaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">+</button>
                 </div>
             </div>
 
             <div style="display: flex; gap: 1rem;">
-                <button type="button" onclick="closeEditQuantityModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                <button type="button" onclick="closeEditQuantityModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
                     Hủy bỏ
                 </button>
-                <button type="submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                <button type="submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
                     Lưu
                 </button>
             </div>

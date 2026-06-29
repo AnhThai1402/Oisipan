@@ -8,6 +8,7 @@ public class AccountResponse
     public string PhoneNumber { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string? Address { get; set; }
+    public string? AvatarUrl { get; set; }
     public bool Status { get; set; }
     public int OrderCount { get; set; }
 }

@@ -72,15 +72,79 @@ function initializeFormValidation() {
 }
 
 /**
- * Add smooth transitions when form is submitted
+ * Add smooth transitions and AJAX when form is submitted
  */
 function initializeFormSubmission() {
     document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent native reload
+
+            // Client-side empty validation check first
+            let hasEmpty = false;
+            const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"])');
+            inputs.forEach(input => {
+                if (!input.value.trim() && input.id !== 'Address') { // Address might be optional depending on logic, but others are required
+                    hasEmpty = true;
+                    const errorSpan = input.closest('.form-group')?.querySelector('.field-validation-error');
+                    if (errorSpan) {
+                        errorSpan.textContent = 'Vui lòng không bỏ trống trường này.';
+                        errorSpan.style.display = 'block';
+                    }
+                    input.style.borderColor = '#dc3545';
+                    input.style.background = 'rgba(220, 53, 69, 0.05)';
+                }
+            });
+
+            if (hasEmpty) {
+                return; // Stop here if empty fields exist
+            }
+
             const submitBtn = this.querySelector('.submit-btn');
+            const originalText = submitBtn ? submitBtn.textContent : '';
             if (submitBtn) {
                 submitBtn.style.opacity = '0.7';
                 submitBtn.style.pointerEvents = 'none';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 8px;"></span> Đang xử lý...';
+            }
+
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (response.redirected) {
+                    // Success! Follow the redirect
+                    window.location.href = response.url;
+                    return;
+                }
+
+                // If not redirected, the server likely returned the view with validation errors
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const newForm = doc.querySelector('form');
+                if (newForm) {
+                    form.innerHTML = newForm.innerHTML;
+                    // Re-initialize visual validation for the newly injected inputs
+                    initializeFormValidation();
+                } else {
+                    // Fallback
+                    location.reload();
+                }
+            } catch (err) {
+                console.error('Lỗi khi gửi form:', err);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.pointerEvents = 'auto';
+                    submitBtn.textContent = originalText;
+                }
             }
         });
     });

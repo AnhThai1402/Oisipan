@@ -64,7 +64,7 @@
     </div>
 
     <!-- Cancellation Request Section -->
-    @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy" && Model.Status != "Đang giao")
+    @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy")
     {
         <article class="panel cancellation-panel" style="margin-top: 2rem; border-left: 5px solid #dc3545;">
             <div class="panel-head">
@@ -81,24 +81,24 @@
                             var statusIcon = req.Status == "Approved" ? "bi-check-circle-fill" : req.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
                             var statusBadge = req.Status == "Approved" ? "Đã chấp nhận" : req.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
                             
-                            <div style="padding: 1rem; background: @statusColor; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid @(req.Status == "Approved" ? "#1f6f50" : req.Status == "Rejected" ? "#dc3545" : "#ffc107");">
+                            <div style="padding: 1rem; background: @statusColor; border-radius: 5px; margin-bottom: 1rem; border-left: 4px solid @(req.Status == "Approved" ? "#1f6f50" : req.Status == "Rejected" ? "#dc3545" : "#ffc107");">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <div style="flex: 1;">
                                         <div style="margin-bottom: 0.5rem;">
-                                            <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                                            <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 5px; font-size: 0.85rem; font-weight: 600;">
                                                 <i class="bi @statusIcon"></i> @statusBadge
                                             </span>
                                         </div>
                                         <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
                                             Gửi: @req.RequestDate.ToString("dd/MM/yyyy HH:mm")
                                         </p>
-                                        <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 4px;">
+                                        <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 5px;">
                                             <strong style="display: block; margin-bottom: 0.3rem;">Lý do:</strong>
                                             <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.Reason</p>
                                         </div>
                                         @if (!string.IsNullOrEmpty(req.AdminNote))
                                         {
-                                            <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 4px; border-left: 3px solid @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">
+                                            <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 5px; border-left: 3px solid @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">
                                                 <strong style="display: block; margin-bottom: 0.3rem; color: @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">Ghi chú từ admin:</strong>
                                                 <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.AdminNote</p>
                                             </div>
@@ -110,12 +110,12 @@
                     </div>
                 }
                 
-                @if (!Model.CancellationRequests.Any(r => r.Status == "Pending") && (Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận"))
+                @if (!Model.CancellationRequests.Any(r => r.Status == "Pending") && (Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận" || Model.Status == "Đang giao"))
                 {
                     <div style="margin-top: 1rem; margin-bottom: 1rem;">
                         <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
                             <i class="bi bi-info-circle"></i> Bạn có thể yêu cầu hủy đơn hàng ở trạng thái: 
-                            <strong>Chờ xác nhận</strong> hoặc <strong>Đã xác nhận</strong>
+                            <strong>Chờ xác nhận</strong>, <strong>Đã xác nhận</strong> hoặc <strong>Đang giao</strong>
                         </p>
                     </div>
                     <button onclick="openCancellationModal()" class="btn-cancel" style="width: 100%; padding: 0.8rem;">
@@ -124,16 +124,16 @@
                 }
                 else if (!Model.CancellationRequests.Any(r => r.Status == "Pending"))
                 {
-                    <div style="padding: 0.8rem; background: rgba(220, 53, 69, 0.1); border-radius: 6px; border-left: 4px solid #dc3545;">
+                    <div style="padding: 0.8rem; background: rgba(220, 53, 69, 0.1); border-radius: 5px; border-left: 4px solid #dc3545;">
                         <i class="bi bi-lock"></i> <strong>Không thể hủy đơn hàng</strong>
                         <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
-                            Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận" hoặc "Đã xác nhận". Trạng thái hiện tại: <strong>@Model.Status</strong>
+                            Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận", "Đã xác nhận" hoặc "Đang giao". Trạng thái hiện tại: <strong>@Model.Status</strong>
                         </p>
                     </div>
                 }
                 else
                 {
-                    <div style="padding: 0.8rem; background: rgba(255, 193, 7, 0.1); border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <div style="padding: 0.8rem; background: rgba(255, 193, 7, 0.1); border-radius: 5px; border-left: 4px solid #ffc107;">
                         <i class="bi bi-hourglass-split"></i> <strong>Bạn đã gửi yêu cầu hủy đơn</strong>
                         <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
                             Vui lòng chờ phản hồi từ admin. Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.
@@ -173,7 +173,7 @@
                     <small style="color: var(--text-muted); font-weight: 500;">Nội dung chuyển khoản</small>
                     <p style="margin: 0.5rem 0; font-family: monospace; font-weight: 600; word-break: break-all;">OP@Model.OrderId.ToString("0000")</p>
                 </div>
-                <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 8px; text-align: center;">
+                <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 5px; text-align: center;">
                     <small style="color: var(--text-muted);">Tổng thanh toán</small>
                     <p style="margin: 0.5rem 0; font-size: 1.3rem; font-weight: 700; color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</p>
                 </div>
@@ -270,7 +270,7 @@
 
     .custom-modal {
         background: white;
-        border-radius: 12px;
+        border-radius: 5px;
         padding: 2rem;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         position: relative;

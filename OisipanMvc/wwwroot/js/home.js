@@ -8,10 +8,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeCheckoutBtn = document.getElementById('close-checkout-modal');
     const checkoutForm = document.getElementById('checkout-form');
 
-    window.addEventListener('scroll', () => {
-        if (!header) return;
-        header.classList.toggle('scrolled', window.scrollY > 40);
+    // Auth forms validation intercept
+    const authForms = document.querySelectorAll('form.auth-form');
+    authForms.forEach(form => {
+        // Skip forgot password form which has its own handler
+        if (form.id === 'forgot-form') return;
+        
+        form.addEventListener('submit', event => {
+            const requiredInputs = form.querySelectorAll('input[required]');
+            let isValid = true;
+            requiredInputs.forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                }
+            });
+            if (!isValid) {
+                event.preventDefault();
+                triggerToast('Vui lòng điền đầy đủ các trường bắt buộc.', 'warning');
+            }
+        });
     });
+
+    const navLinks = document.querySelectorAll('#main-header nav a');
+    const sections = ['hero', 'about', 'menu', 'news', 'footer'].map(id => document.getElementById(id)).filter(el => el != null);
+
+    const onScroll = () => {
+        if (header) {
+            header.classList.toggle('scrolled', window.scrollY > 40);
+        }
+
+        if (sections.length > 0) {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+                const footerSection = sections.find(s => s.id === 'footer');
+                if (footerSection) current = 'footer';
+            }
+
+            if (current) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') && link.getAttribute('href').includes('#' + current)) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        }
+    };
+
+    window.addEventListener('scroll', onScroll);
+    onScroll(); // Trigger once on load
 
     openCartBtn?.addEventListener('click', () => cartSidebar?.classList.add('open'));
     closeCartBtn?.addEventListener('click', () => cartSidebar?.classList.remove('open'));
@@ -23,6 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         cartSidebar?.classList.remove('open');
+        const buyNowInput = document.getElementById('buy-now-product-id');
+        if (buyNowInput) buyNowInput.value = '';
+        const display = document.getElementById('checkout-total-display');
+        if (display && display.hasAttribute('data-cart-total')) {
+            const originalTotal = parseInt(display.getAttribute('data-cart-total') || '0', 10);
+            display.textContent = originalTotal.toLocaleString('vi-VN') + 'đ';
+        }
         checkoutOverlay?.classList.add('open');
     });
 
@@ -159,6 +218,7 @@ function updateCartDisplay(cartData) {
     const checkoutTotalDisplay = document.getElementById('checkout-total-display');
     if (checkoutTotalDisplay) {
         checkoutTotalDisplay.textContent = cartData.cartTotal.toLocaleString('vi-VN') + 'đ';
+        checkoutTotalDisplay.setAttribute('data-cart-total', cartData.cartTotal);
     }
 
     // Update QR amount if visible
@@ -168,7 +228,7 @@ function updateCartDisplay(cartData) {
     }
 
     // Update cart counter badge
-    const totalQuantity = cartData.items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = cartData.items.length;
     const cartCounter = document.getElementById('cart-counter');
     if (cartCounter) {
         cartCounter.textContent = totalQuantity;
@@ -417,4 +477,16 @@ function handleForgotPasswordRequest(event) {
     event.preventDefault();
     triggerToast('Vui long dung trang Quen mat khau de dat lai mat khau.', 'info');
     window.location.href = '/Account/ForgotPassword';
+}
+
+function triggerBuyNow(productId, price) {
+    const buyNowInput = document.getElementById('buy-now-product-id');
+    if (buyNowInput) buyNowInput.value = productId;
+    
+    const checkoutTotalDisplay = document.getElementById('checkout-total-display');
+    if (checkoutTotalDisplay) {
+        checkoutTotalDisplay.textContent = price.toLocaleString('vi-VN') + 'đ';
+    }
+    
+    document.getElementById('checkout-modal-overlay')?.classList.add('open');
 }

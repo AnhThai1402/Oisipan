@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @{
     var cartItems = Context.Session.GetJson<List<CartItemViewModel>>("Cart") ?? new List<CartItemViewModel>();
-    var cartTotalQuantity = cartItems.Sum(item => item.Quantity);
+    var cartTotalQuantity = cartItems.Count;
     var cartTotalAmount = cartItems.Sum(item => item.LineTotal);
     var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
@@ -150,8 +150,12 @@
             <form id="checkout-form" method="post" asp-controller="Cart" asp-action="Checkout" novalidate>
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="returnUrl" value="@currentUrl" />
+                <input type="hidden" id="buy-now-product-id" name="BuyNowProductId" value="" />
                 <div class="form-group">
-                    <label for="customer-name">Họ và tên khách hàng</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label for="customer-name" style="margin-bottom: 0;">Họ và tên khách hàng</label>
+                        <button type="button" id="edit-info-btn" style="display: none; background: none; border: none; color: var(--accent-green); font-size: 0.85rem; cursor: pointer; text-decoration: underline; padding: 0;">Sửa thông tin</button>
+                    </div>
                     <input type="text" id="customer-name" name="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
                 </div>
                 <div class="form-group">
@@ -160,7 +164,9 @@
                 </div>
                 <div class="form-group">
                     <label for="customer-address">Địa chỉ nhận bánh</label>
-                    <input type="text" id="customer-address" name="CustomerAddress" class="form-control" placeholder="Số nhà, tên đường..." required>
+                    <div id="address-container">
+                        <input type="text" id="customer-address" name="CustomerAddress" class="form-control" placeholder="Số nhà, tên đường..." required>
+                    </div>
                 </div>
                 <input type="hidden" id="payment-method" name="PaymentMethod" value="COD" />
                 <div class="form-group">
@@ -169,63 +175,6 @@
                         <div class="pay-opt-card active" data-method="COD" onclick="selectPaymentMethod(this)">
                             <i class="bi bi-cash-stack"></i>
                             <span>Khi nhận hàng</span>
-                        </div>
-                        <div class="pay-opt-card" data-method="Bank" onclick="selectPaymentMethod(this)">
-                            <i class="bi bi-bank"></i>
-                            <span>Chuyển khoản</span>
-                        </div>
-                        <div class="pay-opt-card" data-method="Momo" onclick="selectPaymentMethod(this)">
-                            <i class="bi bi-wallet2"></i>
-                            <span>Ví Momo</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- QR Code Section -->
-                <div id="qr-code-section" style="display: none; border: 2px dashed var(--accent-green); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 1.5rem; background: rgba(31, 111, 80, 0.03);">
-                    <h4 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-main);">Quét mã QR để thanh toán</h4>
-                    <div id="qr-code-display" style="display: flex; justify-content: center; margin-bottom: 1rem;">
-                        <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="160" height="160" fill="white" stroke="#1f6f50" stroke-width="2"/>
-                            <rect x="8" y="8" width="40" height="40" fill="#1f6f50"/>
-                            <rect x="112" y="8" width="40" height="40" fill="#1f6f50"/>
-                            <rect x="8" y="112" width="40" height="40" fill="#1f6f50"/>
-                            <text x="80" y="85" text-anchor="middle" font-size="12" font-family="Arial" fill="#1f6f50" font-weight="bold">Mã QR</text>
-                        </svg>
-                    </div>
-                    <div id="qr-amount" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.8rem;">@cartTotalAmount.ToString("N0")đ</div>
-                    <small style="color: var(--text-muted); display: block;">Số tiền chuyển khoản chính xác như trên</small>
-                </div>
-
-                <!-- Bank Transfer Section -->
-                <div id="bank-transfer-section" style="display: none; border: 2px solid var(--accent-green); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; background: rgba(31, 111, 80, 0.05);">
-                    <h4 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="bi bi-bank" style="color: var(--accent-green);"></i> Thông tin thanh toán
-                    </h4>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <small style="color: var(--text-muted);">Mã chuyển khoản</small>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input type="text" id="transfer-code" readonly style="flex: 1; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; font-size: 0.85rem; font-weight: 600; background-color: #f8f9fa;" value="">
-                            <button type="button" class="icon-btn" title="Sao chép mã" onclick="copyTransferCode()">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-                        <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Sao chép mã này vào nội dung chuyển khoản</small>
-                    </div>
-
-                    <div style="background: white; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                        <div style="margin-bottom: 0.8rem;">
-                            <small style="color: var(--text-muted); font-weight: 500;">Chuyển khoản đến</small>
-                            <p style="margin: 0.3rem 0; font-weight: 600;">Oishipan Bakery</p>
-                        </div>
-                        <div style="margin-bottom: 0.8rem;">
-                            <small style="color: var(--text-muted); font-weight: 500;">Số tài khoản</small>
-                            <p style="margin: 0.3rem 0; font-family: monospace; font-weight: 600;">1234567890</p>
-                        </div>
-                        <div>
-                            <small style="color: var(--text-muted); font-weight: 500;">Ngân hàng</small>
-                            <p style="margin: 0.3rem 0;">Vietcombank</p>
                         </div>
                     </div>
                 </div>
@@ -285,7 +234,7 @@
                         <span class="auth-sub">Chào mừng trở lại</span>
                         <h3 class="auth-title">Đăng Nhập</h3>
                     </div>
-                    <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@currentUrl" class="auth-form" novalidate>
+                    <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@currentUrl" class="auth-form" onsubmit="event.preventDefault(); validateAndSubmitAuthForm(this);">
                         @Html.AntiForgeryToken()
                         <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-envelope"></i></span><input type="email" id="login-email" name="Email" class="auth-control" placeholder="Tên tài khoản hoặc Email" required></div></div>
                         <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-lock"></i></span><input type="password" id="login-password" name="Password" class="auth-control" placeholder="Mật khẩu" required><button type="button" class="eye-btn" onclick="togglePassword('login-password', this)"><i class="fa-regular fa-eye"></i></button></div></div>
@@ -308,7 +257,7 @@
                         <span class="auth-sub">Đồng hành cùng Oishipan</span>
                         <h3 class="auth-title">Đăng Ký</h3>
                     </div>
-                    <form method="post" asp-controller="Account" asp-action="Register" class="auth-form" novalidate>
+                    <form method="post" asp-controller="Account" asp-action="Register" class="auth-form" onsubmit="event.preventDefault(); validateAndSubmitAuthForm(this);">
                         @Html.AntiForgeryToken()
                         <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-user"></i></span><input type="text" id="reg-name" name="FullName" class="auth-control" placeholder="Họ và Tên của bạn" required></div></div>
                         <div class="form-group"><div class="input-wrapper"><span class="input-icon"><i class="fa-regular fa-envelope"></i></span><input type="email" id="reg-email" name="Email" class="auth-control" placeholder="Địa chỉ Email" required></div></div>
@@ -348,6 +297,31 @@
                     <p style="text-align: center;"><a href="javascript:void(0)" onclick="switchAuthPanel('login')" class="btn-back-login"><i class="fa-solid fa-arrow-left"></i> Quay lại Đăng nhập</a></p>
                 </div>
             </div>
+            
+            <script>
+                function validateAndSubmitAuthForm(form) {
+                    const requiredInputs = form.querySelectorAll('input[required]');
+                    let isValid = true;
+                    requiredInputs.forEach(input => {
+                        if (!input.value.trim()) {
+                            isValid = false;
+                            input.classList.add('input-error');
+                        } else {
+                            input.classList.remove('input-error');
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        if (typeof triggerToast === 'function') {
+                            triggerToast('Vui lòng điền đầy đủ các trường bắt buộc.', 'warning');
+                        } else {
+                            alert('Vui lòng điền đầy đủ các trường bắt buộc.');
+                        }
+                    } else {
+                        form.submit();
+                    }
+                }
+            </script>
         </div>
     </div>
 
@@ -386,6 +360,70 @@
 
     <script src="~/js/home.js" asp-append-version="true"></script>
     <script src="~/js/money-input.js" asp-append-version="true"></script>
+    <script>
+        const isUserAuthenticated = @(User.Identity?.IsAuthenticated == true ? "true" : "false");
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            if (isUserAuthenticated) {
+                fetch('@Url.Action("GetCheckoutProfile", "Account", new { area = "" })')
+                    .then(r => r.json())
+                    .then(data => {
+                        const nameInput = document.getElementById('customer-name');
+                        const phoneInput = document.getElementById('customer-phone');
+                        const addressContainer = document.getElementById('address-container');
+                        const editBtn = document.getElementById('edit-info-btn');
+
+                        if (data.fullName) {
+                            nameInput.value = data.fullName;
+                            nameInput.readOnly = true;
+                            nameInput.style.backgroundColor = '#f8f9fa';
+                        }
+                        if (data.phoneNumber) {
+                            phoneInput.value = data.phoneNumber;
+                            phoneInput.readOnly = true;
+                            phoneInput.style.backgroundColor = '#f8f9fa';
+                        }
+
+                        if (data.fullName || data.phoneNumber) {
+                            editBtn.style.display = 'block';
+                        }
+
+                        editBtn.addEventListener('click', () => {
+                            nameInput.readOnly = false;
+                            nameInput.style.backgroundColor = '';
+                            phoneInput.readOnly = false;
+                            phoneInput.style.backgroundColor = '';
+                            
+                            if (addressContainer.querySelector('select')) {
+                                addressContainer.innerHTML = '<input type="text" id="customer-address" name="CustomerAddress" class="form-control" placeholder="Số nhà, tên đường..." required>';
+                            }
+                            editBtn.style.display = 'none';
+                        });
+
+                        if (data.addresses && data.addresses.length > 0) {
+                            let selectHTML = '<select id="customer-address-select" class="form-control" onchange="updateAddressInput(this)" style="margin-bottom: 0.5rem;">';
+                            data.addresses.forEach(addr => {
+                                selectHTML += `<option value="${addr.fullAddress}">${addr.fullAddress}</option>`;
+                            });
+                            selectHTML += '<option value="OTHER">Nhập địa chỉ khác...</option>';
+                            selectHTML += '</select>';
+                            selectHTML += '<input type="hidden" id="customer-address" name="CustomerAddress" value="' + data.addresses[0].fullAddress + '">';
+                            
+                            addressContainer.innerHTML = selectHTML;
+                        }
+                    })
+                    .catch(err => console.error("Could not fetch profile", err));
+            }
+        });
+
+        window.updateAddressInput = function(select) {
+            if (select.value === 'OTHER') {
+                document.getElementById('address-container').innerHTML = '<input type="text" id="customer-address" name="CustomerAddress" class="form-control" placeholder="Số nhà, tên đường..." required autofocus>';
+            } else {
+                document.getElementById('customer-address').value = select.value;
+            }
+        };
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

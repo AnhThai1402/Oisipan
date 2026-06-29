@@ -4,6 +4,8 @@ public class StorefrontViewModel
 {
     public List<ProductCatalogViewModel> Products { get; set; } = new();
     public List<NewsArticleViewModel> NewsArticles { get; set; } = new();
+    public List<CategoryAdminViewModel> Categories { get; set; } = new();
+    public int? SelectedCategoryId { get; set; }
 }
 
 public class ProductCatalogViewModel

@@ -17,12 +17,20 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll()
+    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll([FromQuery] int? categoryId = null)
     {
-        var products = await _context.Products
+        var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.ProductOptions)
                 .ThenInclude(po => po.ProductValues)
+            .AsQueryable();
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        var products = await query
             .OrderBy(p => p.Name)
             .Select(p => new ProductResponse
             {
@@ -73,11 +81,19 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("admin/products")]
-    public async Task<ActionResult<IEnumerable<AdminProductResponse>>> GetAllForAdmin()
+    public async Task<ActionResult<IEnumerable<AdminProductResponse>>> GetAllForAdmin([FromQuery] int? categoryId = null)
     {
-        var products = await _context.Products
+        var query = _context.Products
             .Include(p => p.ProductOptions)
                 .ThenInclude(po => po.ProductValues)
+            .AsQueryable();
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        var products = await query
             .OrderBy(p => p.Name)
             .ToListAsync();
 

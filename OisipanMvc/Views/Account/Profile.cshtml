@@ -10,55 +10,191 @@
         <p class="section-desc">Thông tin tài khoản đang đăng nhập của bạn.</p>
     </div>
 
-    <div class="about-grid">
-        <article class="about-perk-card">
-            <div class="perk-icon-wrap">
-                <i class="bi bi-person"></i>
-            </div>
-            <div>
-                <small>Họ và tên</small>
-                <h2 class="product-title">@Model.FullName</h2>
-            </div>
-        </article>
+    <div style="text-align: right; margin-bottom: 2rem;">
+        <a asp-controller="Account" asp-action="EditProfile" class="btn-primary" style="padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 5px; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa hồ sơ
+        </a>
+    </div>
 
-        <article class="about-perk-card">
-            <div class="perk-icon-wrap">
-                <i class="bi bi-envelope"></i>
-            </div>
-            <div>
-                <small>Email</small>
-                <strong>@Model.Email</strong>
-            </div>
-        </article>
+    <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; background: var(--bg-card); padding: 2rem; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div>
+            @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+            {
+                <img src="@Model.AvatarUrl" alt="Avatar" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);" />
+            }
+            else
+            {
+                <div style="width: 150px; height: 150px; border-radius: 50%; background-color: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #ccc;">
+                    <i class="bi bi-person" style="font-size: 4rem; color: #aaa;"></i>
+                </div>
+            }
+        </div>
+        <div>
+            <h2 style="margin-bottom: 0.5rem;">@Model.FullName</h2>
+            <p style="color: var(--text-color); margin-bottom: 0;"><i class="bi bi-envelope"></i> @Model.Email</p>
+            <p style="color: var(--text-color);"><i class="bi bi-telephone"></i> @Model.PhoneNumber</p>
+        </div>
+    </div>
 
-        <article class="about-perk-card">
-            <div class="perk-icon-wrap">
-                <i class="bi bi-telephone"></i>
+    <div class="address-book" style="background: var(--bg-card); padding: 2rem; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0;">Sổ địa chỉ</h3>
+            <button type="button" class="btn-primary" onclick="openAddressModal()" style="padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-plus-lg"></i> Thêm địa chỉ
+            </button>
+        </div>
+        
+        @if (Model.Addresses != null && Model.Addresses.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                @foreach (var address in Model.Addresses)
+                {
+                    <div style="border: 1px solid #eee; padding: 1rem; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="margin: 0;">@address.FullAddress</p>
+                            @if (address.IsDefault)
+                            {
+                                <span style="display: inline-block; padding: 0.2rem 0.5rem; background: var(--primary-color); color: white; font-size: 0.8rem; border-radius: 5px; margin-top: 0.5rem;">Mặc định</span>
+                            }
+                        </div>
+                        <form asp-action="DeleteAddress" asp-controller="Account" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa địa chỉ này?');">
+                            <input type="hidden" name="addressId" value="@address.AddressId" />
+                            <button type="submit" style="background: none; border: none; color: var(--danger-color, #dc3545); cursor: pointer; padding: 0.5rem;">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </div>
+                }
             </div>
-            <div>
-                <small>Số điện thoại</small>
-                <strong>@Model.PhoneNumber</strong>
-            </div>
-        </article>
-
-        <article class="about-perk-card">
-            <div class="perk-icon-wrap">
-                <i class="bi bi-geo-alt"></i>
-            </div>
-            <div>
-                <small>Địa chỉ</small>
-                <strong>@(string.IsNullOrWhiteSpace(Model.Address) ? "Chưa cập nhật" : Model.Address)</strong>
-            </div>
-        </article>
-
-        <article class="about-perk-card">
-            <div class="perk-icon-wrap">
-                <i class="bi bi-receipt"></i>
-            </div>
-            <div>
-                <small>Đơn hàng</small>
-                <strong>@Model.OrderCount đơn</strong>
-            </div>
-        </article>
+        }
+        else
+        {
+            <p style="color: var(--text-color); text-align: center; padding: 2rem 0;">Bạn chưa có địa chỉ nào.</p>
+        }
     </div>
 </section>
+
+<!-- Address Modal -->
+<div id="addressModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: var(--bg-card); padding: 2rem; border-radius: 5px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Thêm địa chỉ mới</h3>
+        
+        <form asp-action="AddAddress" asp-controller="Account" method="post">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Tỉnh/Thành phố</label>
+                <select id="provinceSelect" class="form-control" required onchange="loadWards()">
+                    <option value="">Chọn Tỉnh/Thành phố</option>
+                </select>
+                <input type="hidden" id="provinceName" name="province" />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Phường/Xã</label>
+                <select id="wardSelect" class="form-control" required onchange="updateWardName()" disabled>
+                    <option value="">Chọn Phường/Xã</option>
+                </select>
+                <input type="hidden" id="wardName" name="ward" />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label>Địa chỉ cụ thể (Số nhà, đường...)</label>
+                <input type="text" name="detail" class="form-control" required placeholder="Ví dụ: 123 Đường ABC..." />
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" onclick="closeAddressModal()" class="btn-outline" style="padding: 0.5rem 1.5rem; border-radius: 5px; cursor: pointer; background: transparent; border: 1px solid #ccc;">Hủy</button>
+                <button type="submit" class="btn-primary" style="padding: 0.5rem 1.5rem; border-radius: 5px; cursor: pointer; border: none;">Thêm địa chỉ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const addressModal = document.getElementById('addressModal');
+    const provinceSelect = document.getElementById('provinceSelect');
+    const wardSelect = document.getElementById('wardSelect');
+
+    function openAddressModal() {
+        addressModal.style.display = 'flex';
+        if (provinceSelect.options.length <= 1) {
+            loadProvinces();
+        }
+    }
+
+    function closeAddressModal() {
+        addressModal.style.display = 'none';
+    }
+
+    // Close modal if clicked outside
+    window.onclick = function(event) {
+        if (event.target == addressModal) {
+            closeAddressModal();
+        }
+    }
+
+    let hanhChinhData = null;
+
+    async function fetchHanhChinhData() {
+        if (!hanhChinhData) {
+            const response = await fetch('/danhmucxaphuong.json');
+            hanhChinhData = await response.json();
+        }
+        return hanhChinhData;
+    }
+
+    async function loadProvinces() {
+        try {
+            const data = await fetchHanhChinhData();
+            
+            // Clear existing options except the first one
+            provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+            
+            data.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.matinhTMS;
+                option.textContent = p.tentinhmoi;
+                provinceSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading provinces:', error);
+            alert('Không thể tải danh sách tỉnh thành.');
+        }
+    }
+
+    async function loadWards() {
+        const code = provinceSelect.value;
+        wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+        wardSelect.disabled = true;
+        
+        if (!code) return;
+        
+        document.getElementById('provinceName').value = provinceSelect.options[provinceSelect.selectedIndex].text;
+
+        try {
+            const data = await fetchHanhChinhData();
+            const province = data.find(p => p.matinhTMS === code);
+            
+            if (province && province.phuongxa) {
+                province.phuongxa.forEach(w => {
+                    const option = document.createElement('option');
+                    option.value = w.maphuongxa;
+                    option.textContent = w.tenphuongxa;
+                    wardSelect.appendChild(option);
+                });
+                wardSelect.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error loading wards:', error);
+        }
+    }
+
+    function updateWardName() {
+        if (wardSelect.value) {
+            document.getElementById('wardName').value = wardSelect.options[wardSelect.selectedIndex].text;
+        } else {
+            document.getElementById('wardName').value = '';
+        }
+    }
+</script>
+}

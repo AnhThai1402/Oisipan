@@ -37,10 +37,10 @@
             <a class="@IsActive("Users")" asp-area="Admin" asp-controller="Users" asp-action="Index"><i class="fa-solid fa-users"></i><span>Người dùng</span></a>
         </nav>
 
-        <div class="sidebar-card">
+        <div class="sidebar-card" id="sidebar-stats-container">
             <span>Doanh thu hôm nay</span>
-            <strong>18.450.000đ</strong>
-            <small>+12.8% so với hôm qua</small>
+            <strong id="sidebar-today-revenue">...</strong>
+            <small id="sidebar-month-revenue">Đang tải...</small>
         </div>
     </aside>
 
@@ -54,10 +54,13 @@
             <div class="topbar-actions">
                 <button class="icon-action" id="density-toggle" title="Đổi mật độ hiển thị"><i class="fa-solid fa-table-cells"></i></button>
                 <button class="icon-action" title="Thông báo"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
-                <a class="admin-user" asp-area="" asp-controller="Home" asp-action="Index">
-                    <span>Admin</span>
-                    <strong>Quay về shop</strong>
-                </a>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="margin: 0;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="admin-user" style="cursor: pointer; text-align: left; font-family: inherit;">
+                        <span>Admin</span>
+                        <strong>Đăng xuất</strong>
+                    </button>
+                </form>
             </div>
         </header>
 
@@ -69,6 +72,25 @@
     <div class="admin-overlay" id="admin-overlay"></div>
     <script src="~/js/admin.js" asp-append-version="true"></script>
     <script src="~/js/money-input.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch('@Url.Action("SidebarStats", "Dashboard", new { area = "Admin" })')
+                .then(response => response.json())
+                .then(data => {
+                    const todayEl = document.getElementById('sidebar-today-revenue');
+                    const monthEl = document.getElementById('sidebar-month-revenue');
+                    if (todayEl && monthEl) {
+                        todayEl.innerText = data.todayRevenue.toLocaleString('vi-VN') + 'đ';
+                        monthEl.innerText = 'Tháng này: ' + data.monthRevenue.toLocaleString('vi-VN') + 'đ';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching sidebar stats:', error);
+                    const monthEl = document.getElementById('sidebar-month-revenue');
+                    if (monthEl) monthEl.innerText = 'Không thể tải';
+                });
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

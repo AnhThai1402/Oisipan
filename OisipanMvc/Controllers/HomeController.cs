@@ -29,9 +29,9 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> Menu()
+    public async Task<IActionResult> Menu([FromQuery] int? categoryId = null)
     {
-        return View(await BuildStorefrontModel());
+        return View(await BuildStorefrontModel(categoryId));
     }
 
     public async Task<IActionResult> ProductDetail(int id)
@@ -80,19 +80,25 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private async Task<StorefrontViewModel> BuildStorefrontModel()
+    private async Task<StorefrontViewModel> BuildStorefrontModel(int? categoryId = null)
     {
-        var productsTask = Api.GetFromJsonAsync<List<ProductCatalogViewModel>>("api/products");
+        var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
+        var productsTask = Api.GetFromJsonAsync<List<ProductCatalogViewModel>>(productUrl);
         var newsTask = Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles");
-        await Task.WhenAll(productsTask, newsTask);
+        var categoriesTask = Api.GetFromJsonAsync<List<CategoryAdminViewModel>>("api/categories");
+        
+        await Task.WhenAll(productsTask, newsTask, categoriesTask);
 
         var products = await productsTask ?? new List<ProductCatalogViewModel>();
         var newsArticles = await newsTask ?? new List<NewsArticleViewModel>();
+        var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
 
         return new StorefrontViewModel
         {
             Products = products.Where(product => product.Quantity > 0).ToList(),
-            NewsArticles = newsArticles
+            NewsArticles = newsArticles,
+            Categories = categories,
+            SelectedCategoryId = categoryId
         };
     }
 

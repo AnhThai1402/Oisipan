@@ -20,7 +20,18 @@ public class CloudinaryImageStorageService : IImageStorageService
 
     public async Task<string> UploadProductImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
     {
-        return await UploadImageAsync(imageFile, _settings.Folder, cancellationToken);
+        var folder = string.IsNullOrWhiteSpace(_settings.Folder)
+            ? "oisipan/products"
+            : $"{_settings.Folder.TrimEnd('/')}/products";
+        return await UploadImageAsync(imageFile, folder, cancellationToken);
+    }
+
+    public async Task<string> UploadAvatarImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
+    {
+        var folder = string.IsNullOrWhiteSpace(_settings.Folder)
+            ? "oisipan/avatars"
+            : $"{_settings.Folder.TrimEnd('/')}/avatars";
+        return await UploadImageAsync(imageFile, folder, cancellationToken);
     }
 
     public async Task<string> UploadNewsImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
@@ -44,9 +55,9 @@ public class CloudinaryImageStorageService : IImageStorageService
         string folder,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_settings.CloudName) ||
-            string.IsNullOrWhiteSpace(_settings.ApiKey) ||
-            string.IsNullOrWhiteSpace(_settings.ApiSecret))
+        if (string.IsNullOrWhiteSpace(_settings.CloudName) || _settings.CloudName == "YOUR_CLOUD_NAME" ||
+            string.IsNullOrWhiteSpace(_settings.ApiKey) || _settings.ApiKey == "YOUR_API_KEY" ||
+            string.IsNullOrWhiteSpace(_settings.ApiSecret) || _settings.ApiSecret == "YOUR_API_SECRET")
         {
             return await SaveImageLocally(imageFile, folder, cancellationToken);
         }

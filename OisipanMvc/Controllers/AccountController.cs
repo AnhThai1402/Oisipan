@@ -12,10 +12,12 @@ namespace FrontendMvc.Controllers;
 public class AccountController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly FrontendMvc.Services.IImageStorageService _imageStorageService;
 
-    public AccountController(IHttpClientFactory httpClientFactory)
+    public AccountController(IHttpClientFactory httpClientFactory, FrontendMvc.Services.IImageStorageService imageStorageService)
     {
         _httpClientFactory = httpClientFactory;
+        _imageStorageService = imageStorageService;
     }
 
     [HttpGet]
@@ -118,13 +120,187 @@ public class AccountController : Controller
         try
         {
             var profile = await Api.GetFromJsonAsync<UserAdminViewModel>($"api/accounts/{userId}");
-            return profile is null ? NotFound() : View(profile);
+            if (profile is null) return NotFound();
+
+            var addresses = await Api.GetFromJsonAsync<List<UserAddressViewModel>>($"api/accounts/{userId}/addresses");
+            if (addresses != null)
+            {
+                profile.Addresses = addresses;
+            }
+
+            return View(profile);
         }
         catch (HttpRequestException)
         {
             TempData["CartError"] = "Không thể tải hồ sơ. Vui lòng thử lại.";
             return RedirectToAction("Index", "Home");
         }
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetCheckoutProfile()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId)) return Unauthorized();
+
+        try
+        {
+            var profile = await Api.GetFromJsonAsync<UserAdminViewModel>($"api/accounts/{userId}");
+            var addresses = await Api.GetFromJsonAsync<List<UserAddressViewModel>>($"api/accounts/{userId}/addresses");
+            
+            return Json(new { 
+                fullName = profile?.FullName, 
+                phoneNumber = profile?.PhoneNumber, 
+                addresses = addresses 
+            });
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> EditProfile()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        try
+        {
+            var profile = await Api.GetFromJsonAsync<UserAdminViewModel>($"api/accounts/{userId}");
+            if (profile is null) return NotFound();
+
+            var model = new ProfileUpdateViewModel
+            {
+                FullName = profile.FullName,
+                PhoneNumber = profile.PhoneNumber,
+                Email = profile.Email,
+                AvatarUrl = profile.AvatarUrl
+            };
+
+            return View(model);
+        }
+        catch (HttpRequestException)
+        {
+            TempData["CartError"] = "Không thể tải hồ sơ. Vui lòng thử lại.";
+            return RedirectToAction("Profile");
+        }
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProfile(ProfileUpdateViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (model.Avatar != null && model.Avatar.Length > 0)
+        {
+            var uploadResult = await _imageStorageService.UploadAvatarImageAsync(model.Avatar);
+            model.AvatarUrl = uploadResult;
+        }
+
+        var response = await Api.PatchAsJsonAsync($"api/accounts/{userId}/profile", model);
+        if (!response.IsSuccessStatusCode)
+        {
+            await AddApiErrors(response);
+            return View(model);
+        }
+
+        // Update cookie claims if Email or FullName changed
+        var currentPrincipal = User;
+        if (currentPrincipal.Identity is ClaimsIdentity identity)
+        {
+            var nameClaim = identity.FindFirst(ClaimTypes.Name);
+            if (nameClaim != null) identity.RemoveClaim(nameClaim);
+            identity.AddClaim(new Claim(ClaimTypes.Name, model.FullName));
+
+            var emailClaim = identity.FindFirst(ClaimTypes.Email);
+            if (emailClaim != null) identity.RemoveClaim(emailClaim);
+            identity.AddClaim(new Claim(ClaimTypes.Email, model.Email));
+
+            await HttpContext.SignInAsync("OisipanCookie", new ClaimsPrincipal(identity));
+        }
+
+        TempData["CartMessage"] = "Cập nhật hồ sơ thành công.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddAddress([FromForm] string province, [FromForm] string ward, [FromForm] string detail)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (string.IsNullOrWhiteSpace(province) || string.IsNullOrWhiteSpace(ward) || string.IsNullOrWhiteSpace(detail))
+        {
+            TempData["CartError"] = "Vui lòng điền đầy đủ thông tin địa chỉ.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var fullAddress = $"{detail.Trim()}, {ward}, {province}";
+
+        var request = new UserAddressCreateViewModel
+        {
+            FullAddress = fullAddress,
+            IsDefault = false
+        };
+
+        var response = await Api.PostAsJsonAsync($"api/accounts/{userId}/addresses", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["CartError"] = "Không thể thêm địa chỉ mới. Vui lòng thử lại.";
+        }
+        else
+        {
+            TempData["CartMessage"] = "Thêm địa chỉ thành công.";
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAddress(int addressId)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var response = await Api.DeleteAsync($"api/accounts/{userId}/addresses/{addressId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["CartError"] = "Không thể xóa địa chỉ. Vui lòng thử lại.";
+        }
+        else
+        {
+            TempData["CartMessage"] = "Đã xóa địa chỉ thành công.";
+        }
+
+        return RedirectToAction(nameof(Profile));
     }
 
     [HttpGet]

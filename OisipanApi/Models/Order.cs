@@ -21,6 +21,12 @@ namespace Oishipan.Models
         [StringLength(50)]
         public string Status { get; set; } = "Chờ xác nhận";
 
+        [StringLength(100)]
+        public string CustomerName { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string CustomerPhone { get; set; } = string.Empty;
+
         [StringLength(50)]
         public string PaymentMethod { get; set; } = null!;
 

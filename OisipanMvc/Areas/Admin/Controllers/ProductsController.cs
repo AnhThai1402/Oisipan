@@ -25,9 +25,15 @@ public class ProductsController : Controller
         _imageStorageService = imageStorageService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] int? categoryId = null)
     {
-        var products = await Api.GetFromJsonAsyncWithOptions<List<ProductAdminViewModel>>("api/products/admin/products") ?? new();
+        var url = categoryId.HasValue ? $"api/products/admin/products?categoryId={categoryId.Value}" : "api/products/admin/products";
+        var products = await Api.GetFromJsonAsyncWithOptions<List<ProductAdminViewModel>>(url) ?? new();
+        
+        var categories = await Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories") ?? new();
+        ViewBag.Categories = categories;
+        ViewBag.SelectedCategoryId = categoryId;
+        
         return View(products);
     }
 

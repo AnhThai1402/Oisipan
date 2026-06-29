@@ -78,20 +78,7 @@
             <small class="form-hint">Không thể cấp quyền quản trị viên cho tài khoản khác.</small>
         </div>
 
-        @if (isEdit)
-        {
-            <div class="form-group">
-                <label asp-for="NewPassword">Mật khẩu mới</label>
-                <div class="input-with-icon">
-                    <input asp-for="NewPassword" type="password" class="form-input password-input" placeholder="Để trống nếu không đổi mật khẩu" />
-                    <button type="button" class="toggle-password" title="Hiển thị mật khẩu">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-                <span asp-validation-for="NewPassword" class="field-validation-error"></span>
-            </div>
-        }
-        else
+        @if (!isEdit)
         {
             <div class="form-group">
                 <label asp-for="Password">Mật khẩu tạm <span class="required">*</span></label>

@@ -23,11 +23,15 @@ public class CheckoutViewModel
 
     [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán.")]
     public string PaymentMethod { get; set; } = "COD";
+
+    public int? BuyNowProductId { get; set; }
 }
 
 public class ApiOrderCreateRequest
 {
     public int UserId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = "COD";
     public string ShippingAddress { get; set; } = string.Empty;
     public List<ApiOrderItemRequest> Items { get; set; } = new();

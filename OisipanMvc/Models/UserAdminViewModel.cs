@@ -26,6 +26,7 @@ public class UserAdminViewModel
 
     [Display(Name = "Địa chỉ")]
     public string? Address { get; set; }
+    public string? AvatarUrl { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
     [RegularExpression("^(User|Admin)$", ErrorMessage = "Vai trò không hợp lệ.")]
@@ -34,6 +35,8 @@ public class UserAdminViewModel
 
     [Display(Name = "Đang hoạt động")]
     public bool Status { get; set; } = true;
+
+    public List<UserAddressViewModel> Addresses { get; set; } = new();
 
     [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự.")]
     [Display(Name = "Mật khẩu")]

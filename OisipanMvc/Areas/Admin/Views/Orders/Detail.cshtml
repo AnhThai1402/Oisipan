@@ -84,7 +84,7 @@
             }
             else
             {
-                <div style="padding: 0.8rem 1rem; background: rgba(31, 111, 80, 0.1); border-radius: 6px; border-left: 4px solid var(--accent-green); width: 100%;">
+                <div style="padding: 0.8rem 1rem; background: rgba(31, 111, 80, 0.1); border-radius: 5px; border-left: 4px solid var(--accent-green); width: 100%;">
                     <strong style="color: var(--text-main);">@Model.Status</strong>
                     <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-top: 0.3rem;">
                         @if (Model.Status == "Đã giao")
@@ -157,10 +157,10 @@
             var statusText = cancReq.Status == "Approved" ? "Đã chấp nhận" : cancReq.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
             var statusIcon = cancReq.Status == "Approved" ? "bi-check-circle-fill" : cancReq.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
             
-            <div style="padding: 1.5rem; background: @statusColor; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid @statusBadgeColor;">
+            <div style="padding: 1.5rem; background: @statusColor; border-radius: 5px; margin-bottom: 1rem; border-left: 4px solid @statusBadgeColor;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
-                        <span style="display: inline-block; padding: 0.4rem 0.9rem; background: white; border-radius: 4px; font-weight: 600; color: @statusBadgeColor; font-size: 0.9rem;">
+                        <span style="display: inline-block; padding: 0.4rem 0.9rem; background: white; border-radius: 5px; font-weight: 600; color: @statusBadgeColor; font-size: 0.9rem;">
                             <i class="bi @statusIcon"></i> @statusText
                         </span>
                         <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
@@ -176,7 +176,7 @@
 
                 @if (!string.IsNullOrEmpty(cancReq.AdminNote))
                 {
-                    <div style="padding: 0.8rem; background: white; border-radius: 4px; border-left: 3px solid @statusBadgeColor;">
+                    <div style="padding: 0.8rem; background: white; border-radius: 5px; border-left: 3px solid @statusBadgeColor;">
                         <strong style="display: block; margin-bottom: 0.3rem; color: @statusBadgeColor;">Ghi chú từ admin:</strong>
                         <p style="margin: 0; color: var(--text-main);">@cancReq.AdminNote</p>
                     </div>
@@ -185,10 +185,10 @@
                 @if (cancReq.Status == "Pending")
                 {
                     <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.CancellationRequestId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 6px; cursor: pointer;">
+                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.CancellationRequestId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
                             <i class="bi bi-check-circle"></i> Chấp nhận
                         </button>
-                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.CancellationRequestId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 6px; cursor: pointer;">
+                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.CancellationRequestId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
                             <i class="bi bi-x-circle"></i> Từ chối
                         </button>
                     </div>
@@ -200,7 +200,7 @@
 
 <!-- Response Modal -->
 <div id="response-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+    <div style="background: white; border-radius: 5px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 style="margin: 0; font-size: 1.2rem;" id="modal-title">Phản hồi yêu cầu hủy đơn</h3>
             <button type="button" onclick="closeResponseModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
@@ -216,15 +216,15 @@
 
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);">Ghi chú (tùy chọn)</label>
-                <textarea name="adminNote" id="response-note" placeholder="Ghi chú cho khách hàng..." rows="4" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 0.9rem;" maxlength="500"></textarea>
+                <textarea name="adminNote" id="response-note" placeholder="Ghi chú cho khách hàng..." rows="4" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 0.9rem;" maxlength="500"></textarea>
                 <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">Tối đa 500 ký tự</small>
             </div>
 
             <div style="display: flex; gap: 1rem;">
-                <button type="button" onclick="closeResponseModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                <button type="button" onclick="closeResponseModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
                     Hủy bỏ
                 </button>
-                <button type="submit" id="response-submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                <button type="submit" id="response-submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
                     Gửi
                 </button>
             </div>

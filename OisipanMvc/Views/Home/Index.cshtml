@@ -93,19 +93,29 @@
 </section>
 
 <section id="menu" class="section-padding">
-    <div class="section-header">
-        <span class="section-subtitle">Thực Đơn Mùa Hè</span>
-        <h2 class="section-title">Tinh Hoa Bánh Nướng Oishipan</h2>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; max-width: 1440px; margin: 0 auto 4rem;">
+        <div class="section-header" style="margin: 0; align-items: flex-start; text-align: left;">
+            <span class="section-subtitle">Thực Đơn Mùa Hè</span>
+            <h2 class="section-title">Tinh Hoa Bánh Nướng Oishipan</h2>
+        </div>
+        <a asp-controller="Home" asp-action="Menu" class="btn-outline" style="padding: 0.6rem 1.5rem; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            Xem tất cả <i class="bi bi-arrow-right" style="margin-left: 0.3rem;"></i>
+        </a>
     </div>
     <div class="menu-grid" id="menu-items-container">
-        @await Html.PartialAsync("_ProductGrid", Model.Products)
+        @await Html.PartialAsync("_ProductGrid", Model.Products.OrderByDescending(p => p.ProductId).Take(4).ToList())
     </div>
 </section>
 
 <section id="news" class="section-padding" style="background-color: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
-    <div class="section-header">
-        <span class="section-subtitle">Nhật Ký Oishipan</span>
-        <h2 class="section-title">Tin Tức &amp; Sự Kiện</h2>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; max-width: 1440px; margin: 0 auto 4rem;">
+        <div class="section-header" style="margin: 0; align-items: flex-start; text-align: left;">
+            <span class="section-subtitle">Nhật Ký Oishipan</span>
+            <h2 class="section-title">Tin Tức &amp; Sự Kiện</h2>
+        </div>
+        <a asp-controller="Home" asp-action="News" class="btn-outline" style="padding: 0.6rem 1.5rem; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            Xem tất cả <i class="bi bi-arrow-right" style="margin-left: 0.3rem;"></i>
+        </a>
     </div>
     @if (Model.NewsArticles.Any())
     {

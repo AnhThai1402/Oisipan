@@ -42,7 +42,7 @@ body {
   width: min(100%, 480px);
   padding: 28px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -98,7 +98,7 @@ body {
 .admin-hero {
   padding: 28px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -125,7 +125,7 @@ body {
   display: block;
   padding: 22px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   color: #111827;
   text-decoration: none;
   background: #fff;
@@ -168,7 +168,7 @@ body {
 .admin-form {
   padding: 22px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -197,7 +197,7 @@ body {
   width: 56px;
   height: 56px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid #e5e7eb;
 }
 

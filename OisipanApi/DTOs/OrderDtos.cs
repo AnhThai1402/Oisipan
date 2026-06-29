@@ -8,6 +8,14 @@ public class OrderCreateRequest
     public int UserId { get; set; }
 
     [Required]
+    [StringLength(100)]
+    public string CustomerName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(20)]
+    public string CustomerPhone { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(50)]
     public string PaymentMethod { get; set; } = "COD";
 

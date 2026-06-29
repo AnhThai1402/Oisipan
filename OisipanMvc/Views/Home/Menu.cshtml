@@ -9,6 +9,18 @@
         <h2 class="section-title">Menu Bánh Đặc Biệt</h2>
         <p class="section-desc">Mỗi chiếc bánh được lấy trực tiếp từ dữ liệu sản phẩm đang bán.</p>
     </div>
+
+    <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a asp-action="Menu" asp-route-categoryId="" class="btn-outline" style="padding: 0.5rem 1.5rem; text-decoration: none; border-radius: 5px; @(Model.SelectedCategoryId == null ? "background: var(--accent-green); color: white; border-color: var(--accent-green);" : "")">
+            Tất cả
+        </a>
+        @foreach (var cat in Model.Categories)
+        {
+            <a asp-action="Menu" asp-route-categoryId="@cat.CategoryId" class="btn-outline" style="padding: 0.5rem 1.5rem; text-decoration: none; border-radius: 5px; @(Model.SelectedCategoryId == cat.CategoryId ? "background: var(--accent-green); color: white; border-color: var(--accent-green);" : "")">
+                @cat.CategoryName
+            </a>
+        }
+    </div>
     <div class="menu-grid" id="products-grid">
         @await Html.PartialAsync("_ProductGrid", Model.Products)
     </div>

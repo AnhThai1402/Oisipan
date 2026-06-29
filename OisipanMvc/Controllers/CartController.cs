@@ -151,11 +151,38 @@ public class CartController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Checkout(CheckoutViewModel model, string? returnUrl = null)
     {
-        var cart = GetCart();
-        if (!cart.Items.Any())
+        List<CartItemViewModel> checkoutItems;
+
+        if (model.BuyNowProductId.HasValue && model.BuyNowProductId.Value > 0)
         {
-            TempData["CartError"] = "Giỏ hàng đang trống.";
-            return RedirectBack(returnUrl);
+            var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{model.BuyNowProductId.Value}");
+            if (product == null || product.Quantity <= 0)
+            {
+                TempData["CartError"] = "Sản phẩm không tồn tại hoặc đã hết hàng.";
+                return RedirectBack(returnUrl);
+            }
+
+            checkoutItems = new List<CartItemViewModel>
+            {
+                new CartItemViewModel
+                {
+                    ProductId = product.ProductId,
+                    Name = product.Name,
+                    UnitPrice = product.Price,
+                    Image = product.Image,
+                    Quantity = 1
+                }
+            };
+        }
+        else
+        {
+            var cart = GetCart();
+            if (!cart.Items.Any())
+            {
+                TempData["CartError"] = "Giỏ hàng đang trống.";
+                return RedirectBack(returnUrl);
+            }
+            checkoutItems = cart.Items;
         }
 
         if (!ModelState.IsValid)
@@ -172,9 +199,11 @@ public class CartController : Controller
         var request = new ApiOrderCreateRequest
         {
             UserId = userId,
+            CustomerName = model.CustomerName,
+            CustomerPhone = model.CustomerPhone,
             PaymentMethod = model.PaymentMethod,
             ShippingAddress = model.CustomerAddress,
-            Items = cart.Items.Select(item => new ApiOrderItemRequest
+            Items = checkoutItems.Select(item => new ApiOrderItemRequest
             {
                 ProductId = item.ProductId,
                 Quantity = item.Quantity
@@ -188,7 +217,11 @@ public class CartController : Controller
             return RedirectBack(returnUrl);
         }
 
-        HttpContext.Session.Remove(CartSessionKey);
+        if (!model.BuyNowProductId.HasValue || model.BuyNowProductId.Value <= 0)
+        {
+            HttpContext.Session.Remove(CartSessionKey);
+        }
+        
         TempData["CartMessage"] = "Đặt hàng thành công. Đơn hàng của bạn đã được ghi nhận.";
         return RedirectToAction("Index", "Orders");
     }

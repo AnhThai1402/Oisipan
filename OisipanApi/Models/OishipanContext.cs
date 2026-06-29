@@ -15,7 +15,8 @@ namespace Oishipan.Models
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Payment> Payments { get; set; }
-        public DbSet<Voucher> Vouchers { get; set; }
+        public virtual DbSet<Voucher> Vouchers { get; set; }
+        public virtual DbSet<UserAddress> UserAddresses { get; set; }
         public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }

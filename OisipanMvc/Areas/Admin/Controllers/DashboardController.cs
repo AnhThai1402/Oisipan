@@ -23,6 +23,16 @@ public class DashboardController : Controller
         return View(stats);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> SidebarStats()
+    {
+        var stats = await Api.GetFromJsonAsyncWithOptions<DashboardStatsDto>("api/dashboard/stats") ?? new();
+        return Json(new { 
+            todayRevenue = stats.TodayRevenue,
+            monthRevenue = stats.MonthRevenue
+        });
+    }
+
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 }
 

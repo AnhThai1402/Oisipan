@@ -28,8 +28,12 @@ namespace Oishipan.Models
 
         public string? Address { get; set; }
 
+        [StringLength(500)]
+        public string? AvatarUrl { get; set; }
+
         public bool Status { get; set; } = true;
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
     }
 }

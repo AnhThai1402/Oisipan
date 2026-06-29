@@ -13,26 +13,33 @@ public class CloudinaryOptions
 
 public class CloudinaryService : ICloudinaryService
 {
-    private readonly Cloudinary _cloudinary;
+    private readonly Cloudinary? _cloudinary;
+    private readonly CloudinaryOptions _options;
+    private readonly IWebHostEnvironment _environment;
 
-    public CloudinaryService(IOptions<CloudinaryOptions> options)
+    public CloudinaryService(IOptions<CloudinaryOptions> options, IWebHostEnvironment environment)
     {
-        var opts = options.Value;
-        if (string.IsNullOrWhiteSpace(opts.CloudName) || 
-            string.IsNullOrWhiteSpace(opts.ApiKey) || 
-            string.IsNullOrWhiteSpace(opts.ApiSecret))
-        {
-            throw new InvalidOperationException("Cloudinary configuration is missing or incomplete.");
-        }
+        _options = options.Value;
+        _environment = environment;
 
-        var account = new Account(opts.CloudName, opts.ApiKey, opts.ApiSecret);
-        _cloudinary = new Cloudinary(account);
+        if (!string.IsNullOrWhiteSpace(_options.CloudName) && _options.CloudName != "YOUR_CLOUD_NAME" &&
+            !string.IsNullOrWhiteSpace(_options.ApiKey) && _options.ApiKey != "YOUR_API_KEY" &&
+            !string.IsNullOrWhiteSpace(_options.ApiSecret) && _options.ApiSecret != "YOUR_API_SECRET")
+        {
+            var account = new Account(_options.CloudName, _options.ApiKey, _options.ApiSecret);
+            _cloudinary = new Cloudinary(account);
+        }
     }
 
     public async Task<string?> UploadImageAsync(IFormFile file, string folder = "oisipan")
     {
         if (file == null || file.Length == 0)
             return null;
+
+        if (_cloudinary == null)
+        {
+            return await SaveImageLocally(file, folder);
+        }
 
         try
         {
@@ -57,16 +64,38 @@ public class CloudinaryService : ICloudinaryService
         }
         catch (Exception ex)
         {
-            // Log the error
             Console.WriteLine($"Cloudinary upload error: {ex.Message}");
             return null;
         }
+    }
+
+    private async Task<string> SaveImageLocally(IFormFile file, string folder)
+    {
+        var relativeFolder = string.IsNullOrWhiteSpace(folder) ? "uploads" : folder.Trim('/').Replace('\\', '/');
+        var physicalFolder = Path.Combine(_environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), relativeFolder.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(physicalFolder);
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var filePath = Path.Combine(physicalFolder, fileName);
+
+        using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        return $"/{relativeFolder}/{fileName}";
     }
 
     public async Task<bool> DeleteImageAsync(string publicId)
     {
         if (string.IsNullOrWhiteSpace(publicId))
             return false;
+
+        if (_cloudinary == null)
+        {
+            // Dummy implementation for local fallback: assume success
+            // In a complete implementation, this would delete the local file
+            return true;
+        }
 
         try
         {

@@ -41,6 +41,77 @@ public class AccountsController : ControllerBase
         return Ok(accounts);
     }
 
+    [HttpGet("{id}/addresses")]
+    public async Task<IActionResult> GetAddresses(int id)
+    {
+        var addresses = await _context.UserAddresses
+            .Where(a => a.UserId == id)
+            .OrderByDescending(a => a.IsDefault)
+            .Select(a => new UserAddressResponse
+            {
+                AddressId = a.AddressId,
+                FullAddress = a.FullAddress,
+                IsDefault = a.IsDefault
+            })
+            .ToListAsync();
+
+        return Ok(addresses);
+    }
+
+    [HttpPost("{id}/addresses")]
+    public async Task<IActionResult> CreateAddress(int id, [FromBody] UserAddressCreateRequest request)
+    {
+        var accountExists = await _context.Accounts.AnyAsync(a => a.UserId == id);
+        if (!accountExists) return NotFound("Không tìm thấy tài khoản.");
+
+        // If this is the first address, or IsDefault is true, set others to false
+        var existingAddresses = await _context.UserAddresses.Where(a => a.UserId == id).ToListAsync();
+        var isFirst = existingAddresses.Count == 0;
+
+        if (request.IsDefault || isFirst)
+        {
+            foreach (var addr in existingAddresses)
+            {
+                addr.IsDefault = false;
+            }
+        }
+
+        var newAddress = new UserAddress
+        {
+            UserId = id,
+            FullAddress = request.FullAddress.Trim(),
+            IsDefault = request.IsDefault || isFirst
+        };
+
+        _context.UserAddresses.Add(newAddress);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetAddresses), new { id = id }, newAddress);
+    }
+
+    [HttpDelete("{id}/addresses/{addressId}")]
+    public async Task<IActionResult> DeleteAddress(int id, int addressId)
+    {
+        var address = await _context.UserAddresses.FirstOrDefaultAsync(a => a.UserId == id && a.AddressId == addressId);
+        if (address == null) return NotFound("Không tìm thấy địa chỉ.");
+
+        _context.UserAddresses.Remove(address);
+        await _context.SaveChangesAsync();
+
+        // If deleted address was default, make another one default if possible
+        if (address.IsDefault)
+        {
+            var firstRemaining = await _context.UserAddresses.FirstOrDefaultAsync(a => a.UserId == id);
+            if (firstRemaining != null)
+            {
+                firstRemaining.IsDefault = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AccountResponse>> GetById(int id)
     {
@@ -115,6 +186,44 @@ public class AccountsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
         {
             account.Password = _passwordHasher.HashPassword(account, request.NewPassword);
+        }
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/profile")]
+    public async Task<IActionResult> UpdateProfile(int id, UserProfileUpdateRequest request)
+    {
+        var account = await _context.Accounts.FindAsync(id);
+        if (account is null)
+        {
+            return NotFound(new { message = "Không tìm thấy người dùng." });
+        }
+
+        if (await _context.Accounts.AnyAsync(a => a.PhoneNumber == request.PhoneNumber && a.UserId != id))
+        {
+            ModelState.AddModelError(nameof(UserProfileUpdateRequest.PhoneNumber), "Số điện thoại đã được sử dụng.");
+            return ValidationProblem(ModelState);
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        if (await _context.Accounts.AnyAsync(a => a.Email == request.Email && a.UserId != id))
+        {
+            ModelState.AddModelError(nameof(UserProfileUpdateRequest.Email), "Email đã được sử dụng.");
+            return ValidationProblem(ModelState);
+        }
+
+        account.FullName = request.FullName.Trim();
+        account.PhoneNumber = request.PhoneNumber.Trim();
+        account.Email = request.Email.Trim().ToLowerInvariant();
+        if (request.AvatarUrl != null)
+        {
+            account.AvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
         }
 
         await _context.SaveChangesAsync();
@@ -196,6 +305,7 @@ public class AccountsController : ControllerBase
             PhoneNumber = account.PhoneNumber,
             Role = account.Role,
             Address = account.Address,
+            AvatarUrl = account.AvatarUrl,
             Status = account.Status,
             OrderCount = account.Orders.Count
         };
