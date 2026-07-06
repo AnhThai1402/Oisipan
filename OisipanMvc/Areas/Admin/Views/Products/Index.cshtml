@@ -51,15 +51,16 @@
     <div class="toolbar-right">
         <div class="segmented">
             <button class="active" data-filter="all"><i class="bi bi-funnel"></i> Tất cả</button>
-            <button data-filter="selling">Đang bán</button>
+            <button data-filter="selling">Đủ hàng</button>
             <button data-filter="low-stock">Sắp hết</button>
             <button data-filter="hidden">Hết hàng</button>
         </div>
     </div>
 </section>
 
+
 <section class="panel">
-    <div class="table-wrapper">
+    <div class="admin-table-wrap">
         <table class="admin-table" id="productTable">
             <thead>
                 <tr>
@@ -81,7 +82,7 @@
                         var statusText = status == "hidden" ? "Hết hàng" : status == "low-stock" ? "Sắp hết" : "Đang bán";
 
 
-                        <tr data-status="@status">
+                        <tr data-status="@status" style="cursor: pointer;" onclick="window.location='@Url.Action("Detail", "Products", new { area = "Admin", id = product.ProductId })'">
                             <td class="product-name-cell">
                                 <div class="product-list-item">
                                     @{
@@ -108,11 +109,12 @@
                             <td class="text-success">@product.Price.ToString("N0")đ</td>
                             <td>@product.Quantity</td>
                             <td><span class="status @statusClass">@statusText</span></td>
-                            <td>
+                            <td onclick="event.stopPropagation()">
                                 <div class="action-buttons product-action-buttons">
                                     <button type="button" class="icon-action" title="Chỉnh sửa tồn kho" onclick="openEditQuantityModal(@product.ProductId, '@product.ProductName', @product.Quantity)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    <a asp-area="Admin" asp-controller="Products" asp-action="Detail" asp-route-id="@product.ProductId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
                                     <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@product.ProductId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
                                     <form method="post" asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@product.ProductId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@product.ProductName');">
                                         @Html.AntiForgeryToken()
@@ -138,6 +140,7 @@
         </table>
     </div>
 </section>
+
 
 <!-- Edit Quantity Modal -->
 <div class="modal-overlay" id="editQuantityModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1001; align-items: center; justify-content: center;">
@@ -262,7 +265,9 @@
                 document.querySelectorAll('.segmented button').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 const filter = this.getAttribute('data-filter');
+
                 productRows.forEach(row => {
+
                     row.style.display = filter === 'all' || row.getAttribute('data-status') === filter ? '' : 'none';
                 });
             });
@@ -270,7 +275,9 @@
 
         document.getElementById('productSearch')?.addEventListener('input', function() {
             const keyword = this.value.toLowerCase();
+
             productRows.forEach(row => {
+
                 row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
             });
         });

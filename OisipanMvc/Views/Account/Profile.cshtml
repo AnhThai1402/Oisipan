@@ -82,7 +82,7 @@
         <form asp-action="AddAddress" asp-controller="Account" method="post">
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Tỉnh/Thành phố</label>
-                <select id="provinceSelect" class="form-control" required onchange="loadWards()">
+                <select id="provinceSelect" class="form-control" required>
                     <option value="">Chọn Tỉnh/Thành phố</option>
                 </select>
                 <input type="hidden" id="provinceName" name="province" />
@@ -90,7 +90,7 @@
 
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Phường/Xã</label>
-                <select id="wardSelect" class="form-control" required onchange="updateWardName()" disabled>
+                <select id="wardSelect" class="form-control" required disabled>
                     <option value="">Chọn Phường/Xã</option>
                 </select>
                 <input type="hidden" id="wardName" name="ward" />
@@ -110,10 +110,31 @@
 </div>
 
 @section Scripts {
+
 <script>
     const addressModal = document.getElementById('addressModal');
     const provinceSelect = document.getElementById('provinceSelect');
     const wardSelect = document.getElementById('wardSelect');
+
+    $(document).ready(function() {
+        $('#provinceSelect').select2({
+            dropdownParent: $('#addressModal'),
+            width: '100%',
+            placeholder: "Chọn Tỉnh/Thành phố",
+            language: { noResults: () => "Không tìm thấy" }
+        }).on('change', function() {
+            loadWards();
+        });
+
+        $('#wardSelect').select2({
+            dropdownParent: $('#addressModal'),
+            width: '100%',
+            placeholder: "Chọn Phường/Xã",
+            language: { noResults: () => "Không tìm thấy" }
+        }).on('change', function() {
+            updateWardName();
+        });
+    });
 
     function openAddressModal() {
         addressModal.style.display = 'flex';
@@ -133,29 +154,19 @@
         }
     }
 
-    let hanhChinhData = null;
-
-    async function fetchHanhChinhData() {
-        if (!hanhChinhData) {
-            const response = await fetch('/danhmucxaphuong.json');
-            hanhChinhData = await response.json();
-        }
-        return hanhChinhData;
-    }
-
     async function loadProvinces() {
         try {
-            const data = await fetchHanhChinhData();
-            
-            // Clear existing options except the first one
+            const data = await fetchAllProvinces();
+            if(!data) return;
             provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
             
             data.forEach(p => {
                 const option = document.createElement('option');
-                option.value = p.matinhTMS;
-                option.textContent = p.tentinhmoi;
+                option.value = p.code;
+                option.textContent = p.name;
                 provinceSelect.appendChild(option);
             });
+            $('#provinceSelect').trigger('change.select2');
         } catch (error) {
             console.error('Error loading provinces:', error);
             alert('Không thể tải danh sách tỉnh thành.');
@@ -172,17 +183,17 @@
         document.getElementById('provinceName').value = provinceSelect.options[provinceSelect.selectedIndex].text;
 
         try {
-            const data = await fetchHanhChinhData();
-            const province = data.find(p => p.matinhTMS === code);
+            const wards = await fetchProvinceWards(code);
             
-            if (province && province.phuongxa) {
-                province.phuongxa.forEach(w => {
+            if (wards) {
+                wards.forEach(w => {
                     const option = document.createElement('option');
-                    option.value = w.maphuongxa;
-                    option.textContent = w.tenphuongxa;
+                    option.value = w.code;
+                    option.textContent = w.name;
                     wardSelect.appendChild(option);
                 });
                 wardSelect.disabled = false;
+                $('#wardSelect').prop('disabled', false).trigger('change.select2');
             }
         } catch (error) {
             console.error('Error loading wards:', error);
