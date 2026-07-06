@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Oishipan.Services;
 
 namespace Oishipan.Controllers;
@@ -8,10 +9,17 @@ namespace Oishipan.Controllers;
 public class UploadController : ControllerBase
 {
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly IWebHostEnvironment _environment;
+    private readonly CloudinaryOptions _cloudinaryOptions;
 
-    public UploadController(ICloudinaryService cloudinaryService)
+    public UploadController(
+        ICloudinaryService cloudinaryService,
+        IWebHostEnvironment environment,
+        IOptions<CloudinaryOptions> cloudinaryOptions)
     {
         _cloudinaryService = cloudinaryService;
+        _environment = environment;
+        _cloudinaryOptions = cloudinaryOptions.Value;
     }
 
     [HttpPost("image")]
@@ -40,11 +48,33 @@ public class UploadController : ControllerBase
 
         try
         {
-            var imageUrl = await _cloudinaryService.UploadImageAsync(file, folder ?? "oisipan");
-            
+            string? imageUrl = null;
+            if (!string.IsNullOrWhiteSpace(_cloudinaryOptions.CloudName) &&
+                !string.IsNullOrWhiteSpace(_cloudinaryOptions.ApiKey) &&
+                !string.IsNullOrWhiteSpace(_cloudinaryOptions.ApiSecret))
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(file, folder ?? "oisipan");
+            }
+
             if (string.IsNullOrEmpty(imageUrl))
             {
-                return StatusCode(500, new { message = "Không thể tải ảnh lên. Vui lòng thử lại." });
+                // Fallback to local storage when Cloudinary is not configured or upload fails.
+                var uploadDir = Path.Combine(_environment.WebRootPath ?? string.Empty, "uploads");
+                Directory.CreateDirectory(uploadDir);
+
+                var fileName = Path.GetFileNameWithoutExtension(file.FileName);
+                var fileExt = Path.GetExtension(file.FileName);
+                var safeName = string.Concat(fileName.Where(c => !Path.GetInvalidFileNameChars().Contains(c))).Trim();
+                if (string.IsNullOrWhiteSpace(safeName)) safeName = "image";
+                var uniqueFileName = $"{safeName}_{Guid.NewGuid():N}{fileExt}";
+                var filePath = Path.Combine(uploadDir, uniqueFileName);
+
+                await using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(fileStream);
+                }
+
+                imageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{uniqueFileName}";
             }
 
             return Ok(new UploadResponse

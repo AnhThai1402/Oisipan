@@ -8,7 +8,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class VouchersController : Controller
+public class VouchersController : AdminBaseController
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -44,7 +44,7 @@ public class VouchersController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Tạo voucher thành công";
+        SetFlashMessage("Tạo voucher thành công", "create");
         return RedirectToAction("Index");
     }
 
@@ -74,7 +74,7 @@ public class VouchersController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Cập nhật voucher thành công";
+        SetFlashMessage("Cập nhật voucher thành công", "edit");
         return RedirectToAction("Index");
     }
 
@@ -90,9 +90,9 @@ public class VouchersController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var response = await Api.DeleteAsync($"api/vouchers/{id}");
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Xóa voucher thành công"
-            : "Không thể xóa voucher";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Xóa voucher thành công" : "Không thể xóa voucher.",
+            response.IsSuccessStatusCode ? "delete" : "error");
 
         return RedirectToAction("Index");
     }

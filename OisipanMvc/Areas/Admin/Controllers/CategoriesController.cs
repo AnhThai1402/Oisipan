@@ -9,7 +9,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class CategoriesController : Controller
+public class CategoriesController : AdminBaseController
 {
     private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private readonly IHttpClientFactory _httpClientFactory;
@@ -42,9 +42,9 @@ public class CategoriesController : Controller
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
         var response = await Api.PostAsJsonAsync("api/categories", ToRequest(model));
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Tạo danh mục thành công"
-            : "Không thể tạo danh mục";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Tạo danh mục thành công" : "Không thể tạo danh mục. Vui lòng kiểm tra lại dữ liệu.",
+            response.IsSuccessStatusCode ? "create" : "error");
 
         return response.IsSuccessStatusCode ? RedirectToAction(nameof(Index)) : View("CreateEdit", model);
     }
@@ -65,9 +65,9 @@ public class CategoriesController : Controller
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
         var response = await Api.PutAsJsonAsync($"api/categories/{id}", ToRequest(model));
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Cập nhật danh mục thành công"
-            : "Không thể cập nhật danh mục";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Cập nhật danh mục thành công" : "Không thể cập nhật danh mục. Vui lòng kiểm tra lại dữ liệu.",
+            response.IsSuccessStatusCode ? "edit" : "error");
 
         return response.IsSuccessStatusCode ? RedirectToAction(nameof(Index)) : View("CreateEdit", model);
     }
@@ -84,9 +84,9 @@ public class CategoriesController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var response = await Api.DeleteAsync($"api/categories/{id}");
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Xóa danh mục thành công"
-            : "Không thể xóa danh mục đang có sản phẩm";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Xóa danh mục thành công" : "Không thể xóa danh mục đang có sản phẩm.",
+            response.IsSuccessStatusCode ? "delete" : "warning");
 
         return RedirectToAction(nameof(Index));
     }

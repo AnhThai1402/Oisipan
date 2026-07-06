@@ -8,7 +8,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class OrdersController : Controller
+public class OrdersController : AdminBaseController
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -43,9 +43,9 @@ public class OrdersController : Controller
     public async Task<IActionResult> UpdateStatus(int id, string status)
     {
         var response = await Api.PatchAsJsonAsyncWithOptions($"api/orders/{id}/status", new { status });
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Cập nhật trạng thái đơn hàng thành công."
-            : "Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại.";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Cập nhật trạng thái đơn hàng thành công." : "Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại.",
+            response.IsSuccessStatusCode ? "edit" : "error");
 
         return RedirectToAction(nameof(Detail), new { id });
     }
@@ -57,9 +57,11 @@ public class OrdersController : Controller
         var response = await Api.PatchAsJsonAsyncWithOptions($"api/orders/cancellation-request/{cancellationRequestId}/respond", 
             new { isApproved = approve, adminNote = adminNote });
         
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? (approve ? "Yêu cầu hủy đơn đã được chấp nhận." : "Yêu cầu hủy đơn đã bị từ chối.")
-            : "Không thể xử lý yêu cầu. Vui lòng thử lại.";
+        SetFlashMessage(
+            response.IsSuccessStatusCode
+                ? (approve ? "Yêu cầu hủy đơn đã được chấp nhận." : "Yêu cầu hủy đơn đã bị từ chối.")
+                : "Không thể xử lý yêu cầu. Vui lòng thử lại.",
+            response.IsSuccessStatusCode ? "edit" : "error");
 
         return RedirectToAction(nameof(Detail), new { id = orderId });
     }

@@ -10,7 +10,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class UsersController : Controller
+public class UsersController : AdminBaseController
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -28,7 +28,7 @@ public class UsersController : Controller
         }
         catch (HttpRequestException)
         {
-            TempData["Message"] = "Không kết nối được API người dùng.";
+            SetFlashMessage("Không kết nối được API người dùng.", "error");
             return View(new List<UserAdminViewModel>());
         }
     }
@@ -52,13 +52,13 @@ public class UsersController : Controller
         var model = await GetUser(id);
         if (model is null)
         {
-            TempData["Message"] = "Không tìm thấy người dùng.";
+            SetFlashMessage("Không tìm thấy người dùng.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
         if (IsAdmin(model))
         {
-            TempData["Message"] = "Không thể chỉnh sửa tài khoản quản trị viên.";
+            SetFlashMessage("Không thể chỉnh sửa tài khoản quản trị viên.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
@@ -80,13 +80,13 @@ public class UsersController : Controller
         var existing = await GetUser(id);
         if (existing is null)
         {
-            TempData["Message"] = "Không tìm thấy người dùng.";
+            SetFlashMessage("Không tìm thấy người dùng.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
         if (IsAdmin(existing))
         {
-            TempData["Message"] = "Không thể chỉnh sửa tài khoản quản trị viên.";
+            SetFlashMessage("Không thể chỉnh sửa tài khoản quản trị viên.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
@@ -97,7 +97,7 @@ public class UsersController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Cập nhật tài khoản thành công.";
+        SetFlashMessage("Cập nhật tài khoản thành công.", "edit");
         return RedirectToAction(nameof(Index));
     }
 
@@ -106,7 +106,7 @@ public class UsersController : Controller
         var model = await GetUser(id);
         if (model is null)
         {
-            TempData["Message"] = "Không tìm thấy người dùng.";
+            SetFlashMessage("Không tìm thấy người dùng.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
@@ -120,24 +120,24 @@ public class UsersController : Controller
         var existing = await GetUser(id);
         if (existing is null)
         {
-            TempData["Message"] = "Không tìm thấy người dùng.";
+            SetFlashMessage("Không tìm thấy người dùng.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
         if (IsAdmin(existing))
         {
-            TempData["Message"] = "Không thể xóa tài khoản quản trị viên.";
+            SetFlashMessage("Không thể xóa tài khoản quản trị viên.", "warning");
             return RedirectToAction(nameof(Index));
         }
 
         var response = await Api.DeleteAsync($"api/accounts/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Message"] = await ReadApiMessage(response) ?? "Không thể xóa tài khoản.";
+            SetFlashMessage(await ReadApiMessage(response) ?? "Không thể xóa tài khoản.", "error");
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["Message"] = "Xóa tài khoản thành công.";
+        SetFlashMessage("Xóa tài khoản thành công.", "delete");
         return RedirectToAction(nameof(Index));
     }
 

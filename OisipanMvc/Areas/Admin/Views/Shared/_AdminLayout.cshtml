@@ -65,6 +65,34 @@
         </header>
 
         <main class="admin-content">
+            @if (TempData["AdminMessage"] is string adminMessage && !string.IsNullOrWhiteSpace(adminMessage))
+            {
+                var messageType = TempData["AdminMessageType"]?.ToString() ?? "success";
+                var icon = messageType switch
+                {
+                    "error" => "bi bi-exclamation-triangle-fill",
+                    "warning" => "bi bi-exclamation-circle-fill",
+                    "create" => "bi bi-plus-circle-fill",
+                    "edit" => "bi bi-pencil-square",
+                    "delete" => "bi bi-trash3-fill",
+                    _ => "bi bi-check-circle-fill"
+                };
+                var cssClass = messageType switch
+                {
+                    "error" => "alert-error",
+                    "warning" => "alert-warning",
+                    "create" => "alert-create",
+                    "edit" => "alert-edit",
+                    "delete" => "alert-delete",
+                    _ => "alert-success"
+                };
+                <div class="alert @cssClass" role="status" data-admin-flash>
+                    <i class="@icon"></i>
+                    <div class="alert-content">
+                        <strong>@adminMessage</strong>
+                    </div>
+                </div>
+            }
             @RenderBody()
         </main>
     </div>

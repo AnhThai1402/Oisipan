@@ -1,3 +1,5 @@
+using System.IO;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FrontendMvc.Extensions;
@@ -11,7 +13,7 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class ProductsController : Controller
+public class ProductsController : AdminBaseController
 {
     private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private readonly IHttpClientFactory _httpClientFactory;
@@ -97,7 +99,7 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Tạo sản phẩm thành công";
+        SetFlashMessage("Tạo sản phẩm thành công", "create");
         return RedirectToAction(nameof(Index));
     }
 
@@ -136,7 +138,7 @@ public class ProductsController : Controller
             return View("CreateEdit", model);
         }
 
-        TempData["Message"] = "Cập nhật sản phẩm thành công";
+        SetFlashMessage("Cập nhật sản phẩm thành công", "edit");
         return RedirectToAction(nameof(Index));
     }
 
@@ -152,9 +154,9 @@ public class ProductsController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var response = await Api.DeleteAsync($"api/products/{id}");
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Xóa sản phẩm thành công"
-            : "Không thể xóa sản phẩm";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Xóa sản phẩm thành công" : "Không thể xóa sản phẩm.",
+            response.IsSuccessStatusCode ? "delete" : "error");
 
         return RedirectToAction(nameof(Index));
     }
@@ -174,9 +176,9 @@ public class ProductsController : Controller
         product.Quantity = quantity;
         var response = await Api.PutAsJsonAsync($"api/products/{id}", product);
 
-        TempData["Message"] = response.IsSuccessStatusCode
-            ? "Cập nhật tồn kho thành công."
-            : "Không thể cập nhật. Vui lòng thử lại.";
+        SetFlashMessage(
+            response.IsSuccessStatusCode ? "Cập nhật tồn kho thành công." : "Không thể cập nhật. Vui lòng thử lại.",
+            response.IsSuccessStatusCode ? "edit" : "error");
 
         return RedirectToAction(nameof(Index));
     }

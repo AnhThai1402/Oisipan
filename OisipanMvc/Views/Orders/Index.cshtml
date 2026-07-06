@@ -46,6 +46,42 @@
                                 </a>
                             </td>
                         </tr>
+                        <tr class="order-progress-row">
+                            <td colspan="7">
+                                <div class="shipping-progress-card" data-status="@order.Status">
+                                    <div class="shipping-progress-header">
+                                        <div>
+                                            <div class="shipping-progress-title">Tiến trình giao hàng</div>
+                                            <div class="shipping-progress-subtitle" data-progress-label>Đang xử lý</div>
+                                        </div>
+                                        <span class="shipping-badge" data-progress-badge>@order.Status</span>
+                                    </div>
+
+                                    <div class="shipping-steps">
+                                        <div class="shipping-step" data-step="1">
+                                            <i class="bi shipping-step-icon bi-clock-fill"></i>
+                                            <span class="shipping-step-label">Chờ xác nhận</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="2">
+                                            <i class="bi shipping-step-icon bi-check-circle-fill"></i>
+                                            <span class="shipping-step-label">Đã xác nhận</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="3">
+                                            <i class="bi shipping-step-icon bi-box-seam"></i>
+                                            <span class="shipping-step-label">Đang chuẩn bị</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="4">
+                                            <i class="bi shipping-step-icon bi-truck"></i>
+                                            <span class="shipping-step-label">Đang giao</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="5">
+                                            <i class="bi shipping-step-icon bi-house-check"></i>
+                                            <span class="shipping-step-label">Đã giao</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
                     }
                 }
                 else
@@ -65,22 +101,6 @@
     </div>
 </section>
 
-<style>
-    .btn-small {
-        display: inline-block;
-        background: var(--accent-green);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-
-    .btn-small:hover {
-        background: #155a3e;
-        transform: translateY(-2px);
-    }
-</style>
+<link rel="stylesheet" href="~/css/orders-history.css" />
+<script src="~/js/orders-history.js"></script>
 
