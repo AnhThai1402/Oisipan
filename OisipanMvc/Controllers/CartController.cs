@@ -23,7 +23,7 @@ public class CartController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Add(int productId, string? returnUrl = null)
     {
-        var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{productId}");
+        var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
         if (product is null || product.Quantity <= 0)
         {
             TempData["CartError"] = "Sản phẩm không tồn tại hoặc đã hết hàng.";
@@ -80,7 +80,7 @@ public class CartController : Controller
         }
         else
         {
-            var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{productId}");
+            var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
             if (product is null || product.Quantity <= 0)
             {
                 cart.Items.Remove(item);

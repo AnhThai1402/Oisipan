@@ -101,6 +101,9 @@ D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.pdb
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\FrontendMvc.genruntimeconfig.cache
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\ref\FrontendMvc.dll
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-buqtfv94a4-buqtfv94a4.gz
-D:\DATN\Oisipan\OisipanMvc\bin\Debug\net10.0\FrontendMvc.exe
 D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\iime52hb37-{0}-a92effd66e-a92effd66e.gz
-D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\dtfjckkem7-{0}-qexs71lgug-qexs71lgug.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\2i8g8sg97b-{0}-aprfqljbkr-aprfqljbkr.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\8pxal1ikgp-{0}-ua5hzrhp90-ua5hzrhp90.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\lxx1940wyn-{0}-fvjeh2lxjv-fvjeh2lxjv.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\o6gshzje09-{0}-ph3xjgmgbp-ph3xjgmgbp.gz
+D:\DATN\Oisipan\OisipanMvc\obj\Debug\net10.0\compressed\dtfjckkem7-{0}-q6vbatbv5a-q6vbatbv5a.gz

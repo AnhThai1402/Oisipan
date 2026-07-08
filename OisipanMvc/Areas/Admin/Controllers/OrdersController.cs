@@ -38,6 +38,45 @@ public class OrdersController : AdminBaseController
         return View(order);
     }
 
+    public async Task<IActionResult> Print(int id, bool print = false, bool download = false)
+    {
+        var order = await Api.GetFromJsonAsyncWithOptions<OrderAdminViewModel>($"api/orders/admin/{id}");
+        if (order is null)
+        {
+            return NotFound();
+        }
+
+        if (print)
+        {
+            ViewData["AutoPrint"] = true;
+        }
+
+        if (download)
+        {
+            ViewData["AutoDownload"] = true;
+        }
+
+        return View("~/Views/Orders/Invoice.cshtml", order);
+    }
+
+    public async Task<IActionResult> DownloadInvoice(int id)
+    {
+        var order = await Api.GetFromJsonAsyncWithOptions<OrderAdminViewModel>($"api/orders/admin/{id}");
+        if (order is null)
+        {
+            return NotFound();
+        }
+
+        var response = await Api.GetAsync($"api/orders/{id}/invoice.pdf");
+        if (!response.IsSuccessStatusCode)
+        {
+            return StatusCode((int)response.StatusCode);
+        }
+
+        var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+        return File(pdfBytes, "application/pdf", $"OP-{id:0000}-invoice.pdf");
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, string status)

@@ -1,4 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using QuestPDF.Drawing;
+using QuestPDF.Elements;
+using System.IO;
+using ZXing;
+using ZXing.Common;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using Microsoft.EntityFrameworkCore;
 using Oishipan.DTOs;
 using Oishipan.Models;
@@ -20,10 +30,12 @@ public class OrdersController : ControllerBase
     };
 
     private readonly OishipanContext _context;
+    private readonly IConfiguration _config;
 
-    public OrdersController(OishipanContext context)
+    public OrdersController(OishipanContext context, IConfiguration config)
     {
         _context = context;
+        _config = config;
     }
 
     [HttpGet]
@@ -31,10 +43,29 @@ public class OrdersController : ControllerBase
     {
         var orders = await BuildOrderQuery()
             .OrderByDescending(o => o.OrderDate)
-            .Select(o => ToResponse(o))
             .ToListAsync();
 
-        return Ok(orders);
+        return Ok(orders.Select(order => new OrderResponse
+        {
+            OrderId = order.OrderId,
+            UserId = order.UserId,
+            CustomerName = order.Account?.FullName,
+            CustomerPhone = order.Account?.PhoneNumber,
+            ShippingAddress = order.ShippingAddress,
+            OrderDate = order.OrderDate,
+            TotalAmount = order.TotalAmount,
+            Status = order.Status,
+            PaymentMethod = order.PaymentMethod,
+            Items = order.OrderDetails.Select(item => new OrderDetailResponse
+            {
+                OrderDetailId = item.OrderDetailId,
+                ProductId = item.ProductId,
+                ProductName = item.Product?.Name,
+                Price = item.Price,
+                Quantity = item.Quantity,
+                Note = item.Note
+            }).ToList()
+        }).ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -90,10 +121,29 @@ public class OrdersController : ControllerBase
         var orders = await BuildOrderQuery()
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.OrderDate)
-            .Select(o => ToResponse(o))
             .ToListAsync();
 
-        return Ok(orders);
+        return Ok(orders.Select(order => new OrderResponse
+        {
+            OrderId = order.OrderId,
+            UserId = order.UserId,
+            CustomerName = order.Account?.FullName,
+            CustomerPhone = order.Account?.PhoneNumber,
+            ShippingAddress = order.ShippingAddress,
+            OrderDate = order.OrderDate,
+            TotalAmount = order.TotalAmount,
+            Status = order.Status,
+            PaymentMethod = order.PaymentMethod,
+            Items = order.OrderDetails.Select(item => new OrderDetailResponse
+            {
+                OrderDetailId = item.OrderDetailId,
+                ProductId = item.ProductId,
+                ProductName = item.Product?.Name,
+                Price = item.Price,
+                Quantity = item.Quantity,
+                Note = item.Note
+            }).ToList()
+        }).ToList());
     }
 
     [HttpPost]
@@ -323,57 +373,387 @@ public class OrdersController : ControllerBase
         return Ok(vouchers);
     }
 
-    private async Task AssignVoucherToUser(int userId)
+    [HttpGet("{id:int}/invoice.pdf")]
+    public async Task<IActionResult> GetInvoicePdf(int id)
     {
         try
         {
-            // Create or get the reward voucher for purchases
-            const string rewardVoucherCode = "NEXTBUY";
-            
-            var rewardVoucher = await _context.Vouchers
-                .FirstOrDefaultAsync(v => v.Code == rewardVoucherCode && v.Status == "Active");
+            // Ensure QuestPDF license is configured
+            QuestPDF.Settings.License = LicenseType.Community;
 
-            if (rewardVoucher is null)
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == id);
+
+            if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+            var model = await ToAdminResponse(order, account);
+
+            // Generate PDF using QuestPDF
+            DocumentMetadata meta = new DocumentMetadata { Title = $"Invoice_OP_{model.OrderId:0000}" };
+
+            byte[] pdfBytes = Document.Create(container =>
+        {
+            container.Page(page =>
             {
-                // Create reward voucher if not exists
-                rewardVoucher = new Voucher
+                page.Size(PageSizes.A4);
+                page.Margin(20);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(12));
+
+                page.Header().Row(row =>
                 {
-                    Code = rewardVoucherCode,
-                    DiscountValue = 30000, // 30k discount for next purchase
-                    MinimumItems = 0, // No minimum items required
-                    ExpiryDate = DateTime.Now.AddDays(90), // Valid for 90 days
-                    CreatedDate = DateTime.Now,
-                    Status = "Active"
-                };
-                _context.Vouchers.Add(rewardVoucher);
-                await _context.SaveChangesAsync();
-            }
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Oisipan").FontSize(20).SemiBold().FontColor(Colors.Black);
+                        col.Item().Text("Địa chỉ: Số 1, Phố A, Thành phố").FontSize(10).FontColor(Colors.Grey.Darken2);
+                        col.Item().Text("Hotline: 0123-456-789").FontSize(10).FontColor(Colors.Grey.Darken2);
+                    });
+                    row.ConstantItem(160).AlignRight().Column(col =>
+                    {
+                        col.Item().Text($"HÓA ĐƠN BÁN HÀNG").FontSize(14).SemiBold();
+                        col.Item().Text($"Mã: OP-{model.OrderId:0000}").FontSize(12);
+                        col.Item().Text($"Ngày: {model.OrderDate:dd/MM/yyyy HH:mm}").FontSize(12);
+                    });
+                });
 
-            // Check if user already has this voucher (can have multiple if already used some)
-            var userVoucher = new UserVoucher
-            {
-                UserId = userId,
-                VoucherId = rewardVoucher.VoucherId,
-                AssignedDate = DateTime.Now,
-                IsUsed = false
-            };
+                // Prepare barcode image bytes (Code128)
+                byte[] barcodeBytes = Array.Empty<byte>();
+                try
+                {
+                    var writer = new BarcodeWriterPixelData
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions
+                        {
+                            Height = 60,
+                            Width = 300,
+                            Margin = 2
+                        }
+                    };
+                    var pixel = writer.Write($"OP-{model.OrderId:0000}");
+                    try
+                    {
+                        var width = pixel.Width;
+                        var height = pixel.Height;
+                        var src = pixel.Pixels; // expected RGB24
+                        var rgba = new Rgba32[width * height];
+                        for (int i = 0, p = 0; i < rgba.Length; i++, p += 3)
+                        {
+                            rgba[i] = new Rgba32(src[p], src[p + 1], src[p + 2], 255);
+                        }
+                        using var img = SixLabors.ImageSharp.Image.LoadPixelData<Rgba32>(rgba, width, height);
+                        using var msBar = new MemoryStream();
+                        img.SaveAsPng(msBar);
+                        barcodeBytes = msBar.ToArray();
+                    }
+                    catch
+                    {
+                        barcodeBytes = Array.Empty<byte>();
+                    }
+                }
+                catch
+                {
+                    barcodeBytes = Array.Empty<byte>();
+                }
 
-            _context.UserVouchers.Add(userVoucher);
-            await _context.SaveChangesAsync();
+                page.Content().Column(col =>
+                {
+                    col.Spacing(10);
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c=>{
+                            c.Item().Text("Khách hàng").SemiBold();
+                            c.Item().Text(model.CustomerName);
+                            c.Item().Text(model.CustomerPhone);
+                            c.Item().Text(model.ShippingAddress);
+                        });
+                        r.ConstantItem(160).Column(c=>{
+                            c.Item().Text("Thanh toán").SemiBold();
+                            c.Item().Text($"Phương thức: {model.PaymentMethod}");
+                            c.Item().Text($"Trạng thái: {model.Status}");
+                        });
+                    });
+
+                    col.Item().Element(e =>
+                    {
+                        e.Container().Background(Colors.Grey.Lighten3).Padding(6).Row(r =>
+                        {
+                            r.RelativeItem().Text("Sản phẩm").SemiBold();
+                            r.ConstantItem(50).Text("SL").SemiBold().AlignCenter();
+                            r.ConstantItem(100).Text("Giá").SemiBold().AlignRight();
+                            r.ConstantItem(100).Text("Thành tiền").SemiBold().AlignRight();
+                        });
+                    });
+
+                    foreach(var item in model.Items)
+                    {
+                        col.Item().Row(r=>{
+                            r.RelativeItem().Text(item.ProductName);
+                            r.ConstantItem(50).AlignCenter().Text(item.Quantity.ToString());
+                            r.ConstantItem(100).AlignRight().Text(item.Price.ToString("N0") + "đ");
+                            r.ConstantItem(100).AlignRight().Text((item.Price*item.Quantity).ToString("N0") + "đ");
+                        });
+                    }
+
+                    col.Item().Row(r=>{
+                        r.RelativeItem().Column(cc=>{
+                            cc.Item().Text($"Tạm tính: {model.TotalAmount:N0}đ");
+                            if(model.DiscountAmount > 0) cc.Item().Text($"Giảm giá: -{model.DiscountAmount:N0}đ");
+                        });
+                        r.ConstantItem(320).AlignRight().Column(cc=>{
+                            cc.Item().Text($"Tổng: {model.FinalAmount:N0}đ").FontSize(14).SemiBold();
+                            if(barcodeBytes.Length>0) cc.Item().Element(e => e.Image(barcodeBytes));
+                        });
+                    });
+                });
+
+                page.Footer().AlignCenter().Text("Cảm ơn quý khách! Hẹn gặp lại.");
+            });
+        }).GeneratePdf();
+
+        // Save to wwwroot/invoices
+        try
+        {
+            var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var invoicesDir = Path.Combine(webRoot, "invoices");
+            if (!Directory.Exists(invoicesDir)) Directory.CreateDirectory(invoicesDir);
+            var fileName = $"invoice-OP-{model.OrderId:0000}.pdf";
+            var filePath = Path.Combine(invoicesDir, fileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+        }
+        catch
+        {
+            // ignore save errors
+        }
+
+            var downloadName = $"OP-{model.OrderId:0000}-invoice.pdf";
+            return File(pdfBytes, "application/pdf", downloadName);
         }
         catch (Exception ex)
         {
-            // Log exception but don't fail the order creation
-            Console.WriteLine($"Error assigning voucher to user {userId}: {ex.Message}");
+            Console.WriteLine($"PDF generation error: {ex.Message}\n{ex.StackTrace}");
+            return StatusCode(500, new { message = "Lỗi khi tạo PDF hóa đơn: " + ex.Message });
         }
+    }
+
+    [HttpPost("{id:int}/send-invoice")]
+    public async Task<IActionResult> SendInvoice(int id, [FromBody] SendInvoiceRequest request)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+            .FirstOrDefaultAsync(o => o.OrderId == id);
+
+        if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+        var model = await ToAdminResponse(order, account);
+
+        // generate pdf bytes using same inline generator
+        DocumentMetadata meta = new DocumentMetadata { Title = $"Invoice_OP_{model.OrderId:0000}" };
+
+        byte[] pdfBytes = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(20);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(12));
+
+                page.Header().Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Oisipan").FontSize(20).SemiBold().FontColor(Colors.Black);
+                        col.Item().Text("Địa chỉ: Số 1, Phố A, Thành phố").FontSize(10).FontColor(Colors.Grey.Darken2);
+                        col.Item().Text("Hotline: 0123-456-789").FontSize(10).FontColor(Colors.Grey.Darken2);
+                    });
+                    row.ConstantItem(160).AlignRight().Column(col =>
+                    {
+                        col.Item().Text($"HÓA ĐƠN BÁN HÀNG").FontSize(14).SemiBold();
+                        col.Item().Text($"Mã: OP-{model.OrderId:0000}").FontSize(12);
+                        col.Item().Text($"Ngày: {model.OrderDate:dd/MM/yyyy HH:mm}").FontSize(12);
+                    });
+                });
+
+                // Prepare barcode image bytes (Code128)
+                byte[] barcodeBytes = Array.Empty<byte>();
+                try
+                {
+                    var writer = new BarcodeWriterPixelData
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions
+                        {
+                            Height = 60,
+                            Width = 300,
+                            Margin = 2
+                        }
+                    };
+                    var pixel = writer.Write($"OP-{model.OrderId:0000}");
+                    try
+                    {
+                        var width = pixel.Width;
+                        var height = pixel.Height;
+                        var src = pixel.Pixels; // expected RGB24
+                        var rgba = new Rgba32[width * height];
+                        for (int i = 0, p = 0; i < rgba.Length; i++, p += 3)
+                        {
+                            rgba[i] = new Rgba32(src[p], src[p + 1], src[p + 2], 255);
+                        }
+                        using var img = SixLabors.ImageSharp.Image.LoadPixelData<Rgba32>(rgba, width, height);
+                        using var msBar = new MemoryStream();
+                        img.SaveAsPng(msBar);
+                        barcodeBytes = msBar.ToArray();
+                    }
+                    catch
+                    {
+                        barcodeBytes = Array.Empty<byte>();
+                    }
+                }
+                catch
+                {
+                    barcodeBytes = Array.Empty<byte>();
+                }
+
+                page.Content().Column(col =>
+                {
+                    col.Spacing(10);
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c=>{
+                            c.Item().Text("Khách hàng").SemiBold();
+                            c.Item().Text(model.CustomerName);
+                            c.Item().Text(model.CustomerPhone);
+                            c.Item().Text(model.ShippingAddress);
+                        });
+                        r.ConstantItem(160).Column(c=>{
+                            c.Item().Text("Thanh toán").SemiBold();
+                            c.Item().Text($"Phương thức: {model.PaymentMethod}");
+                            c.Item().Text($"Trạng thái: {model.Status}");
+                        });
+                    });
+
+                    col.Item().Element(e =>
+                    {
+                        e.Container().Background(Colors.Grey.Lighten3).Padding(6).Row(r =>
+                        {
+                            r.RelativeItem().Text("Sản phẩm").SemiBold();
+                            r.ConstantItem(50).Text("SL").SemiBold().AlignCenter();
+                            r.ConstantItem(100).Text("Giá").SemiBold().AlignRight();
+                            r.ConstantItem(100).Text("Thành tiền").SemiBold().AlignRight();
+                        });
+                    });
+
+                    foreach(var item in model.Items)
+                    {
+                        col.Item().Row(r=>{
+                            r.RelativeItem().Text(item.ProductName);
+                            r.ConstantItem(50).AlignCenter().Text(item.Quantity.ToString());
+                            r.ConstantItem(100).AlignRight().Text(item.Price.ToString("N0") + "đ");
+                            r.ConstantItem(100).AlignRight().Text((item.Price*item.Quantity).ToString("N0") + "đ");
+                        });
+                    }
+
+                    col.Item().Row(r=>{
+                        r.RelativeItem().Column(cc=>{
+                            cc.Item().Text($"Tạm tính: {model.TotalAmount:N0}đ");
+                            if(model.DiscountAmount > 0) cc.Item().Text($"Giảm giá: -{model.DiscountAmount:N0}đ");
+                        });
+                        r.ConstantItem(320).AlignRight().Column(cc=>{
+                            cc.Item().Text($"Tổng: {model.FinalAmount:N0}đ").FontSize(14).SemiBold();
+                            if(barcodeBytes.Length>0) cc.Item().Element(e => e.Image(barcodeBytes));
+                        });
+                    });
+                });
+
+                page.Footer().AlignCenter().Text("Cảm ơn quý khách! Hẹn gặp lại.");
+            });
+        }).GeneratePdf();
+
+        // Save to wwwroot/invoices
+        string savedRelativePath = string.Empty;
+        InvoiceRecord rec = new InvoiceRecord { OrderId = model.OrderId, CreatedDate = DateTime.Now };
+        try
+        {
+            var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var invoicesDir = Path.Combine(webRoot, "invoices");
+            if (!Directory.Exists(invoicesDir)) Directory.CreateDirectory(invoicesDir);
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"invoice-OP-{model.OrderId:0000}-{timestamp}.pdf";
+            var filePath = Path.Combine(invoicesDir, fileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+            savedRelativePath = Path.Combine("invoices", fileName);
+            if (request.SaveCopy)
+            {
+                rec.FilePath = savedRelativePath;
+                rec.Email = request.Email;
+                _context.InvoiceRecords.Add(rec);
+                await _context.SaveChangesAsync();
+            }
+        }
+        catch
+        {
+        }
+
+        if (request.AttachPdf && !string.IsNullOrWhiteSpace(request.Email))
+        {
+            try
+            {
+                var smtpSection = _config.GetSection("Smtp");
+                var host = smtpSection.GetValue<string>("Host");
+                var port = smtpSection.GetValue<int>("Port");
+                var user = smtpSection.GetValue<string>("User");
+                var pass = smtpSection.GetValue<string>("Pass");
+                var from = smtpSection.GetValue<string>("From");
+
+                using var msg = new System.Net.Mail.MailMessage();
+                msg.From = new System.Net.Mail.MailAddress(from ?? user ?? "noreply@example.com", "Oisipan");
+                msg.To.Add(request.Email);
+                msg.Subject = $"Hóa đơn OP-{model.OrderId:0000}";
+                msg.Body = string.IsNullOrWhiteSpace(request.Message) ? "Vui lòng xem hóa đơn đính kèm." : request.Message;
+                msg.IsBodyHtml = false;
+
+                if (pdfBytes != null && pdfBytes.Length > 0)
+                {
+                    var ms = new MemoryStream(pdfBytes);
+                    var attach = new System.Net.Mail.Attachment(ms, $"OP-{model.OrderId:0000}-invoice.pdf", "application/pdf");
+                    msg.Attachments.Add(attach);
+                }
+
+                using var client = new System.Net.Mail.SmtpClient(host, port);
+                client.EnableSsl = smtpSection.GetValue<bool>("EnableSsl");
+                if (!string.IsNullOrEmpty(user)) client.Credentials = new System.Net.NetworkCredential(user, pass);
+                client.Send(msg);
+
+                // mark as sent
+                if (request.SaveCopy)
+                {
+                    rec.EmailSent = true;
+                    rec.SentAt = DateTime.Now;
+                    _context.InvoiceRecords.Update(rec);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Gửi email thất bại.", detail = ex.Message });
+            }
+        }
+
+        return Ok(new { message = "Invoice processed.", path = savedRelativePath });
     }
 
     private IQueryable<Order> BuildOrderQuery()
     {
         return _context.Orders
-            .Include(o => o.Account)
             .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.Product);
+                .ThenInclude(od => od.Product)
+            .Include(o => o.Account);
     }
 
     private static OrderResponse ToResponse(Order order)
@@ -403,31 +783,24 @@ public class OrdersController : ControllerBase
 
     private async Task<AdminOrderResponse> ToAdminResponse(Order order, Account? account = null)
     {
-        // Get voucher information if used in this order
-        var userVoucher = await _context.UserVouchers
-            .Include(uv => uv.Voucher)
-            .FirstOrDefaultAsync(uv => uv.UsedInOrderId == order.OrderId);
-
-        var voucherCode = userVoucher?.Voucher?.Code;
-        var discountAmount = userVoucher?.Voucher?.DiscountValue ?? 0;
-        var finalAmount = order.TotalAmount - discountAmount;
+        var customer = account ?? await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
 
         return new AdminOrderResponse
         {
             OrderId = order.OrderId,
             UserId = order.UserId,
-            CustomerName = account?.FullName,
-            CustomerEmail = account?.Email,
-            CustomerPhone = account?.PhoneNumber,
+            CustomerName = customer?.FullName,
+            CustomerEmail = customer?.Email,
+            CustomerPhone = customer?.PhoneNumber,
             ShippingAddress = order.ShippingAddress,
             OrderDate = order.OrderDate,
             TotalAmount = order.TotalAmount,
-            DiscountAmount = discountAmount,
-            FinalAmount = finalAmount,
-            VoucherCode = voucherCode,
+            DiscountAmount = 0,
+            FinalAmount = order.TotalAmount,
+            VoucherCode = null,
             Status = order.Status,
             PaymentMethod = order.PaymentMethod,
-            UpdatedDate = null, // Orders don't have UpdatedDate field in current schema
+            UpdatedDate = null,
             Notes = null,
             Items = order.OrderDetails.Select(item => new AdminOrderItemResponse
             {
@@ -439,5 +812,10 @@ public class OrdersController : ControllerBase
                 Note = item.Note
             }).ToList()
         };
+    }
+
+    private Task AssignVoucherToUser(int userId)
+    {
+        return Task.CompletedTask;
     }
 }

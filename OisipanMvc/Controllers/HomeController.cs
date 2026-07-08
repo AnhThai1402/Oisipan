@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
+using FrontendMvc.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using FrontendMvc.Models;
 
@@ -52,7 +53,7 @@ public class HomeController : Controller
 
     private async Task<StorefrontViewModel> BuildStorefrontModel()
     {
-        var products = await Api.GetFromJsonAsync<List<ProductCatalogViewModel>>("api/products")
+        var products = await Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>("api/products")
             ?? new List<ProductCatalogViewModel>();
 
         return new StorefrontViewModel

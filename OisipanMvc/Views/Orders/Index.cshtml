@@ -32,18 +32,41 @@
                             <td><strong>#OP-@order.OrderId.ToString("0000")</strong></td>
                             <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
-                                @foreach (var item in order.OrderItems)
+                                @{
+                                    var orderItems = order.OrderItems ?? new List<OrderItemAdminViewModel>();
+                                    var totalQty = orderItems.Sum(i => i.Quantity);
+                                }
+                                @if (orderItems.Any())
                                 {
-                                    <div>@item.ProductName x @item.Quantity</div>
+                                    <div class="order-product-stack">
+                                        @foreach (var item in orderItems.Take(3))
+                                        {
+                                            <div class="order-product-item">
+                                                <span class="order-product-name">@item.ProductName</span>
+                                                <span class="order-product-qty">x @item.Quantity</span>
+                                            </div>
+                                        }
+                                        @if (orderItems.Count > 3)
+                                        {
+                                            <small class="text-muted">+@(orderItems.Count - 3) món khác</small>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@totalQty sản phẩm</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
                                 }
                             </td>
                             <td><strong>@order.TotalAmount.ToString("N0")đ</strong></td>
                             <td>@order.PaymentMethod</td>
                             <td><span class="status pending">@order.Status</span></td>
                             <td>
-                                <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;">
-                                    <i class="bi bi-eye"></i> Xem chi tiết
-                                </a>
+                                <div style="display: flex; gap: 6px;">
+                                    <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;" title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         <tr class="order-progress-row">

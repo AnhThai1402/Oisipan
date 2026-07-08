@@ -17,6 +17,7 @@ namespace Oishipan.Models
         public DbSet<Voucher> Vouchers { get; set; }
         public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
+        public DbSet<InvoiceRecord> InvoiceRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
