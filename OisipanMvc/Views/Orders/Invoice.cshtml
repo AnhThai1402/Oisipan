@@ -1,0 +1,130 @@
+@model FrontendMvc.Models.OrderAdminViewModel
+@{
+    ViewData["Title"] = $"Hóa đơn #OP-{Model.OrderId:0000}";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/invoice.css" asp-append-version="true" />
+
+<div class="invoice-root" style="font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;">
+    <header class="invoice-header">
+        <div class="header-left">
+            <div class="brand-section">
+                <img src="~/images/logo.png" alt="logo" class="company-logo" onerror="this.style.display='none'" />
+                <div class="company-info">
+                    <h1 class="company-name">OISIPAN</h1>
+                    <p class="company-detail">Địa chỉ: Số 1, Phố A, Thành phố</p>
+                    <p class="company-detail">Hotline: 0123-456-789</p>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
+            <div class="invoice-meta-info">
+                <div class="meta-row">
+                    <span class="meta-label">Mã đơn:</span>
+                    <span class="meta-value">#OP-@Model.OrderId.ToString("0000")</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Ngày:</span>
+                    <span class="meta-value">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="invoice-divider"></div>
+
+    <section class="invoice-info-section">
+        <div class="info-box customer-box">
+            <h4 class="box-title">KHÁCH HÀNG</h4>
+            <div class="box-content">
+                <p class="info-item"><strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách vãng lai" : Model.CustomerName)</strong></p>
+                <p class="info-item">@Model.CustomerPhone</p>
+                <p class="info-item">@Model.ShippingAddress</p>
+            </div>
+        </div>
+        <div class="info-box payment-box">
+            <h4 class="box-title">THANH TOÁN</h4>
+            <div class="box-content">
+                <p class="info-item"><strong>Phương thức:</strong> @Model.PaymentMethod</p>
+                <p class="info-item"><strong>Trạng thái:</strong> <span class="status-badge status-@Model.Status.ToLower().Replace(' ', '-')">@Model.Status</span></p>
+            </div>
+        </div>
+    </section>
+
+    <section class="invoice-items-section">
+        <table class="items-table">
+            <thead>
+                <tr class="table-header">
+                    <th class="col-product">Sản phẩm</th>
+                    <th class="col-quantity">SL</th>
+                    <th class="col-price">Giá đơn vị</th>
+                    <th class="col-total">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var item in Model.OrderItems)
+                {
+                    <tr class="item-row">
+                        <td class="col-product">@item.ProductName</td>
+                        <td class="col-quantity">@item.Quantity</td>
+                        <td class="col-price">@item.Price.ToString("N0")đ</td>
+                        <td class="col-total">@item.Total.ToString("N0")đ</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="summary-row subtotal-row">
+                    <td colspan="3" class="summary-label">Tạm tính</td>
+                    <td class="summary-value">@Model.TotalAmount.ToString("N0")đ</td>
+                </tr>
+                @if(Model.DiscountAmount > 0)
+                {
+                    <tr class="summary-row discount-row">
+                        <td colspan="3" class="summary-label">Giảm giá (@Model.VoucherCode ?? "")</td>
+                        <td class="summary-value discount">-@Model.DiscountAmount.ToString("N0")đ</td>
+                    </tr>
+                }
+                <tr class="summary-row total-row">
+                    <td colspan="3" class="summary-label">TỔNG THANH TOÁN</td>
+                    <td class="summary-value total-amount">@Model.FinalAmount.ToString("N0")đ</td>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
+
+    <footer class="invoice-footer">
+        <p class="footer-text">Xin cảm ơn quý khách! Hẹn gặp lại.</p>
+        <p class="footer-note">Cảm ơn bạn đã tin tưởng Oisipan</p>
+    </footer>
+
+    <div class="print-actions no-print">
+        <a class="soft-action" href="@Url.Action("Detail", "Orders", new { id = Model.OrderId })">Quay lại</a>
+        <img id="invoice-barcode" alt="barcode" style="margin-left:12px; height:64px; width:180px; object-fit:contain; border:1px solid var(--border-color); padding:6px;" />
+    </div>
+</div>
+
+    <script>
+    const pdfUrl = '@Url.Action("DownloadInvoice", "Orders", new { area = "Admin", id = Model.OrderId })';
+    if (window.location.search.includes('print')) {
+        setTimeout(() => window.print(), 300);
+    }
+    if (window.location.search.includes('download') || window.location.search.includes('dl=1')) {
+        window.location.href = pdfUrl;
+    }
+    // render client barcode using JsBarcode
+    (function loadBarcode(){
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+        script.onload = () => {
+            try{
+                const el = document.getElementById('invoice-barcode');
+                if(el) JsBarcode(el, 'OP-' + ('0000' + @Model.OrderId).slice(-4), {format: 'CODE128', height:40, displayValue:true});
+            }catch(e){console.warn('barcode render failed', e)}
+        };
+        document.head.appendChild(script);
+    })();
+    </script>
