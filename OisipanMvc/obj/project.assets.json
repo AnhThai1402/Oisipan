@@ -8,23 +8,23 @@
     "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\ACER NITRO\\.nuget\\packages\\": {},
+    "C:\\Users\\pphiu\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
+      "projectUniqueName": "F:\\DATN\\OisipanMvc\\FrontendMvc.csproj",
       "projectName": "FrontendMvc",
-      "projectPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
-      "packagesPath": "C:\\Users\\ACER NITRO\\.nuget\\packages\\",
-      "outputPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\obj\\",
+      "projectPath": "F:\\DATN\\OisipanMvc\\FrontendMvc.csproj",
+      "packagesPath": "C:\\Users\\pphiu\\.nuget\\packages\\",
+      "outputPath": "F:\\DATN\\OisipanMvc\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ACER NITRO\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\pphiu\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],

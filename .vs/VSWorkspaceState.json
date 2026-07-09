@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\OisipanApi\\bin",
+    "\\OisipanMvc",
+    "\\OisipanMvc\\bin",
+    "\\OisipanMvc\\bin\\Debug",
+    "\\OisipanMvc\\bin\\Debug\\net10.0",
+    "\\OisipanMvc\\Controllers"
+  ],
+  "PreviewInSolutionExplorer": false
+}
