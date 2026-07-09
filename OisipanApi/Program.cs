@@ -3,6 +3,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Oishipan.Models;
 using Oishipan.Services;
+using QuestPDF.Infrastructure;
+
+// Configure QuestPDF license for development
+try
+{
+    QuestPDF.Settings.License = LicenseType.Community;
+    QuestPDF.Settings.EnableDebugging = false;
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"QuestPDF license configuration warning: {ex.Message}");
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +34,17 @@ builder.Services.AddDbContext<OishipanContext>(options =>
 // Add Cloudinary service
 builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+// Enable CORS so the frontend running on http://localhost:5010 can call this API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins("http://localhost:5010")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -32,7 +55,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "uploads")),
+    RequestPath = "/uploads"
+});
+
 app.UseHttpsRedirection();
+// Apply CORS policy
+app.UseCors("AllowLocalhost");
 app.MapControllers();
 
 var summaries = new[]

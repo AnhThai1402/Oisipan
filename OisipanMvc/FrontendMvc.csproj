@@ -10,4 +10,9 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.29.2" />
   </ItemGroup>
 
+  <!-- Prevent apphost exe generation during local builds to avoid file locks -->
+  <PropertyGroup>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
 </Project>

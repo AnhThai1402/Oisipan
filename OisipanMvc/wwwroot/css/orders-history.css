@@ -15,6 +15,30 @@
     transform: translateY(-2px);
 }
 
+.order-product-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.order-product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.order-product-name {
+    font-weight: 600;
+    color: #153b2e;
+}
+
+.order-product-qty {
+    color: #5b7b6b;
+    white-space: nowrap;
+}
+
 .order-progress-row td {
     padding-top: 0;
     border-top: none;

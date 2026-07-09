@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 
 namespace FrontendMvc.Controllers;
@@ -15,12 +16,9 @@ public class ProductsController : Controller
 
     public async Task<IActionResult> Details(int id)
     {
-        var client = _httpClientFactory.CreateClient();
-        var apiUrl = $"http://localhost:5188/api/products/{id}";
-        
         try
         {
-            var product = await client.GetFromJsonAsync<ProductCatalogViewModel>(apiUrl);
+            var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{id}");
             if (product == null)
             {
                 return NotFound();
@@ -32,4 +30,6 @@ public class ProductsController : Controller
             return NotFound();
         }
     }
+
+    private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 }

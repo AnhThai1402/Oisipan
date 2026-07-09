@@ -69,6 +69,30 @@ public class OrderAdminViewModel
     public List<OrderCancellationRequestViewModel> CancellationRequests { get; set; } = new();
 }
 
+public class UserOrderApiResponse
+{
+    public int OrderId { get; set; }
+    public int UserId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CustomerPhone { get; set; }
+    public string? ShippingAddress { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public List<UserOrderItemApiResponse> Items { get; set; } = new();
+}
+
+public class UserOrderItemApiResponse
+{
+    public int OrderDetailId { get; set; }
+    public int ProductId { get; set; }
+    public string? ProductName { get; set; }
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+    public string? Note { get; set; }
+}
+
 public class OrderCancellationRequestViewModel
 {
     public int CancellationRequestId { get; set; }

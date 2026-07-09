@@ -166,7 +166,7 @@ public class ProductsController : AdminBaseController
     public async Task<IActionResult> UpdateQuantity(int id, int quantity)
     {
         // Get current product
-        var product = await Api.GetFromJsonAsync<ProductAdminViewModel>($"api/products/admin/{id}");
+        var product = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
         if (product is null)
         {
             return NotFound();

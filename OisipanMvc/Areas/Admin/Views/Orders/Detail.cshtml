@@ -16,7 +16,6 @@
         <p>Đặt hàng bởi <strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách hàng" : Model.CustomerName)</strong></p>
     </div>
     <div class="button-group">
-        <button class="primary-action" title="In đơn hàng" onclick="window.print()"><i class="bi bi-printer"></i> In</button>
     </div>
 </section>
 
@@ -51,8 +50,17 @@
             @{
                 var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Đã giao" };
                 var currentIndex = Array.IndexOf(statusOrder, Model.Status);
-                var isCompleted = Model.Status == "Đã giao" || Model.Status == "Đã hủy";
+                var normalizedStatus = (Model.Status ?? string.Empty).Trim().ToLowerInvariant();
+                var isCompleted = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành" || normalizedStatus == "đã hủy" || normalizedStatus == "cancelled";
                 var canCancel = Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận";
+                var canPrintInvoice = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành";
+            }
+
+            @if (canPrintInvoice)
+            {
+                <a class="primary-action" asp-area="Admin" asp-controller="Orders" asp-action="Print" asp-route-id="@Model.OrderId" asp-route-print="true" asp-route-download="true" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-receipt"></i> In / Xuất hóa đơn
+                </a>
             }
             
             @if (!isCompleted)

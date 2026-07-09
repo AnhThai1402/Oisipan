@@ -1,7 +1,19 @@
 @model FrontendMvc.Areas.Admin.Controllers.DashboardStatsDto
 @{
     ViewData["Title"] = "Bảng điều khiển";
+    var dashboardJson = System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    });
 }
+
+<link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+<script>
+    window.dashboardStats = @Html.Raw(dashboardJson);
+    // API base URL used by client-side JS (matches OisipanApi default)
+    window.apiBaseUrl = '@(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188"))';
+</script>
 
 <section class="admin-hero">
     <div>
@@ -34,12 +46,27 @@
 </section>
 
 <section class="admin-grid two-columns">
-    <article class="dashboard-panel">
+    <article class="panel growth-panel">
         <div class="panel-head">
             <div><span class="eyebrow">Hiệu suất</span><h2>Doanh thu tháng</h2></div>
+            <div class="growth-badge">
+                <span class="dot"></span>
+                <strong id="growthTrendLabel">Đang tải...</strong>
+            </div>
         </div>
-        <div style="position: relative; height: 300px; margin-top: 1rem;">
-            <canvas id="monthRevenueChart"></canvas>
+        <div class="chart-meta">
+            <div class="chart-meta-left">
+                <span class="legend-pill"><i></i> Doanh thu theo ngày</span>
+                <span class="chart-summary" id="chartSummary">0đ</span>
+            </div>
+            <div class="chart-meta-right">
+                <span class="small-label">Tổng doanh thu tháng</span>
+                <strong>@Model.MonthRevenue.ToString("N0")đ</strong>
+            </div>
+        </div>
+        <div class="chart-frame">
+            <div id="growthChartEmpty" class="chart-empty">Không có dữ liệu để hiển thị</div>
+            <svg id="monthRevenueChart" class="growth-chart" viewBox="0 0 640 280" role="img" aria-label="Biểu đồ doanh thu"></svg>
         </div>
     </article>
 
@@ -114,68 +141,5 @@
 </section>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script>
-        const ctx = document.getElementById('monthRevenueChart')?.getContext('2d');
-        if (ctx) {
-            const dailyRevenues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyRevenues));
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dailyRevenues.map(d => d.date),
-                    datasets: [{
-                        label: 'Doanh thu (đ)',
-                        data: dailyRevenues.map(d => d.revenue),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#10b981',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                color: 'var(--text-main)',
-                                font: { size: 12, weight: '500' },
-                                padding: 15
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: 'var(--text-muted)',
-                                callback: function(value) {
-                                    return value.toLocaleString('vi-VN') + 'đ';
-                                }
-                            },
-                            grid: {
-                                color: 'var(--border-color)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: 'var(--text-muted)'
-                            },
-                            grid: {
-                                color: 'var(--border-color)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
 }

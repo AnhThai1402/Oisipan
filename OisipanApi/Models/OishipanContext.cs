@@ -20,6 +20,7 @@ namespace Oishipan.Models
         public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
+        public DbSet<InvoiceRecord> InvoiceRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

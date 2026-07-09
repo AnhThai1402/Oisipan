@@ -59,7 +59,7 @@ public class UploadController : ControllerBase
             if (string.IsNullOrEmpty(imageUrl))
             {
                 // Fallback to local storage when Cloudinary is not configured or upload fails.
-                var uploadDir = Path.Combine(_environment.WebRootPath ?? string.Empty, "uploads");
+                var uploadDir = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, "uploads");
                 Directory.CreateDirectory(uploadDir);
 
                 var fileName = Path.GetFileNameWithoutExtension(file.FileName);

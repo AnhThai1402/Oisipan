@@ -1,0 +1,117 @@
+@model FrontendMvc.Models.OrderAdminViewModel
+@{
+    ViewData["Title"] = $"Hóa đơn #OP-{Model.OrderId:0000}";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/invoice.css" asp-append-version="true" />
+
+<div class="invoice-root" style="font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;">
+    <header class="invoice-header">
+        <div class="brand" style="display:flex;gap:12px;align-items:center;">
+            <img src="~/images/logo.png" alt="logo" style="height:56px; width:auto; object-fit:contain;" onerror="this.style.display='none'" />
+            <div>
+                <h2>Oisipan</h2>
+                <p>Địa chỉ: Số 1, Phố A, Thành phố</p>
+                <p>Hotline: 0123-456-789</p>
+            </div>
+        </div>
+        <div class="meta">
+            <h3>HÓA ĐƠN BÁN HÀNG</h3>
+            <div>Mã đơn: <strong>#OP-@Model.OrderId.ToString("0000")</strong></div>
+            <div>Ngày: <strong>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
+        </div>
+    </header>
+
+    <section class="invoice-info">
+        <div class="box">
+            <h4>Khách hàng</h4>
+            <p>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách vãng lai" : Model.CustomerName)</p>
+            <p>@Model.CustomerPhone</p>
+            <p>@Model.ShippingAddress</p>
+        </div>
+        <div class="box">
+            <h4>Thanh toán</h4>
+            <p>Phương thức: @Model.PaymentMethod</p>
+            <p>Trạng thái: @Model.Status</p>
+        </div>
+    </section>
+
+    <section class="invoice-items">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th class="center">SL</th>
+                    <th class="right">Giá</th>
+                    <th class="right">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var item in Model.OrderItems)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <td class="center">@item.Quantity</td>
+                        <td class="right">@item.Price.ToString("N0")đ</td>
+                        <td class="right">@item.Total.ToString("N0")đ</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">Tạm tính</td>
+                    <td class="right">@Model.TotalAmount.ToString("N0")đ</td>
+                </tr>
+                @if(Model.DiscountAmount > 0)
+                {
+                    <tr>
+                        <td colspan="3">Giảm giá (@Model.VoucherCode ?? "")</td>
+                        <td class="right">-@Model.DiscountAmount.ToString("N0")đ</td>
+                    </tr>
+                }
+                <tr class="total">
+                    <td colspan="3">Tổng thanh toán</td>
+                    <td class="right">@Model.FinalAmount.ToString("N0")đ</td>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
+
+    <footer class="invoice-footer">
+        <p>Xin cảm ơn quý khách! Hẹn gặp lại.</p>
+    </footer>
+
+    <div class="print-actions no-print">
+        <button class="primary-action" onclick="window.print()"><i class="bi bi-printer"></i> In hóa đơn</button>
+        <a class="soft-action" href="@Url.Action("Detail", "Orders", new { area = "Admin", id = Model.OrderId })">Quay lại</a>
+        <a class="primary-action" style="margin-left:8px; background:#0d6efd; border-color:#0d6efd;" href="@( (Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188").TrimEnd('/') + "/api/orders/" + Model.OrderId + "/invoice.pdf")">Tải PDF</a>
+        <img id="invoice-barcode" alt="barcode" style="margin-left:12px; height:64px; width:180px; object-fit:contain; border:1px solid var(--border-color); padding:6px;" />
+    </div>
+</div>
+
+    <script>
+    const apiBase = (('@(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188")').trim()).replace(/\/$/, '');
+    const pdfUrl = apiBase + '/api/orders/' + @Model.OrderId + '/invoice.pdf';
+    // Auto print when opened in a dedicated tab
+    if (window.location.search.includes('print')) {
+        setTimeout(() => window.print(), 300);
+    }
+    if (window.location.search.includes('download') || window.location.search.includes('dl=1')) {
+        window.location.href = pdfUrl;
+    }
+    // Render Code128 barcode on client for visual invoice using JsBarcode CDN
+    (function loadBarcode(){
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+        script.onload = () => {
+            try{
+                const el = document.getElementById('invoice-barcode');
+                if(el) JsBarcode(el, 'OP-' + ('0000' + @Model.OrderId).slice(-4), {format: 'CODE128', height:40, displayValue:true});
+            }catch(e){console.warn('barcode render failed', e)}
+        };
+        document.head.appendChild(script);
+    })();
+    </script>

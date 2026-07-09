@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json;
+using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +25,9 @@ public class OrdersController : Controller
             return Challenge();
         }
 
-        var orders = await Api.GetFromJsonAsync<List<OrderAdminViewModel>>($"api/orders/user/{userId}") ?? new();
+        var apiOrders = await Api.GetFromJsonAsyncWithOptions<List<UserOrderApiResponse>>($"api/orders/user/{userId}") ?? new();
+        var orders = apiOrders.Select(order => MapToOrderViewModel(order, userId)).ToList();
+
         return View(orders);
     }
 
@@ -34,11 +38,13 @@ public class OrdersController : Controller
             return Challenge();
         }
 
-        var order = await Api.GetFromJsonAsync<OrderAdminViewModel>($"api/orders/{id}");
-        if (order is null)
+        var apiOrder = await Api.GetFromJsonAsyncWithOptions<UserOrderApiResponse>($"api/orders/{id}");
+        if (apiOrder is null)
         {
             return NotFound();
         }
+
+        var order = MapToOrderViewModel(apiOrder, userId);
 
         // Verify that the order belongs to the current user
         if (order.UserId != userId)
@@ -47,27 +53,76 @@ public class OrdersController : Controller
         }
 
         // Fetch cancellation requests for this order
-        var cancellationRequests = await Api.GetFromJsonAsync<List<OrderCancellationRequestViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
+        var cancellationRequests = await Api.GetFromJsonAsyncWithOptions<List<OrderCancellationRequestViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
         order.CancellationRequests = cancellationRequests;
 
         return View(order);
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RequestCancellation(int id, string reason)
+    public async Task<IActionResult> Print(int id, bool print = false)
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
 
+        var apiOrder = await Api.GetFromJsonAsyncWithOptions<UserOrderApiResponse>($"api/orders/{id}");
+        if (apiOrder is null) return NotFound();
+
+        var order = MapToOrderViewModel(apiOrder, userId);
+        if (order.UserId != userId) return Forbid();
+
+        ViewData["AutoPrint"] = print;
+        return View("Invoice", order);
+    }
+
+    public async Task<IActionResult> DownloadInvoice(int id)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Challenge();
+        }
+
+        var apiOrder = await Api.GetFromJsonAsyncWithOptions<UserOrderApiResponse>($"api/orders/{id}");
+        if (apiOrder is null) return NotFound();
+
+        var order = MapToOrderViewModel(apiOrder, userId);
+        if (order.UserId != userId) return Forbid();
+
+        var response = await Api.GetAsync($"api/orders/{id}/invoice.pdf");
+        if (!response.IsSuccessStatusCode)
+        {
+            return StatusCode((int)response.StatusCode);
+        }
+
+        var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+        return File(pdfBytes, "application/pdf", $"OP-{id:0000}-invoice.pdf");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestCancellation(int id, [FromForm] string reason)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Challenge();
+        }
+
+        var trimmedReason = reason?.Trim() ?? string.Empty;
+        if (trimmedReason.Length < 10)
+        {
+            TempData["ErrorMessage"] = "Vui lòng nhập lý do hủy ít nhất 10 ký tự.";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
         // Verify that the order belongs to the current user
-        var order = await Api.GetFromJsonAsync<OrderAdminViewModel>($"api/orders/{id}");
-        if (order is null)
+        var apiOrder = await Api.GetFromJsonAsyncWithOptions<UserOrderApiResponse>($"api/orders/{id}");
+        if (apiOrder is null)
         {
             return NotFound();
         }
+
+        var order = MapToOrderViewModel(apiOrder, userId);
 
         if (order.UserId != userId)
         {
@@ -75,16 +130,66 @@ public class OrdersController : Controller
         }
 
         // Send cancellation request to API
-        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { reason = reason });
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { reason = trimmedReason });
 
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
-            return BadRequest(new { message = errorContent });
+            TempData["ErrorMessage"] = ExtractMessage(errorContent) ?? "Không thể gửi yêu cầu hủy đơn lúc này.";
+            return RedirectToAction(nameof(Detail), new { id });
         }
 
         TempData["Message"] = "Yêu cầu hủy đơn hàng đã được gửi. Vui lòng chờ phản hồi từ admin.";
         return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    private static string? ExtractMessage(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(content);
+            if (document.RootElement.TryGetProperty("message", out var messageElement))
+            {
+                return messageElement.GetString();
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall back to the raw response text.
+        }
+
+        return content.Length > 300 ? content[..300] : content;
+    }
+
+    private static OrderAdminViewModel MapToOrderViewModel(UserOrderApiResponse apiOrder, int userId)
+    {
+        return new OrderAdminViewModel
+        {
+            OrderId = apiOrder.OrderId,
+            UserId = apiOrder.UserId,
+            CustomerName = apiOrder.CustomerName ?? string.Empty,
+            CustomerPhone = apiOrder.CustomerPhone ?? string.Empty,
+            ShippingAddress = apiOrder.ShippingAddress ?? string.Empty,
+            Status = string.IsNullOrWhiteSpace(apiOrder.Status) ? "Chờ xác nhận" : apiOrder.Status,
+            TotalAmount = apiOrder.TotalAmount,
+            PaymentMethod = string.IsNullOrWhiteSpace(apiOrder.PaymentMethod) ? "COD" : apiOrder.PaymentMethod,
+            CreatedDate = apiOrder.OrderDate,
+            FinalAmount = apiOrder.TotalAmount,
+            DiscountAmount = 0m,
+            OrderItems = apiOrder.Items.Select(item => new OrderItemAdminViewModel
+            {
+                OrderDetailId = item.OrderDetailId,
+                ProductName = item.ProductName ?? "—",
+                Price = item.Price,
+                Quantity = item.Quantity,
+                OrderItemId = item.OrderDetailId
+            }).ToList()
+        };
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
