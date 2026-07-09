@@ -4,6 +4,137 @@
     var isEdit = Model?.VoucherId > 0;
 }
 
+<style>
+    .voucher-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .voucher-form-group {
+        margin-bottom: 20px;
+    }
+
+    .voucher-form-group label:not(.toggle-switch) {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--admin-text-light);
+        text-transform: uppercase;
+    }
+
+    .voucher-form-group label .required {
+        color: var(--admin-red);
+    }
+
+    .voucher-input-group {
+        display: flex;
+        align-items: center;
+    }
+    
+    .voucher-input-group .form-input {
+        flex: 1;
+        border-radius: 6px 0 0 6px;
+    }
+
+    .voucher-input-group .btn-auto {
+        padding: 0 16px;
+        height: 42px;
+        background: #f8f9fe;
+        border: 1px solid #d3d8e6;
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+        color: #4361ee;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .voucher-input-group .btn-auto:hover {
+        background: #eff1fc;
+    }
+    
+    .input-addon {
+        display: flex;
+    }
+    
+    .input-addon .form-input {
+        border-radius: 6px 0 0 6px;
+    }
+    
+    .input-addon .addon-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        background: #f8f9fe;
+        border: 1px solid #d3d8e6;
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+        color: var(--admin-text-light);
+        font-weight: 500;
+    }
+
+    .toggle-switch {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        margin-bottom: 0 !important;
+        text-transform: none !important;
+    }
+
+    .toggle-switch input {
+        display: none;
+    }
+
+    .toggle-slider {
+        display: block;
+        width: 44px;
+        height: 24px;
+        background-color: #d1d5db;
+        border-radius: 24px;
+        position: relative;
+        transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: white;
+        top: 2px;
+        left: 2px;
+        transition: 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #4361ee;
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+        transform: translateX(20px);
+    }
+
+    .toggle-label {
+        font-weight: 500;
+        font-size: 15px;
+        color: var(--admin-text-dark);
+        text-transform: none;
+    }
+    
+    .form-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--admin-text-light);
+    }
+</style>
+
 <section class="page-breadcrumb">
     <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"><i class="bi bi-house-door"></i> Voucher</a>
     <span>/</span>
@@ -13,148 +144,218 @@
 <section class="page-title-row">
     <div>
         <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
-        <h1>@(isEdit ? "Cập nhật mã giảm giá" : "Tạo mã giảm giá mới")</h1>
-        <p>@(isEdit ? "Cập nhật thông tin voucher" : "Tạo voucher khuyến mãi mới cho khách hàng")</p>
+        <h1>@(isEdit ? "Cập nhật Voucher" : "Tạo Voucher mới")</h1>
     </div>
     <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="soft-action">
         <i class="bi bi-arrow-left"></i> Quay lại
     </a>
 </section>
 
-<div class="admin-grid two-columns">
-    <form method="post" class="form-container">
-        @Html.AntiForgeryToken()
-        <!-- Voucher Code -->
-        <article class="panel">
-            <div class="panel-head">
-                <h2>Thông tin cơ bản</h2>
-            </div>
-
-            <div class="form-group">
-                <label for="code">Mã voucher <span class="required">*</span></label>
-                <input type="text" id="code" name="Code" class="form-input form-lg" 
-                       value="@Model?.Code" placeholder="VD: SUMMER50" required maxlength="20" />
-                <small class="form-hint">Mã duy nhất, viết hoa, không dấu</small>
-            </div>
-
-            <div class="form-group">
-                <label for="discountValue">Giá trị giảm giá (₫) <span class="required">*</span></label>
-                <div class="input-with-icon">
-                    <span class="input-prefix">₫</span>
-                    <input type="text" id="discountValue" name="DiscountValue" class="form-input money-input"
-                           inputmode="numeric" value="@Model?.DiscountValue.ToString("0")" placeholder="50.000" required />
-                </div>
-                <small class="form-hint">Nhập số tiền giảm giá</small>
-            </div>
-
-            <div class="form-group">
-                <label for="minimumItems">Số lượng sản phẩm tối thiểu <span class="required">*</span></label>
-                <input type="number" id="minimumItems" name="MinimumItems" class="form-input" 
-                       value="@(Model?.MinimumItems ?? 0)" placeholder="3" required step="1" min="0" />
-                <small class="form-hint">Khách hàng cần mua ít nhất bao nhiêu sản phẩm để dùng voucher</small>
-            </div>
-
-            <div class="form-group">
-                <label for="expiryDate">Ngày hết hạn <span class="required">*</span></label>
-                <input type="date" id="expiryDate" name="ExpiryDate" class="form-input" 
-                       value="@(Model?.ExpiryDate != DateTime.MinValue ? Model?.ExpiryDate.ToString("yyyy-MM-dd") : "")" required />
-            </div>
-
-            <!-- Actions -->
-            <div class="form-actions" style="margin-top: 24px;">
-                <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="soft-action">
-                    <i class="bi bi-x-circle"></i> Hủy
-                </a>
-                <button type="submit" class="primary-action">
-                    <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
-                    @(isEdit ? "Cập nhật Voucher" : "Tạo Voucher")
-                </button>
-            </div>
-        </article>
-    </form>
-
-    <!-- Preview -->
+<form method="post" class="form-container">
+    @Html.AntiForgeryToken()
+    
     <article class="panel">
-        <div class="panel-head">
-            <h2><i class="bi bi-eye"></i> Xem trước</h2>
+        <div class="panel-head" style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-plus-circle" style="color: var(--admin-text-light); font-size: 18px;"></i>
+            <h2 style="margin: 0; font-size: 18px; color: var(--admin-text-dark);">Thông tin Voucher</h2>
         </div>
 
-        <div class="voucher-preview-card">
-            <div class="voucher-preview-header">Mã giảm giá</div>
-            <div class="voucher-preview-code" id="previewCode">
-                @(Model?.Code?.ToUpper() ?? "SUMMER50")
+        <div class="voucher-form-grid">
+            <!-- Row 1 -->
+            <div class="voucher-form-group">
+                <label for="code">Mã voucher</label>
+                <div class="voucher-input-group">
+                    <input type="text" id="code" name="Code" class="form-input" 
+                           value="@Model?.Code" placeholder="ĐỂ TRỐNG ĐỂ TỰ ĐỘNG TẠO" maxlength="20" style="text-transform: uppercase;" />
+                    <button type="button" class="btn-auto" onclick="generateCode()">
+                        <i class="bi bi-arrow-repeat"></i> Tự động
+                    </button>
+                </div>
+                <span class="form-hint">Để trống để hệ thống tự tạo mã ngẫu nhiên</span>
             </div>
-            <div class="voucher-preview-amount" id="previewAmount">
-                @(Model?.DiscountValue.ToString("N0") ?? "50000")₫
+
+            <div class="voucher-form-group">
+                <label for="name">Tên voucher <span class="required">*</span></label>
+                <input type="text" id="name" name="Name" class="form-input" 
+                       value="@Model?.Name" placeholder="VD: Giảm giá mùa hè..." required />
             </div>
-            <div class="voucher-preview-footer" id="previewExpiry">
-                @if (Model != null && Model.ExpiryDate != DateTime.MinValue)
-                {
-                    <span>Hạn: @Model.ExpiryDate.ToString("dd/MM/yyyy")</span>
-                }
-                else
-                {
-                    <span style="color: var(--admin-muted);">Hạn: chưa chọn</span>
-                }
+
+            <!-- Row 2 -->
+            <div class="voucher-form-group">
+                <label for="discountType">Loại giảm giá <span class="required">*</span></label>
+                <select id="discountType" name="DiscountType" class="form-input" onchange="updateDiscountAddon()">
+                    <option value="Percentage" selected="@(Model?.DiscountType == "Percentage")">Phần trăm (%)</option>
+                    <option value="Fixed" selected="@(Model?.DiscountType == "Fixed")">Số tiền (đ)</option>
+                </select>
+            </div>
+
+            <div class="voucher-form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label for="voucherType">Loại voucher</label>
+                    <select id="voucherType" name="VoucherType" class="form-input">
+                        <option value="Public" selected="@(Model?.VoucherType == "Public")">Công khai</option>
+                        <option value="Private" selected="@(Model?.VoucherType == "Private")">Ẩn</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="distributionMethod">Cách phát voucher</label>
+                    <select id="distributionMethod" name="DistributionMethod" class="form-input">
+                        <option value="SaveOnPage" selected="@(Model?.DistributionMethod == "SaveOnPage")">Tự lưu trên trang</option>
+                        <option value="ShareCode" selected="@(Model?.DistributionMethod == "ShareCode")">Gửi mã</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="voucher-form-group">
+                <label for="discountValue">Giá trị giảm <span class="required">*</span></label>
+                <div class="input-addon">
+                    <input type="text" id="discountValue" name="DiscountValue" class="form-input money-input"
+                           inputmode="numeric" value="@Model?.DiscountValue.ToString("0")" required />
+                    <span class="addon-text" id="discountAddon">%</span>
+                </div>
+            </div>
+
+            <div class="voucher-form-group">
+                <label for="maxDiscount">Giảm tối đa</label>
+                <div class="input-addon">
+                    <input type="text" id="maxDiscount" name="MaxDiscount" class="form-input money-input"
+                           inputmode="numeric" value="@Model?.MaxDiscount.ToString("0")" />
+                    <span class="addon-text">đ</span>
+                </div>
+                <span class="form-hint">0 = không giới hạn</span>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="voucher-form-group">
+                <label for="minOrderValue">Đơn hàng tối thiểu</label>
+                <div class="input-addon">
+                    <input type="text" id="minOrderValue" name="MinOrderValue" class="form-input money-input"
+                           inputmode="numeric" value="@Model?.MinOrderValue.ToString("0")" />
+                    <span class="addon-text">đ</span>
+                </div>
+            </div>
+
+            <div class="voucher-form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label for="totalQuantity">Tổng số lượng <span class="required">*</span></label>
+                    <input type="number" id="totalQuantity" name="TotalQuantity" class="form-input" 
+                           value="@(Model?.TotalQuantity > 0 ? Model.TotalQuantity : 100)" required min="1" />
+                </div>
+                <div>
+                    <label>Trạng thái</label>
+                    <label class="toggle-switch" style="margin-top: 10px;">
+                        <input type="hidden" name="Status" id="statusHidden" value="@(string.IsNullOrEmpty(Model?.Status) ? "Active" : Model.Status)" />
+                        <input type="checkbox" id="statusToggle" @(Model?.Status != "Inactive" ? "checked" : "") onchange="updateStatus()" />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label" id="statusLabel">Hoạt động</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Row 5 -->
+            <div class="voucher-form-group">
+                <label for="startDate">Ngày bắt đầu <span class="required">*</span></label>
+                <input type="datetime-local" id="startDate" name="StartDate" class="form-input" 
+                       value="@(Model?.StartDate != null && Model.StartDate != DateTime.MinValue ? Model.StartDate.ToString("yyyy-MM-ddTHH:mm") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm"))" required />
+            </div>
+
+            <div class="voucher-form-group">
+                <label for="expiryDate">Ngày kết thúc <span class="required">*</span></label>
+                <input type="datetime-local" id="expiryDate" name="ExpiryDate" class="form-input" 
+                       value="@(Model?.ExpiryDate != null && Model.ExpiryDate != DateTime.MinValue ? Model.ExpiryDate.ToString("yyyy-MM-ddTHH:mm") : DateTime.Now.AddMonths(1).ToString("yyyy-MM-ddTHH:mm"))" required />
             </div>
         </div>
 
-        <div class="metric-card glow-green" style="margin-top: 20px;" id="statusCard">
-            <span>Trạng thái</span>
-            <strong>Sẵn sàng</strong>
-            <small>Voucher có thể được sử dụng</small>
+        <div class="form-actions" style="margin-top: 32px; display: flex; gap: 16px;">
+            <button type="submit" class="primary-action">
+                <i class="bi bi-@(isEdit ? "pencil-square" : "check2")"></i>
+                @(isEdit ? "Cập nhật Voucher" : "Lưu")
+            </button>
+            <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="btn btn-secondary" style="padding: 10px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                Hủy
+            </a>
         </div>
     </article>
-</div>
+</form>
 
 @section Scripts {
     <script>
-        // Real-time preview updates
-        const codeInput = document.getElementById('code');
-        const discountInput = document.getElementById('discountValue');
-        const expiryInput = document.getElementById('expiryDate');
-        const previewCode = document.getElementById('previewCode');
-        const previewAmount = document.getElementById('previewAmount');
-        const previewExpiry = document.getElementById('previewExpiry');
-        const statusCard = document.getElementById('statusCard');
-
-        // Format number with thousands separator
-        function formatNumber(num) {
-            return Math.floor(num).toLocaleString('vi-VN');
+        function updateDiscountAddon() {
+            var type = document.getElementById("discountType").value;
+            var addon = document.getElementById("discountAddon");
+            var maxDiscountGroup = document.getElementById("maxDiscount").closest('.voucher-form-group');
+            
+            if (type === "Percentage") {
+                addon.textContent = "%";
+                maxDiscountGroup.style.opacity = "1";
+                maxDiscountGroup.style.pointerEvents = "auto";
+            } else {
+                addon.textContent = "đ";
+                // Optionally disable max discount if it's fixed amount
+                maxDiscountGroup.style.opacity = "0.5";
+                maxDiscountGroup.style.pointerEvents = "none";
+            }
         }
 
-        // Update preview code
-        codeInput.addEventListener('input', function() {
-            const code = this.value.toUpperCase() || 'SUMMER50';
-            previewCode.textContent = code;
-        });
-
-        // Update preview amount
-        discountInput.addEventListener('input', function() {
-            const amount = window.getMoneyInputValue(this);
-            previewAmount.textContent = formatNumber(amount) + '₫';
-        });
-
-        // Update preview expiry and status
-        expiryInput.addEventListener('change', function() {
-            if (this.value) {
-                const expiryDate = new Date(this.value);
-                const day = String(expiryDate.getDate()).padStart(2, '0');
-                const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
-                const year = expiryDate.getFullYear();
-                
-                previewExpiry.innerHTML = `<span>Hạn: ${day}/${month}/${year}</span>`;
-
-                // Update status
-                const isExpired = expiryDate < new Date();
-                if (isExpired) {
-                    statusCard.innerHTML = '<span>Trạng thái</span><strong style="color: var(--admin-red);">Hết hạn</strong><small>Voucher không thể sử dụng</small>';
-                } else {
-                    statusCard.innerHTML = '<span>Trạng thái</span><strong>Sẵn sàng</strong><small>Voucher có thể được sử dụng</small>';
-                }
+        function updateStatus() {
+            var toggle = document.getElementById("statusToggle");
+            var hidden = document.getElementById("statusHidden");
+            var label = document.getElementById("statusLabel");
+            
+            if (toggle.checked) {
+                hidden.value = "Active";
+                label.textContent = "Hoạt động";
+                label.style.color = "#4361ee";
             } else {
-                previewExpiry.innerHTML = '<span style="color: var(--admin-muted);">Hạn: chưa chọn</span>';
+                hidden.value = "Inactive";
+                label.textContent = "Đã tắt";
+                label.style.color = "var(--admin-text-light)";
             }
+        }
+
+        function generateCode() {
+            var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var code = '';
+            for (var i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById("code").value = code;
+        }
+
+        // Setup money inputs
+        document.querySelectorAll('.money-input').forEach(input => {
+            input.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value === '') {
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Allow percentage up to 100
+                if (e.target.id === 'discountValue' && document.getElementById("discountType").value === "Percentage") {
+                    if (parseInt(value) > 100) value = '100';
+                }
+
+                e.target.value = parseInt(value).toLocaleString('vi-VN');
+            });
+            
+            // Format on load
+            if (input.value) {
+                let value = input.value.replace(/\D/g, '');
+                if (value) input.value = parseInt(value).toLocaleString('vi-VN');
+            }
+            
+            // Format before submit
+            input.closest('form').addEventListener('submit', function() {
+                input.value = input.value.replace(/\D/g, '');
+            });
+        });
+
+        // Initial setup
+        document.addEventListener("DOMContentLoaded", function() {
+            updateDiscountAddon();
+            updateStatus();
         });
     </script>
 }

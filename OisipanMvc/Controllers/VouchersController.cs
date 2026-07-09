@@ -8,11 +8,11 @@ namespace FrontendMvc.Controllers
     [Authorize]
     public class VouchersController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public VouchersController(HttpClient httpClient)
+        public VouchersController(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<IActionResult> Index()
@@ -25,7 +25,8 @@ namespace FrontendMvc.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"https://localhost:7210/api/orders/user/{userIdInt}/vouchers");
+                var client = _httpClientFactory.CreateClient("OisipanApi");
+                var response = await client.GetAsync($"/api/orders/user/{userIdInt}/vouchers");
                 if (!response.IsSuccessStatusCode)
                 {
                     return NotFound();

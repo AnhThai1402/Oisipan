@@ -13,6 +13,8 @@ namespace FrontendMvc.Models
         
         [Display(Name = "Giảm giá")]
         public decimal DiscountValue { get; set; }
+
+        public string DiscountType { get; set; } = "Fixed";
         
         [Display(Name = "Hết hạn")]
         public DateTime ExpiryDate { get; set; }

@@ -317,26 +317,68 @@ public class OrdersController : ControllerBase
     [HttpGet("user/{userId:int}/vouchers")]
     public async Task<ActionResult<IEnumerable<UserVoucherDto>>> GetUserVouchers(int userId)
     {
-        var vouchers = await _context.UserVouchers
+        // Lấy các voucher đã được gán/sử dụng bởi user
+        var userVouchers = await _context.UserVouchers
             .Where(uv => uv.UserId == userId)
             .Include(uv => uv.Voucher)
-            .OrderByDescending(uv => uv.AssignedDate)
-            .Select(uv => new UserVoucherDto
-            {
-                UserVoucherId = uv.UserVoucherId,
-                UserId = uv.UserId,
-                VoucherId = uv.VoucherId,
-                VoucherCode = uv.Voucher!.Code,
-                DiscountValue = uv.Voucher.DiscountValue,
-                MinimumItems = uv.Voucher.MinimumItems,
-                ExpiryDate = uv.Voucher.ExpiryDate,
-                IsUsed = uv.IsUsed,
-                UsedDate = uv.UsedDate,
-                AssignedDate = uv.AssignedDate
-            })
             .ToListAsync();
 
-        return Ok(vouchers);
+        // Lấy các voucher public đang active
+        var publicVouchers = await _context.Vouchers
+            .Where(v => v.VoucherType == "Public" && v.Status == "Active" && v.StartDate <= DateTime.Now)
+            .ToListAsync();
+
+        var uniqueUserVouchers = userVouchers
+            .GroupBy(uv => uv.VoucherId)
+            .Select(g => g.OrderBy(uv => uv.IsUsed).ThenByDescending(uv => uv.AssignedDate).First())
+            .ToList();
+
+        var result = new List<UserVoucherDto>();
+
+        foreach(var uv in uniqueUserVouchers)
+        {
+            if (uv.Voucher != null)
+            {
+                result.Add(new UserVoucherDto
+                {
+                    UserVoucherId = uv.UserVoucherId,
+                    UserId = uv.UserId,
+                    VoucherId = uv.VoucherId,
+                    VoucherCode = uv.Voucher.Code,
+                    DiscountValue = uv.Voucher.DiscountValue,
+                    DiscountType = uv.Voucher.DiscountType,
+                    MinimumItems = uv.Voucher.MinimumItems,
+                    ExpiryDate = uv.Voucher.ExpiryDate,
+                    IsUsed = uv.IsUsed,
+                    UsedDate = uv.UsedDate,
+                    AssignedDate = uv.AssignedDate
+                });
+            }
+        }
+
+        var userVoucherIds = uniqueUserVouchers.Select(uv => uv.VoucherId).ToHashSet();
+        foreach(var pv in publicVouchers)
+        {
+            if (!userVoucherIds.Contains(pv.VoucherId))
+            {
+                result.Add(new UserVoucherDto
+                {
+                    UserVoucherId = 0,
+                    UserId = userId,
+                    VoucherId = pv.VoucherId,
+                    VoucherCode = pv.Code,
+                    DiscountValue = pv.DiscountValue,
+                    DiscountType = pv.DiscountType,
+                    MinimumItems = pv.MinimumItems,
+                    ExpiryDate = pv.ExpiryDate,
+                    IsUsed = false,
+                    UsedDate = null,
+                    AssignedDate = pv.StartDate
+                });
+            }
+        }
+
+        return Ok(result.OrderByDescending(v => v.AssignedDate));
     }
 
     [HttpGet("{id:int}/invoice.pdf")]

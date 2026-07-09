@@ -41,7 +41,7 @@
                         var isExpired = voucher.ExpiryDate < DateTime.Now;
                         <tr>
                             <td><strong>@voucher.Code</strong></td>
-                            <td><span class="text-success">@voucher.DiscountValue.ToString("N0")đ</span></td>
+                            <td><span class="text-success">@voucher.DiscountValue.ToString("N0")@(voucher.DiscountType == "Percentage" ? "%" : "đ")</span></td>
                             <td><span class="text-muted">@voucher.MinimumItems sản phẩm</span></td>
                             <td>
                                 @if (isExpired)

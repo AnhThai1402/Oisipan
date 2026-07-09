@@ -13,6 +13,8 @@ namespace Oishipan.DTOs
         
         [Display(Name = "Giảm giá")]
         public decimal DiscountValue { get; set; }
+
+        public string DiscountType { get; set; } = "Fixed";
         
         [Display(Name = "Yêu cầu tối thiểu")]
         public int MinimumItems { get; set; }

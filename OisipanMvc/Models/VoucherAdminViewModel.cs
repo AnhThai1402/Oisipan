@@ -25,4 +25,25 @@ public class VoucherAdminViewModel
 
     [Display(Name = "Ngày tạo")]
     public DateTime CreatedDate { get; set; }
+
+    [Display(Name = "Tên voucher")]
+    public string Name { get; set; } = string.Empty;
+
+    public string DiscountType { get; set; } = "Fixed";
+
+    public string VoucherType { get; set; } = "Public";
+
+    public string DistributionMethod { get; set; } = "SaveOnPage";
+
+    public decimal MaxDiscount { get; set; } = 0;
+
+    public decimal MinOrderValue { get; set; } = 0;
+
+    public int TotalQuantity { get; set; } = 100;
+
+    [Required(ErrorMessage = "Vui lòng chọn ngày bắt đầu.")]
+    [Display(Name = "Ngày bắt đầu")]
+    public DateTime StartDate { get; set; } = DateTime.Now;
+
+    public string Status { get; set; } = "Active";
 }

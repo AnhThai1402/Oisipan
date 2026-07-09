@@ -54,10 +54,18 @@ public class VouchersController : ControllerBase
 
         var voucher = new Voucher
         {
+            Name = string.IsNullOrWhiteSpace(request.Name) ? request.Code.Trim().ToUpper() : request.Name.Trim(),
             Code = request.Code.Trim().ToUpper(),
+            DiscountType = string.IsNullOrWhiteSpace(request.DiscountType) ? "Fixed" : request.DiscountType,
+            VoucherType = string.IsNullOrWhiteSpace(request.VoucherType) ? "Public" : request.VoucherType,
+            DistributionMethod = string.IsNullOrWhiteSpace(request.DistributionMethod) ? "SaveOnPage" : request.DistributionMethod,
             DiscountValue = request.DiscountValue,
-            MinimumItems = request.MinimumItems,
+            MaxDiscount = request.MaxDiscount,
+            MinOrderValue = request.MinOrderValue,
+            TotalQuantity = request.TotalQuantity,
+            StartDate = request.StartDate,
             ExpiryDate = request.ExpiryDate,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status,
             CreatedDate = DateTime.Now
         };
 
@@ -89,10 +97,18 @@ public class VouchersController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
+        voucher.Name = string.IsNullOrWhiteSpace(request.Name) ? request.Code.Trim().ToUpper() : request.Name.Trim();
         voucher.Code = request.Code.Trim().ToUpper();
+        voucher.DiscountType = string.IsNullOrWhiteSpace(request.DiscountType) ? "Fixed" : request.DiscountType;
+        voucher.VoucherType = string.IsNullOrWhiteSpace(request.VoucherType) ? "Public" : request.VoucherType;
+        voucher.DistributionMethod = string.IsNullOrWhiteSpace(request.DistributionMethod) ? "SaveOnPage" : request.DistributionMethod;
         voucher.DiscountValue = request.DiscountValue;
-        voucher.MinimumItems = request.MinimumItems;
+        voucher.MaxDiscount = request.MaxDiscount;
+        voucher.MinOrderValue = request.MinOrderValue;
+        voucher.TotalQuantity = request.TotalQuantity;
+        voucher.StartDate = request.StartDate;
         voucher.ExpiryDate = request.ExpiryDate;
+        voucher.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status;
 
         _context.Vouchers.Update(voucher);
         await _context.SaveChangesAsync();
@@ -119,9 +135,18 @@ public class VouchersController : ControllerBase
     private static VoucherResponse ToResponse(Voucher voucher) => new()
     {
         VoucherId = voucher.VoucherId,
+        Name = voucher.Name,
         Code = voucher.Code,
+        DiscountType = voucher.DiscountType,
+        VoucherType = voucher.VoucherType,
+        DistributionMethod = voucher.DistributionMethod,
         DiscountValue = voucher.DiscountValue,
+        MaxDiscount = voucher.MaxDiscount,
+        MinOrderValue = voucher.MinOrderValue,
+        TotalQuantity = voucher.TotalQuantity,
+        StartDate = voucher.StartDate,
         ExpiryDate = voucher.ExpiryDate,
-        CreatedDate = voucher.CreatedDate
+        CreatedDate = voucher.CreatedDate,
+        Status = voucher.Status
     };
 }

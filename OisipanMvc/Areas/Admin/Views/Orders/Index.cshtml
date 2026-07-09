@@ -48,7 +48,7 @@
                             <td>
                                 <div class="action-buttons">
                                     <a asp-area="Admin" asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
-                                    <button class="icon-action" title="In đơn" onclick="window.print()"><i class="bi bi-printer"></i></button>
+                                    <a asp-area="Admin" asp-controller="Orders" asp-action="Print" asp-route-id="@order.OrderId" asp-route-print="true" target="_blank" rel="noopener noreferrer" class="icon-action" title="In đơn"><i class="bi bi-printer"></i></a>
                                 </div>
                             </td>
                         </tr>

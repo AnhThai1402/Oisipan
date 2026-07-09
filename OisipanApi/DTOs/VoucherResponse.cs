@@ -12,6 +12,24 @@ namespace Oishipan.DTOs
 
         public DateTime ExpiryDate { get; set; }
 
+        public string Name { get; set; } = string.Empty;
+
+        public string DiscountType { get; set; } = string.Empty;
+
+        public string VoucherType { get; set; } = string.Empty;
+
+        public string DistributionMethod { get; set; } = string.Empty;
+
+        public decimal MaxDiscount { get; set; }
+
+        public decimal MinOrderValue { get; set; }
+
+        public int TotalQuantity { get; set; }
+
+        public DateTime StartDate { get; set; }
+
         public DateTime CreatedDate { get; set; }
+
+        public string Status { get; set; } = string.Empty;
     }
 }
