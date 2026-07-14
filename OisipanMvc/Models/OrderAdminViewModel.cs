@@ -66,7 +66,7 @@ public class OrderAdminViewModel
         set => OrderItems = value ?? new();
     }
 
-    public List<OrderCancellationRequestViewModel> CancellationRequests { get; set; } = new();
+    public List<OrderCancellationViewModel> CancellationRequests { get; set; } = new();
 }
 
 public class UserOrderApiResponse
@@ -78,6 +78,9 @@ public class UserOrderApiResponse
     public string? ShippingAddress { get; set; }
     public DateTime OrderDate { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal FinalAmount { get; set; }
+    public string? VoucherCode { get; set; }
     public string Status { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public List<UserOrderItemApiResponse> Items { get; set; } = new();
@@ -86,20 +89,23 @@ public class UserOrderApiResponse
 public class UserOrderItemApiResponse
 {
     public int OrderDetailId { get; set; }
+    public int ProductVariantId { get; set; }
     public int ProductId { get; set; }
     public string? ProductName { get; set; }
-    public decimal Price { get; set; }
+    public string? VariantName { get; set; }
+    public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public string? Note { get; set; }
 }
 
-public class OrderCancellationRequestViewModel
+public class OrderCancellationViewModel
 {
-    public int CancellationRequestId { get; set; }
+    public int OrderCancellationId { get; set; }
     public int OrderId { get; set; }
     public string Reason { get; set; } = string.Empty;
-    public string Status { get; set; } = "Pending";
-    public DateTime RequestDate { get; set; }
+    public string? CancelledBy { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CancelledAt { get; set; }
     public DateTime? ResponseDate { get; set; }
     public string? AdminNote { get; set; }
 }
@@ -112,22 +118,20 @@ public class OrderItemAdminViewModel
         get => OrderItemId;
         set => OrderItemId = value;
     }
+    public int ProductVariantId { get; set; }
     public int ProductId { get; set; }
 
     [Display(Name = "Tên sản phẩm")]
     public string ProductName { get; set; } = string.Empty;
 
+    public string? VariantName { get; set; }
+
     [Display(Name = "Đơn giá")]
-    public decimal Price { get; set; }
-    public decimal UnitPrice
-    {
-        get => Price;
-        set => Price = value;
-    }
+    public decimal UnitPrice { get; set; }
 
     [Display(Name = "Số lượng")]
     public int Quantity { get; set; }
 
     [Display(Name = "Thành tiền")]
-    public decimal Total => Price * Quantity;
+    public decimal Total => UnitPrice * Quantity;
 }

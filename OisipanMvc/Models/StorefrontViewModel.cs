@@ -14,7 +14,8 @@ public class ProductCatalogViewModel
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public string? Image { get; set; }
-    public int Quantity { get; set; }
+    public string? Sku { get; set; }
+    public int StockQuantity { get; set; }
     public int CategoryId { get; set; }
     public string? CategoryName { get; set; }
     public string? Description { get; set; }
@@ -40,9 +41,17 @@ public class ProductVariantCatalogViewModel
 {
     public int ProductVariantId { get; set; }
     public int ProductId { get; set; }
-    public string Size { get; set; } = string.Empty;
-    public string Filling { get; set; } = string.Empty;
-    public decimal AdditionalPrice { get; set; }
-    public int Quantity { get; set; }
+    public string? Sku { get; set; }
+    public List<ProductVariantValueCatalogViewModel> VariantValues { get; set; } = new();
+    public decimal Price { get; set; }
+    public int StockQuantity { get; set; }
     public bool IsActive { get; set; }
+}
+
+public class ProductVariantValueCatalogViewModel
+{
+    public int ProductOptionId { get; set; }
+    public string OptionName { get; set; } = string.Empty;
+    public int ProductValueId { get; set; }
+    public string ValueName { get; set; } = string.Empty;
 }

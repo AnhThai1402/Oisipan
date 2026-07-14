@@ -32,7 +32,7 @@ public class OrdersController : AdminBaseController
         }
 
         // Fetch cancellation requests for this order
-        var cancellationRequests = await Api.GetFromJsonAsyncWithOptions<List<OrderCancellationRequestViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
+        var cancellationRequests = await Api.GetFromJsonAsyncWithOptions<List<OrderCancellationViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
         order.CancellationRequests = cancellationRequests;
 
         return View(order);

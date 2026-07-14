@@ -96,7 +96,7 @@ public class HomeController : Controller
 
         return new StorefrontViewModel
         {
-            Products = products.Where(product => product.Quantity > 0).ToList(),
+            Products = products.Where(product => product.StockQuantity > 0).ToList(),
             NewsArticles = newsArticles,
             Categories = categories,
             SelectedCategoryId = categoryId

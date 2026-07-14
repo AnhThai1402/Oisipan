@@ -21,36 +21,40 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Add(int productId, string? returnUrl = null)
+    public async Task<IActionResult> Add(int productId, int productVariantId, string? returnUrl = null)
     {
         var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
-        if (product is null || product.Quantity <= 0)
+        var variant = product?.ProductVariants.FirstOrDefault(v => v.ProductVariantId == productVariantId);
+        
+        if (product is null || variant is null || variant.StockQuantity <= 0)
         {
-            TempData["CartError"] = "Sản phẩm không tồn tại hoặc đã hết hàng.";
+            TempData["CartError"] = "Biến thể sản phẩm không tồn tại hoặc đã hết hàng.";
             return RedirectBack(returnUrl);
         }
 
         var cart = GetCart();
-        var existing = cart.Items.FirstOrDefault(item => item.ProductId == productId);
+        var existing = cart.Items.FirstOrDefault(item => item.ProductVariantId == productVariantId);
 
         if (existing is null)
         {
             cart.Items.Add(new CartItemViewModel
             {
+                ProductVariantId = variant.ProductVariantId,
                 ProductId = product.ProductId,
                 Name = product.Name,
-                UnitPrice = product.Price,
+                VariantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}")),
+                UnitPrice = product.Price + variant.Price,
                 Image = product.Image,
                 Quantity = 1
             });
         }
-        else if (existing.Quantity < product.Quantity)
+        else if (existing.Quantity < variant.StockQuantity)
         {
             existing.Quantity++;
         }
         else
         {
-            TempData["CartError"] = $"{product.Name} chỉ còn {product.Quantity} sản phẩm.";
+            TempData["CartError"] = $"{product.Name} chỉ còn {product.StockQuantity} sản phẩm.";
             return RedirectBack(returnUrl);
         }
 
@@ -61,10 +65,10 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int productId, int quantity, string? returnUrl = null)
+    public async Task<IActionResult> Update(int productVariantId, int quantity, string? returnUrl = null)
     {
         var cart = GetCart();
-        var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+        var item = cart.Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);
         if (item is null)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -80,8 +84,10 @@ public class CartController : Controller
         }
         else
         {
-            var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
-            if (product is null || product.Quantity <= 0)
+            var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{item.ProductId}");
+            var variant = product?.ProductVariants.FirstOrDefault(v => v.ProductVariantId == productVariantId);
+            
+            if (product is null || variant is null || variant.StockQuantity <= 0)
             {
                 cart.Items.Remove(item);
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -92,20 +98,20 @@ public class CartController : Controller
             }
             else
             {
-                item.Quantity = Math.Min(quantity, product.Quantity);
-                if (quantity > product.Quantity)
+                item.Quantity = Math.Min(quantity, variant.StockQuantity);
+                if (quantity > variant.StockQuantity)
                 {
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                     {
                         return Json(new 
                         { 
                             success = true, 
-                            message = $"{product.Name} chỉ còn {product.Quantity} sản phẩm.", 
+                            message = $"{product.Name} chỉ còn {variant.StockQuantity} sản phẩm.",
                             cartTotal = cart.Items.Sum(x => x.LineTotal),
-                            items = cart.Items.Select(x => new { x.ProductId, x.Quantity, lineTotal = x.LineTotal }).ToList()
+                            items = cart.Items.Select(x => new { x.ProductVariantId, x.Quantity, lineTotal = x.LineTotal }).ToList()
                         });
                     }
-                    TempData["CartError"] = $"{product.Name} chỉ còn {product.Quantity} sản phẩm.";
+                    TempData["CartError"] = $"{product.Name} chỉ còn {variant.StockQuantity} sản phẩm.";
                 }
             }
         }
@@ -118,7 +124,7 @@ public class CartController : Controller
             { 
                 success = true, 
                 cartTotal = cart.Items.Sum(x => x.LineTotal),
-                items = cart.Items.Select(x => new { x.ProductId, x.Quantity, lineTotal = x.LineTotal }).ToList()
+                items = cart.Items.Select(x => new { x.ProductVariantId, x.Quantity, lineTotal = x.LineTotal }).ToList()
             });
         }
 
@@ -127,10 +133,10 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Remove(int productId, string? returnUrl = null)
+    public IActionResult Remove(int productVariantId, string? returnUrl = null)
     {
         var cart = GetCart();
-        cart.Items.RemoveAll(item => item.ProductId == productId);
+        cart.Items.RemoveAll(item => item.ProductVariantId == productVariantId);
         SaveCart(cart);
 
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -139,7 +145,7 @@ public class CartController : Controller
             { 
                 success = true, 
                 cartTotal = cart.Items.Sum(x => x.LineTotal),
-                items = cart.Items.Select(x => new { x.ProductId, x.Quantity, lineTotal = x.LineTotal }).ToList()
+                items = cart.Items.Select(x => new { x.ProductVariantId, x.Quantity, lineTotal = x.LineTotal }).ToList()
             });
         }
 
@@ -153,23 +159,38 @@ public class CartController : Controller
     {
         List<CartItemViewModel> checkoutItems;
 
-        if (model.BuyNowProductId.HasValue && model.BuyNowProductId.Value > 0)
+        if (model.BuyNowProductVariantId.HasValue && model.BuyNowProductVariantId.Value > 0)
         {
-            var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{model.BuyNowProductId.Value}");
-            if (product == null || product.Quantity <= 0)
+            // We need to fetch the product by some means, or we can just fetch all and find the variant, but since we don't have productId, we might need a direct variant API or we just use cart items.
+            // Wait, if it's BuyNow, the frontend should send BuyNowProductId as well or we just lookup the variant.
+            // Since we didn't add BuyNowProductId to CheckoutViewModel, we have to look up the variant.
+            // But we don't have an endpoint for a single variant in MVC API helper unless we query the api/productvariants.
+            var variantResponse = await Api.GetAsync($"api/productvariants/{model.BuyNowProductVariantId.Value}");
+            if (!variantResponse.IsSuccessStatusCode)
+            {
+                TempData["CartError"] = "Sản phẩm không tồn tại hoặc đã hết hàng.";
+                return RedirectBack(returnUrl);
+            }
+            
+            var variant = await variantResponse.Content.ReadFromJsonAsync<ProductVariantCatalogViewModel>();
+            if (variant == null || variant.StockQuantity <= 0)
             {
                 TempData["CartError"] = "Sản phẩm không tồn tại hoặc đã hết hàng.";
                 return RedirectBack(returnUrl);
             }
 
+            var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{variant.ProductId}");
+
             checkoutItems = new List<CartItemViewModel>
             {
                 new CartItemViewModel
                 {
-                    ProductId = product.ProductId,
-                    Name = product.Name,
-                    UnitPrice = product.Price,
-                    Image = product.Image,
+                    ProductVariantId = variant.ProductVariantId,
+                    ProductId = variant.ProductId,
+                    Name = product?.Name ?? "Sản phẩm",
+                    VariantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}")),
+                    UnitPrice = (product?.Price ?? 0) + variant.Price,
+                    Image = product?.Image,
                     Quantity = 1
                 }
             };
@@ -203,9 +224,10 @@ public class CartController : Controller
             CustomerPhone = model.CustomerPhone,
             PaymentMethod = model.PaymentMethod,
             ShippingAddress = model.CustomerAddress,
+            VoucherCode = model.VoucherCode,
             Items = checkoutItems.Select(item => new ApiOrderItemRequest
             {
-                ProductId = item.ProductId,
+                ProductVariantId = item.ProductVariantId,
                 Quantity = item.Quantity
             }).ToList()
         };
@@ -217,13 +239,29 @@ public class CartController : Controller
             return RedirectBack(returnUrl);
         }
 
-        if (!model.BuyNowProductId.HasValue || model.BuyNowProductId.Value <= 0)
+        if (!model.BuyNowProductVariantId.HasValue || model.BuyNowProductVariantId.Value <= 0)
         {
             HttpContext.Session.Remove(CartSessionKey);
         }
         
         TempData["CartMessage"] = "Đặt hàng thành công. Đơn hàng của bạn đã được ghi nhận.";
         return RedirectToAction("Index", "Orders");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ValidateVoucher([FromBody] ValidateVoucherViewModel model)
+    {
+        var response = await Api.PostAsJsonAsync("api/vouchers/validate", model);
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadFromJsonAsync<object>();
+            return Json(content);
+        }
+        else
+        {
+            var error = await ReadApiMessage(response);
+            return Json(new { isValid = false, message = error });
+        }
     }
 
     private CartViewModel GetCart()

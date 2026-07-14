@@ -112,7 +112,7 @@ using (var scope = app.Services.CreateScope())
                 Email = adminEmail,
                 PhoneNumber = adminPhone,
                 Role = "Admin",
-                Status = true,
+                Status = "Active",
                 Address = "Oisipan"
             };
 
@@ -123,7 +123,7 @@ using (var scope = app.Services.CreateScope())
         {
             admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
             admin.Role = "Admin";
-            admin.Status = true;
+            admin.Status = "Active";
             admin.Password = passwordHasher.HashPassword(admin, adminPassword);
         }
 

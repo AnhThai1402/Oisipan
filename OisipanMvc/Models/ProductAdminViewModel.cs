@@ -38,13 +38,13 @@ public class ProductAdminViewModel
 
     [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
     [Display(Name = "Tồn kho")]
-    public int Quantity { get; set; }
+    public int StockQuantity { get; set; }
 
     // Alias for views
     public int Stock
     {
-        get => Quantity;
-        set => Quantity = value;
+        get => StockQuantity;
+        set => StockQuantity = value;
     }
 
     [Display(Name = "Tồn kho tối thiểu")]
@@ -71,8 +71,8 @@ public class ProductAdminViewModel
     {
         get
         {
-            if (Quantity == 0) return "Hết hàng";
-            if (MinimumStock.HasValue && Quantity <= MinimumStock) return "Sắp hết hàng";
+            if (StockQuantity == 0) return "Hết hàng";
+            if (MinimumStock.HasValue && StockQuantity <= MinimumStock) return "Sắp hết hàng";
             return "Đủ hàng";
         }
     }
@@ -111,23 +111,27 @@ public class ProductVariantAdminViewModel
 
     public string? ProductName { get; set; }
 
-    [Required]
-    [StringLength(100)]
-    public string Size { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(100)]
-    public string Filling { get; set; } = string.Empty;
+    public string? Sku { get; set; }
 
     [Range(0, double.MaxValue)]
-    public decimal AdditionalPrice { get; set; }
+    public decimal Price { get; set; }
 
     [Range(0, int.MaxValue)]
-    public int Quantity { get; set; }
+    public int StockQuantity { get; set; }
 
     public bool IsActive { get; set; } = true;
 
     public List<SelectListItem> Products { get; set; } = new();
+
+    public List<ProductVariantValueAdminViewModel> VariantValues { get; set; } = new();
+}
+
+public class ProductVariantValueAdminViewModel
+{
+    public int ProductOptionId { get; set; }
+    public string OptionName { get; set; } = string.Empty;
+    public int ProductValueId { get; set; }
+    public string ValueName { get; set; } = string.Empty;
 }
 
 public class ProductOptionAdminViewModel

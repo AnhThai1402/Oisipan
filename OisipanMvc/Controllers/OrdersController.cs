@@ -53,7 +53,7 @@ public class OrdersController : Controller
         }
 
         // Fetch cancellation requests for this order
-        var cancellationRequests = await Api.GetFromJsonAsyncWithOptions<List<OrderCancellationRequestViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
+        var cancellationRequests = await Api.GetFromJsonAsyncWithOptions<List<OrderCancellationViewModel>>($"api/orders/{id}/cancellation-requests") ?? new();
         order.CancellationRequests = cancellationRequests;
 
         return View(order);
@@ -184,8 +184,11 @@ public class OrdersController : Controller
             OrderItems = apiOrder.Items.Select(item => new OrderItemAdminViewModel
             {
                 OrderDetailId = item.OrderDetailId,
+                ProductVariantId = item.ProductVariantId,
+                ProductId = item.ProductId,
                 ProductName = item.ProductName ?? "—",
-                Price = item.Price,
+                VariantName = item.VariantName,
+                UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 OrderItemId = item.OrderDetailId
             }).ToList()

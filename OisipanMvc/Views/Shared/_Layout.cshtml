@@ -97,7 +97,7 @@
             {
                 @foreach (var item in cartItems)
                 {
-                    <div class="cart-item" data-product-id="@item.ProductId">
+                    <div class="cart-item" data-product-variant-id="@item.ProductVariantId">
                         <div class="cart-item-icon">
                             @if (!string.IsNullOrWhiteSpace(item.Image))
                             {
@@ -110,14 +110,20 @@
                         </div>
                         <div class="cart-item-details">
                             <span class="cart-item-title">@item.Name</span>
+                            @if (!string.IsNullOrEmpty(item.VariantName))
+                            {
+                                <span class="cart-item-variant" style="font-size:0.8rem; color:var(--text-light); margin-bottom: 2px; display:block;">
+                                    @item.VariantName
+                                </span>
+                            }
                             <span class="cart-item-price">@item.UnitPrice.ToString("N0")đ</span>
                             <div class="cart-item-actions">
-                                <button type="button" class="cart-qty-btn cart-qty-decrease" data-product-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity - 1)">-</button>
+                                <button type="button" class="cart-qty-btn cart-qty-decrease" data-product-variant-id="@item.ProductVariantId" data-action="update" data-quantity="@(item.Quantity - 1)">-</button>
                                 <span style="font-size: 0.9rem; font-weight: 600;" class="cart-qty-display">@item.Quantity</span>
-                                <button type="button" class="cart-qty-btn cart-qty-increase" data-product-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity + 1)">+</button>
+                                <button type="button" class="cart-qty-btn cart-qty-increase" data-product-variant-id="@item.ProductVariantId" data-action="update" data-quantity="@(item.Quantity + 1)">+</button>
                             </div>
                         </div>
-                        <button type="button" class="remove-item cart-remove-btn" data-product-id="@item.ProductId" data-action="remove" title="Xóa khỏi giỏ">
+                        <button type="button" class="remove-item cart-remove-btn" data-product-variant-id="@item.ProductVariantId" data-action="remove" title="Xóa khỏi giỏ">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -150,7 +156,7 @@
             <form id="checkout-form" method="post" asp-controller="Cart" asp-action="Checkout" novalidate>
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="returnUrl" value="@currentUrl" />
-                <input type="hidden" id="buy-now-product-id" name="BuyNowProductId" value="" />
+                <input type="hidden" id="buy-now-product-variant-id" name="BuyNowProductVariantId" value="" />
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <label for="customer-name" style="margin-bottom: 0;">Họ và tên khách hàng</label>
@@ -187,10 +193,21 @@
                         </div>
                     </div>
                 </div>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">Tổng thanh toán</span>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="checkout-voucher">Mã giảm giá (Nếu có)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="checkout-voucher" name="VoucherCode" class="form-control" placeholder="Nhập mã giảm giá..." style="text-transform: uppercase;">
+                        <button type="button" id="apply-voucher-btn" class="btn-primary" style="padding: 0 1.5rem; white-space: nowrap;">Áp Dụng</button>
+                    </div>
+                    <small id="voucher-message" style="display: block; margin-top: 0.5rem; font-weight: 500;"></small>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Tổng thanh toán: <span id="checkout-subtotal-display">@cartTotalAmount.ToString("N0")đ</span></span>
+                        <span id="checkout-discount-row" style="font-size: 0.85rem; color: #e74c3c; display: none;">Giảm giá: -<span id="checkout-discount-display">0đ</span></span>
                         <div id="checkout-total-display" style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--accent-green); font-weight: 700;">@cartTotalAmount.ToString("N0")đ</div>
+                        <input type="hidden" id="base-cart-total" value="@cartTotalAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-original-total="@cartTotalAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                        <input type="hidden" id="base-cart-items-count" value="@cartItems.Sum(x => x.Quantity)" data-original-count="@cartItems.Sum(x => x.Quantity)" />
                     </div>
                     <button type="submit" class="btn-primary" style="padding: 0.8rem 2rem;">Xác Nhận Đặt Hàng</button>
                 </div>

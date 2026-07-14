@@ -15,6 +15,7 @@ public class AdminOrderResponse
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal FinalAmount { get; set; }
+    public int? VoucherId { get; set; }
     public string? VoucherCode { get; set; }
     public string Status { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
@@ -26,9 +27,10 @@ public class AdminOrderResponse
 public class AdminOrderItemResponse
 {
     public int OrderDetailId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     public string? ProductName { get; set; }
-    public decimal Price { get; set; }
+    public string? VariantName { get; set; }
+    public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public string? Note { get; set; }
 }

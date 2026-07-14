@@ -70,9 +70,16 @@
                 @foreach(var item in Model.OrderItems)
                 {
                     <tr class="item-row">
-                        <td class="col-product">@item.ProductName</td>
+                        <td class="col-product">
+                            @item.ProductName
+                            @if (!string.IsNullOrEmpty(item.VariantName))
+                            {
+                                <br />
+                                <small style="color: var(--text-muted); font-size: 0.85rem;">Phân loại: @item.VariantName</small>
+                            }
+                        </td>
                         <td class="col-quantity">@item.Quantity</td>
-                        <td class="col-price">@item.Price.ToString("N0")đ</td>
+                        <td class="col-price">@item.UnitPrice.ToString("N0")đ</td>
                         <td class="col-total">@item.Total.ToString("N0")đ</td>
                     </tr>
                 }

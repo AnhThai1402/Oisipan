@@ -35,4 +35,11 @@ namespace Oishipan.DTOs
 
         public string Status { get; set; } = string.Empty;
     }
+
+    public class ValidateVoucherRequest
+    {
+        public string Code { get; set; } = string.Empty;
+        public decimal OrderTotal { get; set; }
+        public int TotalItems { get; set; }
+    }
 }

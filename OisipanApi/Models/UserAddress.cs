@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models;
 
-public class UserAddress
+public class UserAddress : BaseEntity
 {
     [Key]
     public int AddressId { get; set; }

@@ -33,7 +33,7 @@ public class AccountsController : ControllerBase
                 PhoneNumber = a.PhoneNumber,
                 Role = a.Role,
                 Address = a.Address,
-                Status = a.Status,
+                Status = a.Status == "Active",
                 OrderCount = a.Orders.Count
             })
             .ToListAsync();
@@ -143,7 +143,7 @@ public class AccountsController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             Role = "User",
             Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
-            Status = request.Status
+            Status = "Active"
         };
 
         account.Password = _passwordHasher.HashPassword(account, request.Password);
@@ -181,7 +181,7 @@ public class AccountsController : ControllerBase
         account.PhoneNumber = request.PhoneNumber;
         account.Role = "User";
         account.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
-        account.Status = request.Status;
+        account.Status = request.Status ? "Active" : "Inactive";
 
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
         {
@@ -306,7 +306,7 @@ public class AccountsController : ControllerBase
             Role = account.Role,
             Address = account.Address,
             AvatarUrl = account.AvatarUrl,
-            Status = account.Status,
+            Status = account.Status == "Active",
             OrderCount = account.Orders.Count
         };
     }

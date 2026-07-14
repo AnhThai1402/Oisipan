@@ -173,7 +173,7 @@ public class ProductsController : AdminBaseController
         }
 
         // Update quantity
-        product.Quantity = quantity;
+        product.StockQuantity = quantity;
         var response = await Api.PutAsJsonAsync($"api/products/{id}", product);
 
         SetFlashMessage(
@@ -199,7 +199,7 @@ public class ProductsController : AdminBaseController
         model.Name,
         model.Price,
         model.Image,
-        model.Quantity,
+        model.StockQuantity,
         model.CategoryId,
         model.Description
     };

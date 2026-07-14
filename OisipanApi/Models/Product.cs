@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class Product
+    public class Product : BaseEntity
     {
         [Key]
         public int ProductId { get; set; }
@@ -17,7 +17,7 @@ namespace Oishipan.Models
 
         public string? Image { get; set; }
 
-        public int Quantity { get; set; }
+        public int StockQuantity { get; set; }
 
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
@@ -30,14 +30,7 @@ namespace Oishipan.Models
 
         public int? MinimumStock { get; set; }
 
-        // Status: active, inactive
-        [StringLength(30)]
-        public string Status { get; set; } = "active";
-
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
         public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedDate { get; set; }
     }
 }
-

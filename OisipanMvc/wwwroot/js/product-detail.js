@@ -49,6 +49,41 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? selected.map(input => `${input.dataset.optionName}: ${input.dataset.valueName}`).join(" · ")
                 : "Chưa chọn đầy đủ";
         }
+
+        let foundVariantId = 0;
+        if (window.ProductVariantsData && selected.length > 0) {
+            const selectedValueIds = selected.map(i => parseInt(i.value)).sort();
+            
+            const variant = window.ProductVariantsData.find(v => {
+                const vValues = (v.VariantValues || v.variantValues || []).map(vv => vv.ProductValueId || vv.productValueId).sort();
+                if (vValues.length !== selectedValueIds.length) return false;
+                for (let i = 0; i < vValues.length; i++) {
+                    if (vValues[i] !== selectedValueIds[i]) return false;
+                }
+                return true;
+            });
+            
+            if (variant) {
+                foundVariantId = variant.ProductVariantId || variant.productVariantId;
+            } else {
+                console.warn("Could not find variant for:", selectedValueIds, window.ProductVariantsData);
+            }
+        }
+        const variantInput = document.getElementById("productVariantId");
+        if (variantInput) {
+            variantInput.value = foundVariantId;
+        }
+    }
+
+    const form = document.getElementById("productForm");
+    if (form) {
+        form.addEventListener("submit", event => {
+            const variantId = document.getElementById("productVariantId")?.value;
+            if (!variantId || variantId === "0") {
+                event.preventDefault();
+                alert("Vui lòng chọn đầy đủ các lựa chọn trước khi thêm vào giỏ hàng.");
+            }
+        });
     }
 
     detail.querySelectorAll(".product-option-button").forEach(button => {

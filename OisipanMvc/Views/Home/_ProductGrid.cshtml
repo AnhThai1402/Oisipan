@@ -4,14 +4,9 @@
 {
     foreach (var product in Model)
     {
-        var priceOptions = product.ProductOptions
-            .Where(option =>
-                (string.Equals(option.OptionName, "Size", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(option.OptionName, "Nhân bánh", StringComparison.OrdinalIgnoreCase)) &&
-                option.ProductValues.Any())
-            .ToList();
-        var minimumPrice = product.Price + priceOptions.Sum(option => option.ProductValues.Min(value => value.AdditionalPrice));
-        var maximumPrice = product.Price + priceOptions.Sum(option => option.ProductValues.Max(value => value.AdditionalPrice));
+        var activeVariants = product.ProductVariants.Where(v => v.IsActive).ToList();
+        var minimumPrice = activeVariants.Any() ? product.Price + activeVariants.Min(v => v.Price) : product.Price;
+        var maximumPrice = activeVariants.Any() ? product.Price + activeVariants.Max(v => v.Price) : product.Price;
         var displayPrice = minimumPrice == maximumPrice
             ? $"{minimumPrice:N0}đ"
             : $"{minimumPrice:N0}đ - {maximumPrice:N0}đ";

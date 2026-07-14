@@ -27,23 +27,9 @@
                         <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId" class="btn-view-detail" title="Xem chi tiết">
                             <i class="bi bi-eye"></i>
                         </a>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <form method="post" asp-controller="Cart" asp-action="Add">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="productId" value="@product.ProductId" />
-                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                                <button type="submit" class="btn-add-cart" title="Thêm vào giỏ">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn-add-cart" title="Đăng nhập để thêm vào giỏ">
-                                <i class="bi bi-person-lock"></i>
-                            </a>
-                        }
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId" class="btn-add-cart" title="Chọn tùy chọn">
+                            <i class="bi bi-cart-plus"></i>
+                        </a>
                     </div>
                 </div>
             </div>

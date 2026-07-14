@@ -13,8 +13,10 @@ public class ProductRequest
 
     public string? Image { get; set; }
 
+    public string? Sku { get; set; }
+
     [Range(0, int.MaxValue, ErrorMessage = "Số lượng không được âm.")]
-    public int Quantity { get; set; }
+    public int StockQuantity { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
     public int CategoryId { get; set; }

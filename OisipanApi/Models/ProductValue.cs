@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class ProductValue
+    public class ProductValue : BaseEntity
     {
         [Key]
         public int ProductValueId { get; set; }

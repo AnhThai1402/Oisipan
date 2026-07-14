@@ -23,6 +23,7 @@ public class ProductsController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.ProductOptions)
                 .ThenInclude(po => po.ProductValues)
+            .Include(p => p.ProductVariants)
             .AsQueryable();
 
         if (categoryId.HasValue)
@@ -38,7 +39,7 @@ public class ProductsController : ControllerBase
                 Name = p.Name,
                 Price = p.Price,
                 Image = p.Image,
-                Quantity = p.Quantity,
+                StockQuantity = p.StockQuantity,
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category == null ? null : p.Category.CategoryName,
                 Description = p.Description,
@@ -75,9 +76,62 @@ public class ProductsController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.ProductOptions)
                 .ThenInclude(po => po.ProductValues)
+            .Include(p => p.ProductVariants)
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
-        return product is null ? NotFound(new { message = "Không tìm thấy sản phẩm." }) : Ok(ToResponse(product));
+        if (product is null)
+        {
+            return NotFound(new { message = "Không tìm thấy sản phẩm." });
+        }
+
+        await EnsureVariantsExistAsync(product);
+
+        return Ok(ToResponse(product));
+    }
+
+    private async Task EnsureVariantsExistAsync(Product product)
+    {
+        var sizeOption = product.ProductOptions.FirstOrDefault(po => po.OptionName.Equals("Size", StringComparison.OrdinalIgnoreCase));
+        var fillingOption = product.ProductOptions.FirstOrDefault(po => !po.OptionName.Equals("Size", StringComparison.OrdinalIgnoreCase));
+
+        if (sizeOption == null || fillingOption == null) return;
+
+        bool added = false;
+        foreach (var s in sizeOption.ProductValues)
+        {
+            foreach (var f in fillingOption.ProductValues)
+            {
+                bool exists = product.ProductVariants.Any(pv => 
+                    pv.ProductVariantValues != null &&
+                    pv.ProductVariantValues.Any(pvv => pvv.ProductValueId == s.ProductValueId) &&
+                    pv.ProductVariantValues.Any(pvv => pvv.ProductValueId == f.ProductValueId)
+                );
+
+                if (!exists)
+                {
+                    var variant = new ProductVariant
+                    {
+                        ProductId = product.ProductId,
+                        Price = s.AdditionalPrice + f.AdditionalPrice,
+                        StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : 0,
+                        Status = "Active",
+                        ProductVariantValues = new List<ProductVariantValue>
+                        {
+                            new ProductVariantValue { ProductValueId = s.ProductValueId },
+                            new ProductVariantValue { ProductValueId = f.ProductValueId }
+                        }
+                    };
+                    _context.ProductVariants.Add(variant);
+                    product.ProductVariants.Add(variant);
+                    added = true;
+                }
+            }
+        }
+
+        if (added)
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 
     [HttpGet("admin/products")]
@@ -149,13 +203,13 @@ public class ProductsController : ControllerBase
             Name = request.Name.Trim(),
             Price = request.Price,
             Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim(),
-            Quantity = request.Quantity,
+            StockQuantity = request.StockQuantity,
             CategoryId = request.CategoryId,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Sku = request.Name.Trim().ToUpper().Substring(0, Math.Min(30, request.Name.Trim().Length)).Replace(" ", "-"),
             MinimumStock = request.MinimumStock,
             Status = request.Status ?? "active",
-            CreatedDate = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Products.Add(product);
@@ -186,7 +240,7 @@ public class ProductsController : ControllerBase
         product.Name = request.Name.Trim();
         product.Price = request.Price;
         product.Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim();
-        product.Quantity = request.Quantity;
+        product.StockQuantity = request.StockQuantity;
         product.CategoryId = request.CategoryId;
         product.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         product.Status = request.Status?.Trim() ?? "active";
@@ -219,7 +273,7 @@ public class ProductsController : ControllerBase
             Name = product.Name,
             Price = product.Price,
             Image = product.Image,
-            Quantity = product.Quantity,
+            StockQuantity = product.StockQuantity,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.CategoryName,
             Description = product.Description,
@@ -242,6 +296,26 @@ public class ProductsController : ControllerBase
                         })
                         .ToList()
                 })
+                .ToList(),
+            ProductVariants = product.ProductVariants
+                .Select(pv => new ProductVariantResponse
+                {
+                    ProductVariantId = pv.ProductVariantId,
+                    ProductId = pv.ProductId,
+                    Price = pv.Price,
+                    StockQuantity = pv.StockQuantity,
+                    Sku = pv.Sku,
+                    IsActive = pv.Status == "Active",
+                    VariantValues = pv.ProductVariantValues != null ? pv.ProductVariantValues
+                        .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
+                        .Select(pvv => new ProductVariantValueResponse
+                        {
+                            ProductOptionId = pvv.ProductValue!.ProductOptionId,
+                            OptionName = pvv.ProductValue.ProductOption!.OptionName,
+                            ProductValueId = pvv.ProductValueId,
+                            ValueName = pvv.ProductValue.ValueName
+                        }).ToList() : new List<ProductVariantValueResponse>()
+                })
                 .ToList()
         };
     }
@@ -254,14 +328,14 @@ public class ProductsController : ControllerBase
             Name = product.Name,
             Price = product.Price,
             Image = product.Image,
-            Quantity = product.Quantity,
+            StockQuantity = product.StockQuantity,
             MinimumStock = product.MinimumStock,
             CategoryId = product.CategoryId,
             CategoryName = categoryName ?? product.Category?.CategoryName,
             Description = product.Description,
             Status = product.Status ?? "active",
-            CreatedDate = product.CreatedDate,
-            UpdatedDate = product.UpdatedDate,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
             ProductOptions = product.ProductOptions
                 .OrderBy(po => po.OptionName)
                 .Select(po => new AdminProductOptionResponse

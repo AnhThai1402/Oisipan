@@ -114,10 +114,36 @@
     <div class="panel-head">
         <h2><i class="bi bi-receipt"></i> Tổng quan</h2>
     </div>
-    <div class="metric-card glow-gold">
-        <span>Tổng thanh toán</span>
-        <strong>@Model.TotalAmount.ToString("N0")đ</strong>
-        <small>@Model.OrderItems.Sum(item => item.Quantity) sản phẩm</small>
+    
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div class="metric-card glow-gold" style="flex: 1; min-width: 200px;">
+            <span>Tạm tính</span>
+            <strong>@Model.TotalAmount.ToString("N0")đ</strong>
+            <small>@Model.OrderItems.Sum(item => item.Quantity) sản phẩm</small>
+        </div>
+        
+        @if (Model.DiscountAmount > 0)
+        {
+            <div class="metric-card" style="flex: 1; min-width: 200px; background: rgba(220, 53, 69, 0.05); border: 1px solid rgba(220, 53, 69, 0.1);">
+                <span style="color: #dc3545;">Giảm giá @(string.IsNullOrWhiteSpace(Model.VoucherCode) ? "" : $"(Mã: {Model.VoucherCode})")</span>
+                <strong style="color: #dc3545;">-@Model.DiscountAmount.ToString("N0")đ</strong>
+                <small style="color: #dc3545;">Đã áp dụng voucher</small>
+            </div>
+            
+            <div class="metric-card glow-gold" style="flex: 1; min-width: 200px; background: var(--bg-card);">
+                <span style="color: var(--accent-green);">Thành tiền (Khách phải trả)</span>
+                <strong style="color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</strong>
+                <small style="color: var(--text-muted);">Số tiền cuối cùng</small>
+            </div>
+        }
+        else
+        {
+            <div class="metric-card glow-gold" style="flex: 1; min-width: 200px; background: var(--bg-card);">
+                <span style="color: var(--accent-green);">Khách phải trả</span>
+                <strong style="color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</strong>
+                <small style="color: var(--text-muted);">Số tiền cuối cùng</small>
+            </div>
+        }
     </div>
 </article>
 
@@ -140,9 +166,16 @@
                 @foreach (var item in Model.OrderItems)
                 {
                     <tr>
-                        <td><strong>@item.ProductName</strong></td>
+                        <td>
+                            <strong>@item.ProductName</strong>
+                            @if (!string.IsNullOrEmpty(item.VariantName))
+                            {
+                                <br />
+                                <small style="color: var(--text-muted);">Phân loại: @item.VariantName</small>
+                            }
+                        </td>
                         <td style="text-align: center;">@item.Quantity</td>
-                        <td style="text-align: right;">@item.Price.ToString("N0")đ</td>
+                        <td style="text-align: right;">@item.UnitPrice.ToString("N0")đ</td>
                         <td style="text-align: right; font-weight: 600;">@item.Total.ToString("N0")đ</td>
                     </tr>
                 }
@@ -158,7 +191,7 @@
             <h2><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h2>
         </div>
         
-        @foreach (var cancReq in Model.CancellationRequests.OrderByDescending(r => r.RequestDate))
+        @foreach (var cancReq in Model.CancellationRequests.OrderByDescending(r => r.CancelledAt))
         {
             var statusColor = cancReq.Status == "Approved" ? "rgba(31, 111, 80, 0.05)" : cancReq.Status == "Rejected" ? "rgba(220, 53, 69, 0.05)" : "rgba(255, 193, 7, 0.05)";
             var statusBadgeColor = cancReq.Status == "Approved" ? "#1f6f50" : cancReq.Status == "Rejected" ? "#dc3545" : "#ffc107";
@@ -171,9 +204,7 @@
                         <span style="display: inline-block; padding: 0.4rem 0.9rem; background: white; border-radius: 5px; font-weight: 600; color: @statusBadgeColor; font-size: 0.9rem;">
                             <i class="bi @statusIcon"></i> @statusText
                         </span>
-                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
-                            Gửi: @cancReq.RequestDate.ToString("dd/MM/yyyy HH:mm")
-                        </p>
+                        <span style="display: block; font-size: 0.85rem; margin-top: 0.3rem;"><i class="bi bi-clock"></i> Ngày gửi: @cancReq.CancelledAt.ToString("dd/MM/yyyy HH:mm")</span>
                     </div>
                 </div>
 
@@ -193,10 +224,10 @@
                 @if (cancReq.Status == "Pending")
                 {
                     <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.CancellationRequestId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
-                            <i class="bi bi-check-circle"></i> Chấp nhận
+                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.OrderCancellationId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
+                            <i class="bi bi-check-circle"></i> Phê duyệt
                         </button>
-                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.CancellationRequestId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
+                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.OrderCancellationId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
                             <i class="bi bi-x-circle"></i> Từ chối
                         </button>
                     </div>

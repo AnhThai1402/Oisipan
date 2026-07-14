@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Oishipan.Models
 {
-    public class Category
+    public class Category : BaseEntity
     {
         [Key]
         public int CategoryId { get; set; }

@@ -25,12 +25,14 @@ public class OrderCreateRequest
 
     [MinLength(1)]
     public List<OrderItemCreateRequest> Items { get; set; } = new();
+
+    public string? VoucherCode { get; set; }
 }
 
 public class OrderItemCreateRequest
 {
     [Range(1, int.MaxValue)]
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
 
     [Range(1, 999)]
     public int Quantity { get; set; }
@@ -55,6 +57,10 @@ public class OrderResponse
     public string? ShippingAddress { get; set; }
     public DateTime OrderDate { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal FinalAmount { get; set; }
+    public int? VoucherId { get; set; }
+    public string? VoucherCode { get; set; }
     public string Status { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public List<OrderDetailResponse> Items { get; set; } = new();
@@ -63,9 +69,27 @@ public class OrderResponse
 public class OrderDetailResponse
 {
     public int OrderDetailId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     public string? ProductName { get; set; }
-    public decimal Price { get; set; }
+    public string? VariantName { get; set; }
+    public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public string? Note { get; set; }
+}
+
+public class OrderCancellationDto
+{
+    public int OrderCancellationId { get; set; }
+    public int OrderId { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public string? CancelledBy { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CancelledAt { get; set; }
+    public DateTime? ResponseDate { get; set; }
+    public string? AdminNote { get; set; }
+}
+
+public class OrderCancellationCreateDto
+{
+    public string Reason { get; set; } = string.Empty;
 }

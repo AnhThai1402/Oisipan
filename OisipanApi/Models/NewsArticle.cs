@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Oishipan.Models;
 
-public class NewsArticle
+public class NewsArticle : BaseEntity
 {
     [Key]
     public int NewsArticleId { get; set; }
@@ -23,8 +23,4 @@ public class NewsArticle
     public bool IsPublished { get; set; }
 
     public DateTime? PublishedAt { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
 }

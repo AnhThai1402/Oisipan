@@ -24,7 +24,9 @@ public class CheckoutViewModel
     [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán.")]
     public string PaymentMethod { get; set; } = "COD";
 
-    public int? BuyNowProductId { get; set; }
+    public int? BuyNowProductVariantId { get; set; }
+    
+    public string? VoucherCode { get; set; }
 }
 
 public class ApiOrderCreateRequest
@@ -34,12 +36,20 @@ public class ApiOrderCreateRequest
     public string CustomerPhone { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = "COD";
     public string ShippingAddress { get; set; } = string.Empty;
+    public string? VoucherCode { get; set; }
     public List<ApiOrderItemRequest> Items { get; set; } = new();
 }
 
 public class ApiOrderItemRequest
 {
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     public int Quantity { get; set; }
     public string? Note { get; set; }
+}
+
+public class ValidateVoucherViewModel
+{
+    public string Code { get; set; } = string.Empty;
+    public decimal OrderTotal { get; set; }
+    public int TotalItems { get; set; }
 }

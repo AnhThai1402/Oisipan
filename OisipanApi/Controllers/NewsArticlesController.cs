@@ -158,7 +158,7 @@ public class NewsArticlesController : ControllerBase
             IsPublished = article.IsPublished,
             PublishedAt = article.PublishedAt.HasValue ? AsUtc(article.PublishedAt.Value) : null,
             CreatedAt = AsUtc(article.CreatedAt),
-            UpdatedAt = AsUtc(article.UpdatedAt)
+            UpdatedAt = article.UpdatedAt.HasValue ? AsUtc(article.UpdatedAt.Value) : null
         };
     }
 }

@@ -334,7 +334,6 @@ D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\Frontend.102078B3.Up2Date
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\1utnfzj6jq-{0}-hyfd9mb2cc-hyfd9mb2cc.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\gn68u8xr4c-{0}-p30ha7r4ss-p30ha7r4ss.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-odvnybgx0n-odvnybgx0n.gz
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\kpqpoi8jex-{0}-p95bhtzxsg-p95bhtzxsg.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\xhe9dpwwzr-{0}-fa6boj729g-fa6boj729g.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\07c28w1bud-{0}-be5s2otiae-be5s2otiae.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-2k5hypf9je-2k5hypf9je.gz
@@ -348,5 +347,6 @@ D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\lxx1940wyn-{0}-fvje
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\8pxal1ikgp-{0}-ua5hzrhp90-ua5hzrhp90.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\j94i15i4wi-{0}-zknbgx87af-zknbgx87af.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\zgiqty961a-{0}-oyubxzccia-oyubxzccia.gz
-D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\sx2mz8rznn-{0}-ase2e24iq2-ase2e24iq2.gz
 D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\uqbcaonlpe-{0}-qqs3g2ex4a-qqs3g2ex4a.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\kpqpoi8jex-{0}-r3n9mc7g2r-r3n9mc7g2r.gz
+D:\DATN_Oisipan_2026\OisipanMvc\obj\Debug\net10.0\compressed\sx2mz8rznn-{0}-zoq2j14pru-zoq2j14pru.gz

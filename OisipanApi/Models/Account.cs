@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Oishipan.Models
 {
-    public class Account
+    public class Account : BaseEntity
     {
         [Key]
         public int UserId { get; set; }
@@ -30,8 +30,6 @@ namespace Oishipan.Models
 
         [StringLength(500)]
         public string? AvatarUrl { get; set; }
-
-        public bool Status { get; set; } = true;
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();

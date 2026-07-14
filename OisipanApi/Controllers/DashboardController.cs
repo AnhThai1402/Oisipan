@@ -20,17 +20,17 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<DashboardStatsDto>> GetStats()
     {
         var today = DateTime.Now.Date;
-        var monthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
         // Today's revenue
         var todayOrders = await _context.Orders
-            .Where(o => o.OrderDate.Date == today && o.Status != "Đã hủy")
+            .Where(o => o.CreatedAt.Date == today && o.Status == "Đã hoàn thành")
             .ToListAsync();
         var todayRevenue = todayOrders.Sum(o => o.TotalAmount);
 
         // Month revenue
         var monthOrders = await _context.Orders
-            .Where(o => o.OrderDate >= monthStart && o.Status != "Đã hủy")
+            .Where(o => o.CreatedAt >= startOfMonth && o.Status == "Đã hoàn thành")
             .ToListAsync();
         var monthRevenue = monthOrders.Sum(o => o.TotalAmount);
 
@@ -41,24 +41,20 @@ public class DashboardController : ControllerBase
             .CountAsync(o => o.Status == "Đã xác nhận" || o.Status == "Đang chuẩn bị");
 
         // Stock info
-        var lowStockThreshold = 10;
-        var lowStockProducts = await _context.Products
-            .CountAsync(p => p.Quantity > 0 && p.Quantity <= lowStockThreshold);
-        var outOfStockProducts = await _context.Products
-            .CountAsync(p => p.Quantity <= 0);
+        var lowStockProducts = await _context.Products.CountAsync(p => p.StockQuantity > 0 && p.StockQuantity <= (p.MinimumStock ?? 10));
+        var outOfStockProducts = await _context.Products.CountAsync(p => p.StockQuantity == 0);
 
         // Customer info
         var newCustomersThisMonth = await _context.Accounts
-            .CountAsync(a => a.Status);
+            .CountAsync(a => a.CreatedAt >= startOfMonth && a.Status == "Active");
         var totalCustomers = await _context.Accounts
-            .CountAsync(a => a.Status);
+            .CountAsync(a => a.Status == "Active");
 
         // Recent orders
         var recentOrders = await _context.Orders
             .Include(o => o.Account)
             .Include(o => o.OrderDetails)
-            .Where(o => o.OrderDate.Date == today)
-            .OrderByDescending(o => o.OrderDate)
+            .OrderByDescending(o => o.CreatedAt)
             .Take(10)
             .Select(o => new OrderTodayDto
             {
@@ -68,14 +64,14 @@ public class DashboardController : ControllerBase
                 TotalAmount = o.TotalAmount,
                 PaymentMethod = o.PaymentMethod,
                 Status = o.Status,
-                CreatedDate = o.OrderDate,
+                CreatedDate = o.CreatedAt,
                 EstimatedDelivery = GetEstimatedDelivery(o.Status)
             })
             .ToListAsync();
 
         // Daily revenue breakdown for the month
         var dailyRevenues = monthOrders
-            .GroupBy(o => o.OrderDate.Date)
+            .GroupBy(o => o.CreatedAt.Date)
             .OrderBy(g => g.Key)
             .Select(g => new DailyRevenueDto
             {

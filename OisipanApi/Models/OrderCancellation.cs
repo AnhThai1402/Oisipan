@@ -3,10 +3,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class OrderCancellationRequest
+    [Table("CancellationReasons")]
+    public class OrderCancellation : BaseEntity
     {
         [Key]
-        public int CancellationRequestId { get; set; }
+        public int OrderCancellationId { get; set; }
 
         public int OrderId { get; set; }
         [ForeignKey("OrderId")]
@@ -16,11 +17,10 @@ namespace Oishipan.Models
         [StringLength(500)]
         public string Reason { get; set; } = string.Empty;
 
-        // Status: Pending, Approved, Rejected
-        [StringLength(20)]
-        public string Status { get; set; } = "Pending";
+        [StringLength(50)]
+        public string? CancelledBy { get; set; }
 
-        public DateTime RequestDate { get; set; } = DateTime.Now;
+        public DateTime CancelledAt { get; set; } = DateTime.Now;
 
         public DateTime? ResponseDate { get; set; }
 

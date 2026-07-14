@@ -77,7 +77,7 @@
                 {
                     @foreach (var product in Model)
                     {
-                        var status = product.Quantity <= 0 ? "hidden" : product.Quantity <= (product.MinimumStock ?? 10) ? "low-stock" : "selling";
+                        var status = product.StockQuantity <= 0 ? "hidden" : product.StockQuantity <= (product.MinimumStock ?? 10) ? "low-stock" : "selling";
                         var statusClass = status == "hidden" ? "muted" : status == "low-stock" ? "warning" : "live";
                         var statusText = status == "hidden" ? "Hết hàng" : status == "low-stock" ? "Sắp hết" : "Đang bán";
 
@@ -107,11 +107,11 @@
                             </td>
                             <td>@(product.CategoryName ?? "Chưa có")</td>
                             <td class="text-success">@product.Price.ToString("N0")đ</td>
-                            <td>@product.Quantity</td>
+                            <td>@product.StockQuantity</td>
                             <td><span class="status @statusClass">@statusText</span></td>
                             <td onclick="event.stopPropagation()">
                                 <div class="action-buttons product-action-buttons">
-                                    <button type="button" class="icon-action" title="Chỉnh sửa tồn kho" onclick="openEditQuantityModal(@product.ProductId, '@product.ProductName', @product.Quantity)">
+                                    <button type="button" class="icon-action" title="Chỉnh sửa tồn kho" onclick="openEditQuantityModal(@product.ProductId, '@product.ProductName', @product.StockQuantity)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <a asp-area="Admin" asp-controller="Products" asp-action="Detail" asp-route-id="@product.ProductId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>

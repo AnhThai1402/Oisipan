@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class Voucher
+    public class Voucher : BaseEntity
     {
         [Key]
         public int VoucherId { get; set; }
@@ -41,12 +41,6 @@ namespace Oishipan.Models
         public DateTime StartDate { get; set; } = DateTime.Now;
 
         public DateTime ExpiryDate { get; set; }
-
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
-
-        // Status: Active, Inactive, Expired
-        [StringLength(20)]
-        public string Status { get; set; } = "Active";
 
         public bool IsExpired
         {

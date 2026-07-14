@@ -8,18 +8,16 @@ public class ProductVariantManageRequest
     public int ProductId { get; set; }
 
     [Required]
-    [StringLength(100)]
-    public string Size { get; set; } = string.Empty;
+    public List<int> ProductValueIds { get; set; } = new();
 
-    [Required]
-    [StringLength(100)]
-    public string Filling { get; set; } = string.Empty;
+    [StringLength(50)]
+    public string? Sku { get; set; }
 
     [Range(0, double.MaxValue)]
-    public decimal AdditionalPrice { get; set; }
+    public decimal Price { get; set; }
 
     [Range(0, int.MaxValue)]
-    public int Quantity { get; set; }
+    public int StockQuantity { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

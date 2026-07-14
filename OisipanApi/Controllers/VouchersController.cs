@@ -20,7 +20,7 @@ public class VouchersController : ControllerBase
     public async Task<ActionResult<IEnumerable<VoucherResponse>>> GetAll()
     {
         var vouchersData = await _context.Vouchers
-            .OrderByDescending(v => v.CreatedDate)
+            .OrderByDescending(v => v.CreatedAt)
             .ToListAsync();
 
         var vouchers = vouchersData.Select(v => ToResponse(v)).ToList();
@@ -66,7 +66,7 @@ public class VouchersController : ControllerBase
             StartDate = request.StartDate,
             ExpiryDate = request.ExpiryDate,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status,
-            CreatedDate = DateTime.Now
+            CreatedAt = DateTime.Now
         };
 
         _context.Vouchers.Add(voucher);
@@ -129,7 +129,64 @@ public class VouchersController : ControllerBase
         _context.Vouchers.Remove(voucher);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Voucher đã được xóa thành công." });
+        return NoContent();
+    }
+
+    [HttpPost("validate")]
+    public async Task<IActionResult> ValidateVoucher([FromBody] ValidateVoucherRequest request)
+    {
+        var voucherCode = request.Code?.Trim();
+        var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+        if (voucher == null)
+        {
+            return BadRequest(new { message = "Mã giảm giá không tồn tại." });
+        }
+
+        if (voucher.Status != "Active" || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+        {
+            return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
+        }
+
+        if (request.OrderTotal < voucher.MinOrderValue)
+        {
+            return BadRequest(new { message = $"Đơn hàng phải từ {voucher.MinOrderValue:N0}đ để sử dụng mã này." });
+        }
+
+        if (request.TotalItems < voucher.MinimumItems)
+        {
+            return BadRequest(new { message = $"Đơn hàng phải có ít nhất {voucher.MinimumItems} sản phẩm để sử dụng mã này." });
+        }
+
+        if (voucher.TotalQuantity <= 0)
+        {
+            return BadRequest(new { message = "Mã giảm giá đã hết lượt sử dụng." });
+        }
+
+        decimal discount = 0;
+        if (string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase))
+        {
+            discount = request.OrderTotal * (voucher.DiscountValue / 100m);
+            if (voucher.MaxDiscount > 0 && discount > voucher.MaxDiscount)
+            {
+                discount = voucher.MaxDiscount;
+            }
+        }
+        else
+        {
+            discount = voucher.DiscountValue;
+        }
+
+        if (discount > request.OrderTotal)
+        {
+            discount = request.OrderTotal;
+        }
+
+        return Ok(new { 
+            isValid = true, 
+            discountAmount = discount, 
+            finalAmount = request.OrderTotal - discount 
+        });
     }
 
     private static VoucherResponse ToResponse(Voucher voucher) => new()
@@ -146,7 +203,7 @@ public class VouchersController : ControllerBase
         TotalQuantity = voucher.TotalQuantity,
         StartDate = voucher.StartDate,
         ExpiryDate = voucher.ExpiryDate,
-        CreatedDate = voucher.CreatedDate,
+        CreatedDate = voucher.CreatedAt,
         Status = voucher.Status
     };
 }
