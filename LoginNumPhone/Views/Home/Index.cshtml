@@ -1,0 +1,170 @@
+﻿@model LoginNumPhone.Models.NumPhoneModel
+
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="container mt-5">
+
+    <div class="mb-3">
+        <label>Số điện thoại</label>
+
+        <input asp-for="PhoneNumber"
+               id="PhoneNumber"
+               class="form-control"
+               placeholder="+84901234567" />
+
+        <span asp-validation-for="PhoneNumber"
+              class="text-danger"></span>
+    </div>
+
+    <div id="recaptcha-container" class="mb-3"></div>
+
+    <button id="sendOtpBtn"
+            type="button"
+            class="btn btn-primary">
+        Gửi OTP
+    </button>
+
+    <hr />
+
+    <div id="otpSection" style="display:none">
+
+        <div class="mb-3">
+
+            <label>Mã OTP</label>
+
+            <input asp-for="OTP"
+                   id="OTP"
+                   class="form-control"
+                   placeholder="Nhập OTP" />
+
+        </div>
+
+        <button id="verifyBtn"
+                type="button"
+                class="btn btn-success">
+            Xác thực
+        </button>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <script>
+
+        const firebaseConfig = {
+            apiKey: "@ViewBag.ApiKey",
+            authDomain: "@ViewBag.AuthDomain",
+            projectId: "@ViewBag.ProjectId",
+            storageBucket: "@ViewBag.StorageBucket",
+            messagingSenderId: "@ViewBag.MessagingSenderId",
+            appId: "@ViewBag.AppId"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+
+        window.recaptchaVerifier =
+            new firebase.auth.RecaptchaVerifier(
+                "recaptcha-container",
+                {
+                    size: "normal"
+                });
+
+        window.recaptchaVerifier.render();
+
+        document.getElementById("sendOtpBtn")
+        .addEventListener("click", async function () {
+
+            const phone =
+                document.getElementById("PhoneNumber").value;
+
+            if (phone === "") {
+                alert("Nhập số điện thoại");
+                return;
+            }
+
+            try {
+
+                window.confirmationResult =
+                    await auth.signInWithPhoneNumber(
+                        phone,
+                        window.recaptchaVerifier);
+
+                document.getElementById("otpSection").style.display = "block";
+
+                alert("Đã gửi OTP");
+
+            }
+            catch (err) {
+
+                alert(err.message);
+
+            }
+
+        });
+
+        document.getElementById("verifyBtn")
+        .addEventListener("click", async function () {
+
+            const otp =
+                document.getElementById("OTP").value;
+
+            if (otp === "") {
+                alert("Nhập OTP");
+                return;
+            }
+
+            try {
+
+                const result =
+                    await window.confirmationResult.confirm(otp);
+
+                const idToken =
+                    await result.user.getIdToken();
+
+                const response =
+                    await fetch("/Home/LoginPhone", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            idToken: idToken
+                        })
+
+                    });
+
+                if (response.ok) {
+
+                    alert("Đăng nhập thành công");
+
+                    window.location.href = "/Home/GetAll";
+
+                }
+                else {
+
+                    alert("Đăng nhập thất bại");
+
+                }
+
+            }
+            catch (err) {
+
+                alert(err.message);
+
+            }
+
+        });
+
+    </script>
+}
