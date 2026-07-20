@@ -23,6 +23,8 @@ namespace Oishipan.Models
                 .HasIndex(a => a.Email).IsUnique();
             modelBuilder.Entity<Account>()
                 .HasIndex(a => a.PhoneNumber).IsUnique();
+            modelBuilder.Entity<Account>()
+                .HasIndex(a => a.GoogleId).IsUnique();
 
             // Cấu hình Unique cho Voucher Code
             modelBuilder.Entity<Voucher>()

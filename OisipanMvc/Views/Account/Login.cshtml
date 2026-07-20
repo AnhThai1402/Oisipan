@@ -46,6 +46,18 @@
             <button type="submit" class="btn btn-primary w-100 mt-3">Đăng nhập</button>
         </form>
 
+        <div class="auth-divider">
+            <span>HOẶC</span>
+        </div>
+
+        <div class="google-signin-container">
+            <div id="google-signin-button"></div>
+        </div>
+
+        <div id="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
         <p class="auth-switch">
             Chưa có tài khoản?
             <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a>
@@ -55,4 +67,15 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="~/css/google-login.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="~/js/google-login.js"></script>
+    <script>
+        window.addEventListener('load', function () {
+            var clientId = '@ViewBag.GoogleClientId';
+            if (clientId && window.GoogleLoginHandler) {
+                GoogleLoginHandler.initialize(clientId);
+            }
+        });
+    </script>
 }

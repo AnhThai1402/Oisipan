@@ -1,6 +1,63 @@
 @BackendApi_HostAddress = http://localhost:5188
+@token = your-jwt-token-here
 
+### Weather Forecast Test
 GET {{BackendApi_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+### Register New Account (Local)
+POST {{BackendApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Nguyen Van A",
+  "email": "nguyenvana@example.com",
+  "phoneNumber": "0901234567",
+  "password": "Password123!",
+  "confirmPassword": "Password123!",
+  "address": "123 Nguyen Hue, TPHCM"
+}
+
+###
+
+### Login with Email and Password
+POST {{BackendApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nguyenvana@example.com",
+  "password": "Password123!"
+}
+
+###
+
+### Google Login
+POST {{BackendApi_HostAddress}}/api/auth/google-login
+Content-Type: application/json
+
+{
+  "idToken": "YOUR_GOOGLE_ID_TOKEN_HERE"
+}
+
+###
+
+### Get Current User (Protected - Requires JWT Token)
+GET {{BackendApi_HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Forgot Password
+POST {{BackendApi_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "nguyenvana@example.com",
+  "phoneNumber": "0901234567",
+  "newPassword": "NewPassword123!"
+}
 
 ###

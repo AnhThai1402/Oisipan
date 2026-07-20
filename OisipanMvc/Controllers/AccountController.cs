@@ -11,10 +11,12 @@ namespace FrontendMvc.Controllers;
 public class AccountController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration;
 
-    public AccountController(IHttpClientFactory httpClientFactory)
+    public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -46,6 +48,7 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Login()
     {
+        ViewBag.GoogleClientId = _configuration["GoogleAuth:ClientId"];
         return View(new LoginViewModel());
     }
 
@@ -93,6 +96,47 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync("OisipanCookie");
         return RedirectToAction("Index", "Home");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GoogleLoginCallback([FromBody] GoogleLoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.IdToken))
+        {
+            return Json(new { success = false, message = "Thiếu Google ID Token." });
+        }
+
+        try
+        {
+            var response = await Api.PostAsJsonAsync("api/auth/google-login", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await ExtractErrorMessage(response);
+                return Json(new { success = false, message = errorMessage });
+            }
+
+            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (account is null)
+            {
+                return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
+            }
+
+            await SignIn(account, rememberMe: true);
+
+            var redirectUrl = string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? Url.Action("Index", "Admin")
+                : Url.Action("Index", "Home");
+
+            return Json(new { success = true, redirectUrl });
+        }
+        catch (HttpRequestException ex)
+        {
+            return Json(new { success = false, message = "Không thể kết nối tới máy chủ xác thực. Vui lòng kiểm tra Backend API đang chạy. Chi tiết: " + ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Có lỗi xảy ra khi đăng nhập bằng Google: " + ex.Message });
+        }
     }
 
     [HttpGet]
@@ -188,5 +232,35 @@ public class AccountController : Controller
         }
 
         ModelState.AddModelError(string.Empty, "Có lỗi xảy ra. Vui lòng thử lại.");
+    }
+
+    private static async Task<string> ExtractErrorMessage(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return "Google token không hợp lệ hoặc đã hết hạn.";
+        }
+
+        var content = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return "Có lỗi xảy ra. Vui lòng thử lại.";
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(content);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("message", out var messageProperty))
+            {
+                return messageProperty.GetString() ?? "Có lỗi xảy ra.";
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return "Có lỗi xảy ra. Vui lòng thử lại.";
     }
 }

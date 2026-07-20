@@ -15,12 +15,17 @@ namespace Oishipan.Models
         [StringLength(100)]
         public string Email { get; set; } = null!;
 
-        [Required]
         [StringLength(15)]
-        public string PhoneNumber { get; set; } = null!;
+        public string? PhoneNumber { get; set; }
+
+        public string? Password { get; set; }
+
+        [StringLength(100)]
+        public string? GoogleId { get; set; }
 
         [Required]
-        public string Password { get; set; } = null!;
+        [StringLength(20)]
+        public string AuthProvider { get; set; } = "Local";
 
         [Required]
         [StringLength(20)]
