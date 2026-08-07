@@ -112,13 +112,13 @@
             <form method="post" asp-controller="Cart" asp-action="Add" id="productForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="productId" value="@Model.ProductId" />
-                <input type="hidden" id="productVariantId" name="productVariantId" value="0" />
+                <input type="hidden" id="productVariantId" name="productVariantId" value="" />
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                 <div class="product-main-actions">
                     <button type="submit" class="btn-main-add-cart">
                         <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
                     </button>
-                    <button type="button" class="btn-main-buy-now" onclick="triggerBuyNow(@Model.ProductId)">
+                    <button type="button" class="btn-main-buy-now" onclick="triggerBuyNow('@Model.ProductId')">
                         Mua ngay
                     </button>
                 </div>

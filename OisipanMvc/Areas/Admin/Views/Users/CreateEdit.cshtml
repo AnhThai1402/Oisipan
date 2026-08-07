@@ -1,6 +1,6 @@
 @model UserAdminViewModel
 @{
-    var isEdit = Model.UserId > 0;
+    var isEdit = Model.UserId != Guid.Empty;
     ViewData["Title"] = isEdit ? "Chỉnh sửa người dùng" : "Thêm người dùng mới";
 }
 

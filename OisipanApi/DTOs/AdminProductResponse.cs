@@ -5,14 +5,14 @@ namespace Oishipan.DTOs;
 /// </summary>
 public class AdminProductResponse
 {
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public string? Image { get; set; }
     public string? Sku { get; set; }
-    public int StockQuantity { get; set; }
-    public int? MinimumStock { get; set; }
-    public int CategoryId { get; set; }
+    public short StockQuantity { get; set; }
+    public byte? MinimumStock { get; set; }
+    public Guid CategoryId { get; set; }
     public string? CategoryName { get; set; }
     public string? Description { get; set; }
     public string Status { get; set; } = "active";
@@ -23,8 +23,8 @@ public class AdminProductResponse
 
 public class AdminProductOptionResponse
 {
-    public int ProductOptionId { get; set; }
-    public int ProductId { get; set; }
+    public Guid ProductOptionId { get; set; }
+    public Guid ProductId { get; set; }
     public string? ProductName { get; set; }
     public string OptionName { get; set; } = string.Empty;
     public List<AdminProductValueResponse> ProductValues { get; set; } = new();
@@ -32,8 +32,8 @@ public class AdminProductOptionResponse
 
 public class AdminProductValueResponse
 {
-    public int ProductValueId { get; set; }
-    public int ProductOptionId { get; set; }
+    public Guid ProductValueId { get; set; }
+    public Guid ProductOptionId { get; set; }
     public string ValueName { get; set; } = string.Empty;
     public decimal AdditionalPrice { get; set; }
 }

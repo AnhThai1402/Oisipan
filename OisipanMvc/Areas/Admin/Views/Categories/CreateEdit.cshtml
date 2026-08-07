@@ -1,7 +1,7 @@
 @model FrontendMvc.Models.CategoryAdminViewModel
 @{
-    ViewData["Title"] = Model?.CategoryId > 0 ? "Chỉnh sửa danh mục" : "Thêm danh mục mới";
-    var isEdit = Model?.CategoryId > 0;
+    ViewData["Title"] = Model?.CategoryId != Guid.Empty ? "Chỉnh sửa danh mục" : "Thêm danh mục mới";
+    var isEdit = Model?.CategoryId != Guid.Empty;
 }
 
 <section class="page-breadcrumb">

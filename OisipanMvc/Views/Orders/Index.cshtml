@@ -11,6 +11,8 @@
     </div>
 
     <div class="table-wrapper" style="max-width: 1100px; margin: 0 auto;">
+        @if (Model?.Any() == true)
+        {
         <table class="admin-table">
             <thead>
                 <tr>
@@ -24,8 +26,7 @@
                 </tr>
             </thead>
             <tbody>
-                @if (Model?.Any() == true)
-                {
+
                     @foreach (var order in Model)
                     {
                         <tr>
@@ -109,21 +110,22 @@
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px;">
-                            <i class="bi bi-receipt" style="font-size: 44px; display: block; margin-bottom: 12px;"></i>
-                            <strong>Bạn chưa có đơn hàng nào</strong>
-                            <div style="margin-top: 12px;">
-                                <a asp-controller="Home" asp-action="Index" asp-fragment="menu" class="btn-primary">Chọn bánh ngay</a>
-                            </div>
-                        </td>
-                    </tr>
-                }
             </tbody>
         </table>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <div style="width: 80px; height: 80px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="bi bi-receipt" style="font-size: 40px; color: var(--accent-green);"></i>
+                </div>
+                <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-main); margin-bottom: 8px;">Bạn chưa có đơn hàng nào</h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;">Hãy khám phá thực đơn của Oishipan và đặt những chiếc bánh thơm ngon ngay nhé!</p>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="menu" class="btn-primary" style="padding: 12px 30px; border-radius: 30px; font-weight: 600;">
+                    <i class="bi bi-cart-plus" style="margin-right: 6px;"></i> Chọn bánh ngay
+                </a>
+            </div>
+        }
     </div>
 </section>
 

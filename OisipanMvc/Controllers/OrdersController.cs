@@ -20,7 +20,7 @@ public class OrdersController : Controller
 
     public async Task<IActionResult> Index()
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -31,9 +31,9 @@ public class OrdersController : Controller
         return View(orders);
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -59,9 +59,9 @@ public class OrdersController : Controller
         return View(order);
     }
 
-    public async Task<IActionResult> Print(int id, bool print = false)
+    public async Task<IActionResult> Print(Guid id, bool print = false)
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -76,9 +76,9 @@ public class OrdersController : Controller
         return View("Invoice", order);
     }
 
-    public async Task<IActionResult> DownloadInvoice(int id)
+    public async Task<IActionResult> DownloadInvoice(Guid id)
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -101,9 +101,9 @@ public class OrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RequestCancellation(int id, [FromForm] string reason)
+    public async Task<IActionResult> RequestCancellation(Guid id, [FromForm] string reason)
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -166,7 +166,7 @@ public class OrdersController : Controller
         return content.Length > 300 ? content[..300] : content;
     }
 
-    private static OrderAdminViewModel MapToOrderViewModel(UserOrderApiResponse apiOrder, int userId)
+    private static OrderAdminViewModel MapToOrderViewModel(UserOrderApiResponse apiOrder, Guid userId)
     {
         return new OrderAdminViewModel
         {

@@ -47,7 +47,7 @@ public class UsersController : AdminBaseController
         return Task.FromResult<IActionResult>(RedirectToAction(nameof(Index)));
     }
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
         var model = await GetUser(id);
         if (model is null)
@@ -67,7 +67,7 @@ public class UsersController : AdminBaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, UserAdminViewModel model)
+    public async Task<IActionResult> Edit(Guid id, UserAdminViewModel model)
     {
         model.UserId = id;
         ModelState.Remove(nameof(UserAdminViewModel.Password));
@@ -101,7 +101,7 @@ public class UsersController : AdminBaseController
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
         var model = await GetUser(id);
         if (model is null)
@@ -115,7 +115,7 @@ public class UsersController : AdminBaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var existing = await GetUser(id);
         if (existing is null)
@@ -143,7 +143,7 @@ public class UsersController : AdminBaseController
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 
-    private async Task<UserAdminViewModel?> GetUser(int id)
+    private async Task<UserAdminViewModel?> GetUser(Guid id)
     {
         try
         {

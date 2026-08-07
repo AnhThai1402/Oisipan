@@ -50,8 +50,8 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<OrderResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<OrderResponse>> GetById(Guid id)
     {
         var order = await BuildOrderQuery()
             .FirstOrDefaultAsync(o => o.OrderId == id);
@@ -80,8 +80,8 @@ public class OrdersController : ControllerBase
         return Ok(adminOrders);
     }
 
-    [HttpGet("admin/{id:int}")]
-    public async Task<ActionResult<AdminOrderResponse>> GetByIdForAdmin(int id)
+    [HttpGet("admin/{id:guid}")]
+    public async Task<ActionResult<AdminOrderResponse>> GetByIdForAdmin(Guid id)
     {
         var order = await _context.Orders
             .Include(o => o.OrderDetails)
@@ -97,8 +97,8 @@ public class OrdersController : ControllerBase
         return Ok(await ToAdminResponse(order, account));
     }
 
-    [HttpGet("user/{userId:int}")]
-    public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUser(int userId)
+    [HttpGet("user/{userId:guid}")]
+    public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUser(Guid userId)
     {
         var ordersData = await BuildOrderQuery()
             .Where(o => o.UserId == userId)
@@ -118,7 +118,7 @@ public class OrdersController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        if (!await _context.Accounts.AnyAsync(a => a.UserId == request.UserId && a.Status == "Active"))
+        if (!await _context.Accounts.AnyAsync(a => a.UserId == request.UserId && a.Status))
         {
             return BadRequest(new { message = "Tài khoản đặt hàng không tồn tại hoặc đã bị khóa." });
         }
@@ -154,7 +154,7 @@ public class OrdersController : ControllerBase
             CustomerName = request.CustomerName.Trim(),
             CustomerPhone = request.CustomerPhone.Trim(),
             CreatedAt = DateTime.Now,
-            Status = "Chờ xác nhận",
+            OrderStatus = "Chờ xác nhận",
             PaymentMethod = request.PaymentMethod.Trim(),
             ShippingAddress = request.ShippingAddress.Trim()
         };
@@ -203,7 +203,7 @@ public class OrdersController : ControllerBase
                 return BadRequest(new { message = "Mã giảm giá không tồn tại." });
             }
 
-            if (voucher.Status != "Active" || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+            if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
             {
                 await transaction.RollbackAsync();
                 return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
@@ -274,8 +274,8 @@ public class OrdersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = order.OrderId }, ToResponse(created));
     }
 
-    [HttpPatch("{id:int}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, OrderStatusUpdateRequest request)
+    [HttpPatch("{id:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, OrderStatusUpdateRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -298,20 +298,20 @@ public class OrdersController : ControllerBase
         if (status == "Đã hủy")
         {
             var allowedCancellationStatuses = new[] { "Chờ xác nhận", "Đã xác nhận" };
-            if (!allowedCancellationStatuses.Contains(order.Status))
+            if (!allowedCancellationStatuses.Contains(order.OrderStatus))
             {
-                return BadRequest(new { message = $"Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'. Trạng thái hiện tại: '{order.Status}'." });
+                return BadRequest(new { message = $"Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'. Trạng thái hiện tại: '{order.OrderStatus}'." });
             }
         }
 
-        order.Status = status;
+        order.OrderStatus = status;
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    [HttpPost("{id:int}/cancellation-request")]
-    public async Task<IActionResult> RequestCancellation(int id, OrderCancellationCreateDto request)
+    [HttpPost("{id:guid}/cancellation-request")]
+    public async Task<IActionResult> RequestCancellation(Guid id, OrderCancellationCreateDto request)
     {
         if (!ModelState.IsValid)
         {
@@ -325,14 +325,14 @@ public class OrdersController : ControllerBase
         }
 
         // Check if order can be cancelled
-        if (order.Status == "Đã giao" || order.Status == "Đã hủy")
+        if (order.OrderStatus == "Đã giao" || order.OrderStatus == "Đã hủy")
         {
-            return BadRequest(new { message = $"Không thể hủy đơn hàng ở trạng thái '{order.Status}'." });
+            return BadRequest(new { message = $"Không thể hủy đơn hàng ở trạng thái '{order.OrderStatus}'." });
         }
 
         // Check if cancellation request already exists
         var existingRequest = await _context.CancellationReasons
-            .FirstOrDefaultAsync(r => r.OrderId == id && r.Status == "Pending");
+            .FirstOrDefaultAsync(r => r.OrderId == id && r.RequestStatus == "Pending");
 
         if (existingRequest is not null)
         {
@@ -343,7 +343,7 @@ public class OrdersController : ControllerBase
         {
             OrderId = id,
             Reason = request.Reason.Trim(),
-            Status = "Pending",
+            RequestStatus = "Pending",
             CreatedAt = DateTime.Now,
             CancelledBy = "Customer"
         };
@@ -354,8 +354,8 @@ public class OrdersController : ControllerBase
         return Ok(new { message = "Yêu cầu hủy đơn hàng đã được gửi. Vui lòng chờ phản hồi từ admin." });
     }
 
-    [HttpGet("{id:int}/cancellation-requests")]
-    public async Task<ActionResult<IEnumerable<OrderCancellationDto>>> GetCancellationRequests(int id)
+    [HttpGet("{id:guid}/cancellation-requests")]
+    public async Task<ActionResult<IEnumerable<OrderCancellationDto>>> GetCancellationRequests(Guid id)
     {
         var requests = await _context.CancellationReasons
             .Where(r => r.OrderId == id)
@@ -366,7 +366,7 @@ public class OrdersController : ControllerBase
                 OrderId = r.OrderId,
                 Reason = r.Reason,
                 CancelledBy = r.CancelledBy,
-                Status = r.Status,
+                Status = r.RequestStatus,
                 CancelledAt = r.CreatedAt,
                 ResponseDate = r.ResponseDate,
                 AdminNote = r.AdminNote
@@ -376,8 +376,8 @@ public class OrdersController : ControllerBase
         return Ok(requests);
     }
 
-    [HttpPatch("cancellation-request/{id:int}/respond")]
-    public async Task<IActionResult> RespondToCancellationRequest(int id, [FromBody] AdminCancellationResponseDto response)
+    [HttpPatch("cancellation-request/{id:guid}/respond")]
+    public async Task<IActionResult> RespondToCancellationRequest(Guid id, [FromBody] AdminCancellationResponseDto response)
     {
         if (!ModelState.IsValid)
         {
@@ -390,7 +390,7 @@ public class OrdersController : ControllerBase
             return NotFound(new { message = "Không tìm thấy yêu cầu hủy đơn." });
         }
 
-        request.Status = response.IsApproved ? "Approved" : "Rejected";
+        request.RequestStatus = response.IsApproved ? "Approved" : "Rejected";
         request.AdminNote = response.AdminNote?.Trim();
         request.ResponseDate = DateTime.Now;
 
@@ -399,17 +399,17 @@ public class OrdersController : ControllerBase
             var order = await _context.Orders.FindAsync(request.OrderId);
             if (order is not null)
             {
-                order.Status = "Đã hủy";
+                order.OrderStatus = "Đã hủy";
             }
         }
 
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = request.Status == "Approved" ? "Yêu cầu hủy đơn hàng đã được phê duyệt." : "Yêu cầu hủy đơn hàng đã bị từ chối." });
+        return Ok(new { message = request.RequestStatus == "Approved" ? "Yêu cầu hủy đơn hàng đã được phê duyệt." : "Yêu cầu hủy đơn hàng đã bị từ chối." });
     }
 
-    [HttpGet("user/{userId:int}/vouchers")]
-    public async Task<ActionResult<IEnumerable<UserVoucherDto>>> GetUserVouchers(int userId)
+    [HttpGet("user/{userId:guid}/vouchers")]
+    public async Task<ActionResult<IEnumerable<UserVoucherDto>>> GetUserVouchers(Guid userId)
     {
         // Lấy các voucher đã được gán/sử dụng bởi user
         var userVouchers = await _context.UserVouchers
@@ -419,7 +419,7 @@ public class OrdersController : ControllerBase
 
         // Lấy các voucher public đang active
         var publicVouchers = await _context.Vouchers
-            .Where(v => v.VoucherType == "Public" && v.Status == "Active" && v.StartDate <= DateTime.Now)
+            .Where(v => v.VoucherType == "Public" && v.Status && v.StartDate <= DateTime.Now)
             .ToListAsync();
 
         var uniqueUserVouchers = userVouchers
@@ -457,7 +457,7 @@ public class OrdersController : ControllerBase
             {
                 result.Add(new UserVoucherDto
                 {
-                    UserVoucherId = 0,
+                    UserVoucherId = Guid.Empty,
                     UserId = userId,
                     VoucherId = pv.VoucherId,
                     VoucherCode = pv.Code,
@@ -475,8 +475,8 @@ public class OrdersController : ControllerBase
         return Ok(result.OrderByDescending(v => v.AssignedDate));
     }
 
-    [HttpGet("{id:int}/invoice.pdf")]
-    public async Task<IActionResult> GetInvoicePdf(int id)
+    [HttpGet("{id:guid}/invoice.pdf")]
+    public async Task<IActionResult> GetInvoicePdf(Guid id)
     {
         try
         {
@@ -641,8 +641,8 @@ public class OrdersController : ControllerBase
         }
     }
 
-    [HttpPost("{id:int}/send-invoice")]
-    public async Task<IActionResult> SendInvoice(int id, [FromBody] SendInvoiceRequest request)
+    [HttpPost("{id:guid}/send-invoice")]
+    public async Task<IActionResult> SendInvoice(Guid id, [FromBody] SendInvoiceRequest request)
     {
         var order = await _context.Orders
             .Include(o => o.OrderDetails)
@@ -874,7 +874,7 @@ public class OrdersController : ControllerBase
             FinalAmount = order.FinalAmount,
             VoucherId = order.VoucherId,
             VoucherCode = order.Voucher?.Code,
-            Status = order.Status,
+            Status = order.OrderStatus,
             PaymentMethod = order.PaymentMethod,
             Items = order.OrderDetails.Select(item => new OrderDetailResponse
             {
@@ -907,7 +907,7 @@ public class OrdersController : ControllerBase
             FinalAmount = order.FinalAmount,
             VoucherId = order.VoucherId,
             VoucherCode = order.Voucher?.Code,
-            Status = order.Status,
+            Status = order.OrderStatus,
             PaymentMethod = order.PaymentMethod,
             UpdatedDate = null,
             Notes = null,
@@ -924,7 +924,7 @@ public class OrdersController : ControllerBase
         };
     }
 
-    private Task AssignVoucherToUser(int userId)
+    private Task AssignVoucherToUser(Guid userId)
     {
         return Task.CompletedTask;
     }

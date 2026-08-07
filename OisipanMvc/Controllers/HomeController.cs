@@ -30,12 +30,12 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> Menu([FromQuery] int? categoryId = null)
+    public async Task<IActionResult> Menu([FromQuery] Guid? categoryId = null)
     {
         return View(await BuildStorefrontModel(categoryId));
     }
 
-    public async Task<IActionResult> ProductDetail(int id)
+    public async Task<IActionResult> ProductDetail(Guid id)
     {
         var response = await Api.GetAsync($"api/products/{id}");
         if (!response.IsSuccessStatusCode)
@@ -57,18 +57,7 @@ public class HomeController : Controller
         return View(product);
     }
 
-    public async Task<IActionResult> News()
-    {
-        var articles = await Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles")
-            ?? new List<NewsArticleViewModel>();
-        return View(articles);
-    }
 
-    public async Task<IActionResult> NewsDetail(int id)
-    {
-        var article = await Api.GetFromJsonAsync<NewsArticleViewModel>($"api/newsarticles/{id}");
-        return article is null ? NotFound() : View(article);
-    }
 
     public IActionResult Contact()
     {
@@ -81,23 +70,23 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private async Task<StorefrontViewModel> BuildStorefrontModel(int? categoryId = null)
+    private async Task<StorefrontViewModel> BuildStorefrontModel(Guid? categoryId = null)
     {
         var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
         var productsTask = Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
-        var newsTask = Api.GetFromJsonAsync<List<NewsArticleViewModel>>("api/newsarticles");
+        var bannersTask = Api.GetFromJsonAsync<List<BannerViewModel>>("api/banners");
         var categoriesTask = Api.GetFromJsonAsync<List<CategoryAdminViewModel>>("api/categories");
         
-        await Task.WhenAll(productsTask, newsTask, categoriesTask);
+        await Task.WhenAll(productsTask, bannersTask, categoriesTask);
 
         var products = await productsTask ?? new List<ProductCatalogViewModel>();
-        var newsArticles = await newsTask ?? new List<NewsArticleViewModel>();
+        var banners = await bannersTask ?? new List<BannerViewModel>();
         var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
 
         return new StorefrontViewModel
         {
             Products = products.Where(product => product.StockQuantity > 0).ToList(),
-            NewsArticles = newsArticles,
+            Banners = banners,
             Categories = categories,
             SelectedCategoryId = categoryId
         };

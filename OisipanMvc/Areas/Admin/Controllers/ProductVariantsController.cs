@@ -18,10 +18,10 @@ public class ProductVariantsController : Controller
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<IActionResult> Index(int? productId)
+    public async Task<IActionResult> Index(Guid? productId)
     {
         var products = await GetProductItems(productId);
-        productId ??= int.TryParse(products.FirstOrDefault()?.Value, out var firstProductId)
+        productId ??= Guid.TryParse(products.FirstOrDefault()?.Value, out var firstProductId)
             ? firstProductId
             : null;
 
@@ -44,7 +44,7 @@ public class ProductVariantsController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddOptionValue(
-        int productId,
+        Guid productId,
         string optionName,
         string valueName,
         decimal additionalPrice)
@@ -95,9 +95,9 @@ public class ProductVariantsController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateOptionValue(
-        int productId,
-        int productValueId,
-        int productOptionId,
+        Guid productId,
+        Guid productValueId,
+        Guid productOptionId,
         string valueName,
         decimal additionalPrice)
     {
@@ -118,7 +118,7 @@ public class ProductVariantsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteOptionValue(int productId, int productValueId)
+    public async Task<IActionResult> DeleteOptionValue(Guid productId, Guid productValueId)
     {
         var response = await Api.DeleteAsync($"api/productvalues/{productValueId}");
         TempData[response.IsSuccessStatusCode ? "SuccessMessage" : "ErrorMessage"] =
@@ -158,7 +158,7 @@ public class ProductVariantsController : Controller
         return fallback;
     }
 
-    private async Task<List<SelectListItem>> GetProductItems(int? selectedProductId)
+    private async Task<List<SelectListItem>> GetProductItems(Guid? selectedProductId)
     {
         var products = await Api.GetFromJsonAsync<List<ProductAdminViewModel>>("api/products") ?? new();
         return products

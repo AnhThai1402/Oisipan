@@ -5,8 +5,8 @@ namespace Oishipan.DTOs;
 /// </summary>
 public class AdminOrderResponse
 {
-    public int OrderId { get; set; }
-    public int UserId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid UserId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerEmail { get; set; }
     public string? CustomerPhone { get; set; }
@@ -15,7 +15,7 @@ public class AdminOrderResponse
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal FinalAmount { get; set; }
-    public int? VoucherId { get; set; }
+    public Guid? VoucherId { get; set; }
     public string? VoucherCode { get; set; }
     public string Status { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
@@ -26,11 +26,11 @@ public class AdminOrderResponse
 
 public class AdminOrderItemResponse
 {
-    public int OrderDetailId { get; set; }
-    public int ProductVariantId { get; set; }
+    public Guid OrderDetailId { get; set; }
+    public Guid ProductVariantId { get; set; }
     public string? ProductName { get; set; }
     public string? VariantName { get; set; }
     public decimal UnitPrice { get; set; }
-    public int Quantity { get; set; }
+    public byte Quantity { get; set; }
     public string? Note { get; set; }
 }

@@ -4,9 +4,9 @@ namespace FrontendMvc.Models
 {
     public class UserVoucherDto
     {
-        public int UserVoucherId { get; set; }
-        public int UserId { get; set; }
-        public int VoucherId { get; set; }
+        public Guid UserVoucherId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid VoucherId { get; set; }
         
         [Display(Name = "Mã voucher")]
         public string VoucherCode { get; set; } = string.Empty;

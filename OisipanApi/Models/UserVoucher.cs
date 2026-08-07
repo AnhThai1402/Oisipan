@@ -6,13 +6,13 @@ namespace Oishipan.Models
     public class UserVoucher : BaseEntity
     {
         [Key]
-        public int UserVoucherId { get; set; }
+        public Guid UserVoucherId { get; set; }
 
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         [ForeignKey("UserId")]
         public virtual Account? Account { get; set; }
 
-        public int VoucherId { get; set; }
+        public Guid VoucherId { get; set; }
         [ForeignKey("VoucherId")]
         public virtual Voucher? Voucher { get; set; }
 
@@ -20,7 +20,7 @@ namespace Oishipan.Models
         public bool IsUsed { get; set; } = false;
 
         // Reference to the order where this voucher was used (if any)
-        public int? UsedInOrderId { get; set; }
+        public Guid? UsedInOrderId { get; set; }
 
         // Date when voucher was assigned to user
         public DateTime AssignedDate { get; set; } = DateTime.Now;

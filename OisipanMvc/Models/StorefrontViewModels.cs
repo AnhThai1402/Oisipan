@@ -6,7 +6,7 @@ namespace FrontendMvc.Models;
 public class CartViewModel
 {
     public List<CartItemViewModel> Items { get; set; } = new();
-    public int TotalQuantity => Items.Sum(item => item.Quantity);
+    public short TotalQuantity => (short)Items.Sum(item => item.Quantity);
     public decimal TotalAmount => Items.Sum(item => item.LineTotal);
 }
 
@@ -24,14 +24,14 @@ public class CheckoutViewModel
     [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán.")]
     public string PaymentMethod { get; set; } = "COD";
 
-    public int? BuyNowProductVariantId { get; set; }
+    public Guid? BuyNowProductVariantId { get; set; }
     
     public string? VoucherCode { get; set; }
 }
 
 public class ApiOrderCreateRequest
 {
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = "COD";
@@ -42,8 +42,8 @@ public class ApiOrderCreateRequest
 
 public class ApiOrderItemRequest
 {
-    public int ProductVariantId { get; set; }
-    public int Quantity { get; set; }
+    public Guid ProductVariantId { get; set; }
+    public byte Quantity { get; set; }
     public string? Note { get; set; }
 }
 

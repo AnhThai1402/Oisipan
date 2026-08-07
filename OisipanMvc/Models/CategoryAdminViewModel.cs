@@ -4,7 +4,7 @@ namespace FrontendMvc.Models;
 
 public class CategoryAdminViewModel
 {
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập tên danh mục.")]
     [StringLength(100, ErrorMessage = "Tên danh mục không được vượt quá 100 ký tự.")]

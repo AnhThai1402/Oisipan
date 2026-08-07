@@ -17,7 +17,7 @@ public class ProductVariantsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductVariantResponse>>> GetAll([FromQuery] int? productId)
+    public async Task<ActionResult<IEnumerable<ProductVariantResponse>>> GetAll([FromQuery] Guid? productId)
     {
         var query = _context.ProductVariants
             .Include(variant => variant.Product)
@@ -40,8 +40,8 @@ public class ProductVariantsController : ControllerBase
         return Ok(variants);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductVariantResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductVariantResponse>> GetById(Guid id)
     {
         var variant = await _context.ProductVariants
             .Include(item => item.Product)
@@ -69,7 +69,7 @@ public class ProductVariantsController : ControllerBase
             ProductId = request.ProductId,
             Price = request.Price,
             StockQuantity = request.StockQuantity,
-            Status = request.IsActive ? "Active" : "Inactive",
+            Status = request.IsActive,
             Sku = request.Sku
         };
 
@@ -95,8 +95,8 @@ public class ProductVariantsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = variant.ProductVariantId }, ToResponse(savedVariant));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, ProductVariantManageRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductVariantManageRequest request)
     {
         var variant = await _context.ProductVariants
             .Include(v => v.ProductVariantValues)
@@ -117,7 +117,7 @@ public class ProductVariantsController : ControllerBase
         variant.ProductId = request.ProductId;
         variant.Price = request.Price;
         variant.StockQuantity = request.StockQuantity;
-        variant.Status = request.IsActive ? "Active" : "Inactive";
+        variant.Status = request.IsActive;
         variant.Sku = request.Sku;
 
         // Update ProductVariantValues
@@ -142,8 +142,8 @@ public class ProductVariantsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var variant = await _context.ProductVariants.FindAsync(id);
         if (variant is null)
@@ -159,14 +159,14 @@ public class ProductVariantsController : ControllerBase
         return NoContent();
     }
 
-    private async Task ValidateRequest(ProductVariantManageRequest request, int? currentId = null)
+    private async Task ValidateRequest(ProductVariantManageRequest request, Guid? currentId = null)
     {
         if (!await _context.Products.AnyAsync(product => product.ProductId == request.ProductId))
         {
             ModelState.AddModelError(nameof(request.ProductId), "Sản phẩm không tồn tại.");
         }
 
-        var requestValues = request.ProductValueIds?.OrderBy(x => x).ToList() ?? new List<int>();
+        var requestValues = request.ProductValueIds?.OrderBy(x => x).ToList() ?? new List<Guid>();
         var otherVariants = await _context.ProductVariants
             .Include(v => v.ProductVariantValues)
             .Where(v => v.ProductVariantId != currentId && v.ProductId == request.ProductId)
@@ -185,7 +185,7 @@ public class ProductVariantsController : ControllerBase
         }
     }
 
-    private async Task UpdateProductQuantity(int productId)
+    private async Task UpdateProductQuantity(Guid productId)
     {
         var product = await _context.Products.FindAsync(productId);
         if (product is null)
@@ -193,9 +193,9 @@ public class ProductVariantsController : ControllerBase
             return;
         }
 
-        product.StockQuantity = await _context.ProductVariants
+        product.StockQuantity = (short)await _context.ProductVariants
             .Where(variant => variant.ProductId == productId)
-            .SumAsync(variant => variant.StockQuantity);
+            .SumAsync(variant => int.Parse(variant.StockQuantity.ToString()));
         await _context.SaveChangesAsync();
     }
 
@@ -209,7 +209,7 @@ public class ProductVariantsController : ControllerBase
             Price = variant.Price,
             StockQuantity = variant.StockQuantity,
             Sku = variant.Sku,
-            IsActive = variant.Status == "Active",
+            IsActive = variant.Status,
             VariantValues = variant.ProductVariantValues
                 .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
                 .Select(pvv => new ProductVariantValueResponse

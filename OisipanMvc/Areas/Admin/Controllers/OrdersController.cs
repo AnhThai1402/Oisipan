@@ -23,7 +23,7 @@ public class OrdersController : AdminBaseController
         return View(orders);
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
         var order = await Api.GetFromJsonAsyncWithOptions<OrderAdminViewModel>($"api/orders/admin/{id}");
         if (order is null)
@@ -38,7 +38,7 @@ public class OrdersController : AdminBaseController
         return View(order);
     }
 
-    public async Task<IActionResult> Print(int id, bool print = false, bool download = false)
+    public async Task<IActionResult> Print(Guid id, bool print = false, bool download = false)
     {
         var order = await Api.GetFromJsonAsyncWithOptions<OrderAdminViewModel>($"api/orders/admin/{id}");
         if (order is null)
@@ -59,7 +59,7 @@ public class OrdersController : AdminBaseController
         return View("~/Views/Orders/Invoice.cshtml", order);
     }
 
-    public async Task<IActionResult> DownloadInvoice(int id)
+    public async Task<IActionResult> DownloadInvoice(Guid id)
     {
         var order = await Api.GetFromJsonAsyncWithOptions<OrderAdminViewModel>($"api/orders/admin/{id}");
         if (order is null)
@@ -79,7 +79,7 @@ public class OrdersController : AdminBaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int id, string status)
+    public async Task<IActionResult> UpdateStatus(Guid id, string status)
     {
         var response = await Api.PatchAsJsonAsyncWithOptions($"api/orders/{id}/status", new { status });
         SetFlashMessage(
@@ -91,7 +91,7 @@ public class OrdersController : AdminBaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RespondCancellation(int cancellationRequestId, string orderId, bool approve, string? adminNote)
+    public async Task<IActionResult> RespondCancellation(Guid cancellationRequestId, string orderId, bool approve, string? adminNote)
     {
         var response = await Api.PatchAsJsonAsyncWithOptions($"api/orders/cancellation-request/{cancellationRequestId}/respond", 
             new { isApproved = approve, adminNote = adminNote });

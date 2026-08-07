@@ -50,7 +50,7 @@ public class CategoriesController : AdminBaseController
     }
 
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<CategoryAdminViewModel>($"api/categories/{id}");
         return model is null ? NotFound() : View("CreateEdit", model);
@@ -59,7 +59,7 @@ public class CategoriesController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, CategoryAdminViewModel model)
+    public async Task<IActionResult> Edit(Guid id, CategoryAdminViewModel model)
     {
         await SaveImageIfValid(model);
         if (!ModelState.IsValid) return View("CreateEdit", model);
@@ -72,7 +72,7 @@ public class CategoriesController : AdminBaseController
         return response.IsSuccessStatusCode ? RedirectToAction(nameof(Index)) : View("CreateEdit", model);
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<CategoryAdminViewModel>($"api/categories/{id}");
         return model is null ? NotFound() : View(model);
@@ -81,7 +81,7 @@ public class CategoriesController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var response = await Api.DeleteAsync($"api/categories/{id}");
         SetFlashMessage(

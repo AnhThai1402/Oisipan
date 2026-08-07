@@ -4,7 +4,7 @@ namespace FrontendMvc.Models;
 
 public class UserAddressViewModel
 {
-    public int AddressId { get; set; }
+    public Guid AddressId { get; set; }
     public string FullAddress { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
 }

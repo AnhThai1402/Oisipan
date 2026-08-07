@@ -33,7 +33,7 @@ public class AccountsController : ControllerBase
                 PhoneNumber = a.PhoneNumber,
                 Role = a.Role,
                 Address = a.Address,
-                Status = a.Status == "Active",
+                Status = a.Status,
                 OrderCount = a.Orders.Count
             })
             .ToListAsync();
@@ -42,7 +42,7 @@ public class AccountsController : ControllerBase
     }
 
     [HttpGet("{id}/addresses")]
-    public async Task<IActionResult> GetAddresses(int id)
+    public async Task<IActionResult> GetAddresses(Guid id)
     {
         var addresses = await _context.UserAddresses
             .Where(a => a.UserId == id)
@@ -59,7 +59,7 @@ public class AccountsController : ControllerBase
     }
 
     [HttpPost("{id}/addresses")]
-    public async Task<IActionResult> CreateAddress(int id, [FromBody] UserAddressCreateRequest request)
+    public async Task<IActionResult> CreateAddress(Guid id, [FromBody] UserAddressCreateRequest request)
     {
         var accountExists = await _context.Accounts.AnyAsync(a => a.UserId == id);
         if (!accountExists) return NotFound("Không tìm thấy tài khoản.");
@@ -90,7 +90,7 @@ public class AccountsController : ControllerBase
     }
 
     [HttpDelete("{id}/addresses/{addressId}")]
-    public async Task<IActionResult> DeleteAddress(int id, int addressId)
+    public async Task<IActionResult> DeleteAddress(Guid id, Guid addressId)
     {
         var address = await _context.UserAddresses.FirstOrDefaultAsync(a => a.UserId == id && a.AddressId == addressId);
         if (address == null) return NotFound("Không tìm thấy địa chỉ.");
@@ -112,8 +112,8 @@ public class AccountsController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<AccountResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<AccountResponse>> GetById(Guid id)
     {
         var account = await _context.Accounts
             .Include(a => a.Orders)
@@ -143,7 +143,7 @@ public class AccountsController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             Role = "User",
             Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
-            Status = "Active"
+            Status = true
         };
 
         account.Password = _passwordHasher.HashPassword(account, request.Password);
@@ -153,8 +153,8 @@ public class AccountsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = account.UserId }, ToResponse(account));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, AccountUpdateRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, AccountUpdateRequest request)
     {
         var account = await _context.Accounts.FindAsync(id);
         if (account is null)
@@ -181,7 +181,7 @@ public class AccountsController : ControllerBase
         account.PhoneNumber = request.PhoneNumber;
         account.Role = "User";
         account.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
-        account.Status = request.Status ? "Active" : "Inactive";
+        account.Status = request.Status;
 
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
         {
@@ -192,8 +192,8 @@ public class AccountsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{id:int}/profile")]
-    public async Task<IActionResult> UpdateProfile(int id, UserProfileUpdateRequest request)
+    [HttpPatch("{id:guid}/profile")]
+    public async Task<IActionResult> UpdateProfile(Guid id, UserProfileUpdateRequest request)
     {
         var account = await _context.Accounts.FindAsync(id);
         if (account is null)
@@ -230,8 +230,8 @@ public class AccountsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var account = await _context.Accounts
             .Include(a => a.Orders)
@@ -257,7 +257,7 @@ public class AccountsController : ControllerBase
         return NoContent();
     }
 
-    private async Task ValidateUnique(string email, string phoneNumber, int? excludeUserId = null)
+    private async Task ValidateUnique(string email, string phoneNumber, Guid? excludeUserId = null)
     {
         if (await _context.Accounts.AnyAsync(a => a.Email == email && a.UserId != excludeUserId))
         {
@@ -306,7 +306,7 @@ public class AccountsController : ControllerBase
             Role = account.Role,
             Address = account.Address,
             AvatarUrl = account.AvatarUrl,
-            Status = account.Status == "Active",
+            Status = account.Status,
             OrderCount = account.Orders.Count
         };
     }

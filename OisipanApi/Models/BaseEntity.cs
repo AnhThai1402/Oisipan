@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Oishipan.Models
 {
     public abstract class BaseEntity
@@ -8,7 +6,6 @@ namespace Oishipan.Models
         
         public DateTime? UpdatedAt { get; set; }
 
-        [StringLength(50)]
-        public string Status { get; set; } = "Active";
+        public bool Status { get; set; } = true;
     }
 }

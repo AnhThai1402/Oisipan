@@ -6,9 +6,9 @@ namespace Oishipan.Models;
 public class ProductVariant : BaseEntity
 {
     [Key]
-    public int ProductVariantId { get; set; }
+    public Guid ProductVariantId { get; set; }
 
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
     
     [ForeignKey(nameof(ProductId))]
     public Product? Product { get; set; }
@@ -18,8 +18,9 @@ public class ProductVariant : BaseEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
 
-    public int StockQuantity { get; set; }
+    public short StockQuantity { get; set; }
 
     [StringLength(50)]
+    [Column(TypeName = "varchar(50)")]
     public string? Sku { get; set; }
 }

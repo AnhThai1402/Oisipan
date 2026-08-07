@@ -4,8 +4,8 @@ namespace Oishipan.DTOs
 {
     public class OrderCancellationRequestDto
     {
-        public int CancellationRequestId { get; set; }
-        public int OrderId { get; set; }
+        public Guid CancellationRequestId { get; set; }
+        public Guid OrderId { get; set; }
         public string Reason { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
         public DateTime RequestDate { get; set; }

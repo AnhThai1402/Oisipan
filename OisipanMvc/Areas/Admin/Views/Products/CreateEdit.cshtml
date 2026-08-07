@@ -1,7 +1,7 @@
 @model FrontendMvc.Models.ProductAdminViewModel
 @{
-    ViewData["Title"] = Model?.ProductId > 0 ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới";
-    var isEdit = Model?.ProductId > 0;
+    ViewData["Title"] = Model?.ProductId != Guid.Empty ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới";
+    var isEdit = Model?.ProductId != Guid.Empty;
 }
 
 <section class="page-breadcrumb">

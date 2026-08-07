@@ -21,7 +21,7 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Add(int productId, int productVariantId, string? returnUrl = null)
+    public async Task<IActionResult> Add(Guid productId, Guid productVariantId, string? returnUrl = null)
     {
         var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
         var variant = product?.ProductVariants.FirstOrDefault(v => v.ProductVariantId == productVariantId);
@@ -45,7 +45,7 @@ public class CartController : Controller
                 VariantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}")),
                 UnitPrice = product.Price + variant.Price,
                 Image = product.Image,
-                Quantity = 1
+                Quantity = (byte)1
             });
         }
         else if (existing.Quantity < variant.StockQuantity)
@@ -65,7 +65,7 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int productVariantId, int quantity, string? returnUrl = null)
+    public async Task<IActionResult> Update(Guid productVariantId, int quantity, string? returnUrl = null)
     {
         var cart = GetCart();
         var item = cart.Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);
@@ -98,7 +98,7 @@ public class CartController : Controller
             }
             else
             {
-                item.Quantity = Math.Min(quantity, variant.StockQuantity);
+                item.Quantity = (byte)Math.Min(quantity, variant.StockQuantity);
                 if (quantity > variant.StockQuantity)
                 {
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -133,7 +133,7 @@ public class CartController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Remove(int productVariantId, string? returnUrl = null)
+    public IActionResult Remove(Guid productVariantId, string? returnUrl = null)
     {
         var cart = GetCart();
         cart.Items.RemoveAll(item => item.ProductVariantId == productVariantId);
@@ -152,6 +152,72 @@ public class CartController : Controller
         return RedirectBack(returnUrl);
     }
 
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> Checkout(Guid? buyNowVariantId)
+    {
+        var cart = GetCart();
+        List<CartItemViewModel> checkoutItems = new List<CartItemViewModel>();
+
+        if (buyNowVariantId.HasValue && buyNowVariantId.Value != Guid.Empty)
+        {
+            var variantResponse = await Api.GetAsync($"api/productvariants/{buyNowVariantId.Value}");
+            if (variantResponse.IsSuccessStatusCode)
+            {
+                var variant = await variantResponse.Content.ReadFromJsonAsync<ProductVariantCatalogViewModel>();
+                if (variant != null && variant.StockQuantity > 0)
+                {
+                    var product = await Api.GetFromJsonAsync<ProductCatalogViewModel>($"api/products/{variant.ProductId}");
+                    checkoutItems.Add(new CartItemViewModel
+                    {
+                        ProductVariantId = variant.ProductVariantId,
+                        ProductId = variant.ProductId,
+                        Name = product?.Name ?? "Sản phẩm",
+                        VariantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}")),
+                        UnitPrice = (product?.Price ?? 0) + variant.Price,
+                        Image = product?.Image,
+                        Quantity = (byte)1
+                    });
+                }
+            }
+        }
+        else
+        {
+            checkoutItems = cart.Items;
+        }
+
+        if (!checkoutItems.Any())
+        {
+            TempData["CartError"] = "Giỏ hàng của bạn đang trống.";
+            return RedirectToAction("Index", "Home");
+        }
+
+        ViewBag.CheckoutItems = checkoutItems;
+        ViewBag.BuyNowVariantId = buyNowVariantId;
+        
+        var model = new CheckoutViewModel();
+        
+        if (Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            var userResponse = await Api.GetAsync($"api/users/{userId}");
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var userDoc = await userResponse.Content.ReadFromJsonAsync<JsonDocument>();
+                if (userDoc != null)
+                {
+                    model.CustomerName = userDoc.RootElement.GetProperty("fullName").GetString() ?? User.Identity.Name;
+                    model.CustomerPhone = userDoc.RootElement.GetProperty("phoneNumber").GetString() ?? "";
+                }
+            }
+            else
+            {
+                model.CustomerName = User.Identity.Name;
+            }
+        }
+
+        return View(model);
+    }
+
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -159,7 +225,7 @@ public class CartController : Controller
     {
         List<CartItemViewModel> checkoutItems;
 
-        if (model.BuyNowProductVariantId.HasValue && model.BuyNowProductVariantId.Value > 0)
+        if (model.BuyNowProductVariantId.HasValue && model.BuyNowProductVariantId.Value != Guid.Empty)
         {
             // We need to fetch the product by some means, or we can just fetch all and find the variant, but since we don't have productId, we might need a direct variant API or we just use cart items.
             // Wait, if it's BuyNow, the frontend should send BuyNowProductId as well or we just lookup the variant.
@@ -191,7 +257,7 @@ public class CartController : Controller
                     VariantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}")),
                     UnitPrice = (product?.Price ?? 0) + variant.Price,
                     Image = product?.Image,
-                    Quantity = 1
+                    Quantity = (byte)1
                 }
             };
         }
@@ -212,7 +278,7 @@ public class CartController : Controller
             return RedirectBack(returnUrl);
         }
 
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Challenge();
         }
@@ -239,7 +305,7 @@ public class CartController : Controller
             return RedirectBack(returnUrl);
         }
 
-        if (!model.BuyNowProductVariantId.HasValue || model.BuyNowProductVariantId.Value <= 0)
+        if (!model.BuyNowProductVariantId.HasValue || model.BuyNowProductVariantId.Value == Guid.Empty)
         {
             HttpContext.Session.Remove(CartSessionKey);
         }

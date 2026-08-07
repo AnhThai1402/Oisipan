@@ -1,0 +1,164 @@
+@model FrontendMvc.Models.BannerViewModel
+@{
+    var isEdit = Model?.BannerId != Guid.Empty && Model?.BannerId != null;
+    ViewData["Title"] = isEdit ? "Chỉnh sửa banner" : "Thêm banner mới";
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Banners" asp-action="Index"><i class="bi bi-images"></i> Banner</a>
+    <span>/</span>
+    <span>@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">@(isEdit ? "Chỉnh sửa" : "Thêm mới")</span>
+        <h1>@ViewData["Title"]</h1>
+        <p>Thiết lập hình ảnh quảng cáo, sự kiện hiển thị trên website</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Banners" asp-action="Index" class="soft-action"><i class="bi bi-arrow-left"></i> Quay lại</a>
+</section>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+{
+    <div class="alert alert-error" role="alert">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <div class="alert-content">
+            <strong>Vui lòng kiểm tra các lỗi dưới đây:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                @foreach (var modelState in ViewData.ModelState.Values)
+                {
+                    @foreach (var error in modelState.Errors)
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+<form asp-area="Admin" asp-controller="Banners" asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data" class="product-form-container">
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="BannerId" />
+        <input type="hidden" asp-for="ImageUrl" />
+    }
+    <div class="admin-grid two-columns">
+        <!-- Left Column -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Thông tin chi tiết</h2>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Title">Tiêu đề Banner <span class="required">*</span></label>
+                <input asp-for="Title" class="form-input" placeholder="Nhập tiêu đề..." required />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Link">Đường dẫn (Link)</label>
+                <input asp-for="Link" class="form-input" placeholder="https://example.com/khuyen-mai" />
+                <small class="text-muted">Có thể để trống nếu banner không cần click chuột.</small>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="DisplayOrder">Thứ tự hiển thị</label>
+                    <input asp-for="DisplayOrder" type="number" class="form-input" value="@(Model?.DisplayOrder ?? 0)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Trạng thái</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="IsActive" value="true" checked="@(Model == null || Model.IsActive)" />
+                        <span class="radio-custom"></span>
+                        <strong>Đang hiện</strong>
+                        <small>Hiển thị trên website</small>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="IsActive" value="false" checked="@(Model != null && !Model.IsActive)" />
+                        <span class="radio-custom"></span>
+                        <strong>Ẩn</strong>
+                        <small>Không hiển thị trên website</small>
+                    </label>
+                </div>
+            </div>
+        </article>
+
+        <!-- Right Column -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Hình ảnh</h2>
+            </div>
+            
+            <div class="form-group">
+                <label asp-for="ImageFile">Tải ảnh lên @(!isEdit ? Html.Raw("<span class='required'>*</span>") : "")</label>
+                <div class="file-upload-area">
+                    <input asp-for="ImageFile" type="file" id="productImage" accept="image/jpeg,image/png,image/webp,image/gif" />
+                    <label for="productImage" class="file-upload-label">
+                        <div class="upload-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <div class="upload-text">
+                            <strong>Chọn hình ảnh hoặc kéo thả</strong>
+                            <small>Hỗ trợ PNG, JPG, GIF tối đa 4MB</small>
+                        </div>
+                    </label>
+                    @if (isEdit && !string.IsNullOrWhiteSpace(Model?.ImageUrl))
+                    {
+                        <div class="image-preview">
+                            <img src="@Model.ImageUrl" alt="Preview" />
+                            <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="ImageFile" class="field-validation-error"></span>
+            </div>
+        </article>
+    </div>
+    
+    <div class="form-actions">
+        <a asp-area="Admin" asp-controller="Banners" asp-action="Index" class="soft-action">
+            <i class="bi bi-x-circle"></i> Hủy
+        </a>
+        <button type="submit" class="primary-action">
+            <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
+            @(isEdit ? "Lưu thay đổi" : "Tạo banner")
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.getElementById('productImage')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.querySelector('.image-preview') || document.createElement('div');
+                    preview.className = 'image-preview';
+                    preview.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview" />
+                        <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                    `;
+                    const uploadArea = document.querySelector('.file-upload-area');
+                    const existingPreview = uploadArea.querySelector('.image-preview');
+                    if (existingPreview) {
+                        existingPreview.remove();
+                    }
+                    uploadArea.appendChild(preview);
+                    
+                    preview.querySelector('.remove-image').addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        document.getElementById('productImage').value = '';
+                        preview.remove();
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+}

@@ -11,8 +11,8 @@ namespace Oishipan.DTOs
         [Range(0.01, double.MaxValue, ErrorMessage = "Giá trị chiết khấu phải lớn hơn 0.")]
         public decimal DiscountValue { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
-        public int MinimumItems { get; set; } = 0; // Minimum number of items required
+        [Range(0, byte.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
+        public byte MinimumItems { get; set; } = 0; // Minimum number of items required
 
         [Required(ErrorMessage = "Vui lòng chọn hạn sử dụng.")]
         public DateTime ExpiryDate { get; set; }
@@ -29,7 +29,7 @@ namespace Oishipan.DTOs
 
         public decimal MinOrderValue { get; set; }
 
-        public int TotalQuantity { get; set; }
+        public short TotalQuantity { get; set; }
 
         public DateTime StartDate { get; set; }
 

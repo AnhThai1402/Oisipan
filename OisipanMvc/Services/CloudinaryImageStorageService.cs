@@ -34,11 +34,11 @@ public class CloudinaryImageStorageService : IImageStorageService
         return await UploadImageAsync(imageFile, folder, cancellationToken);
     }
 
-    public async Task<string> UploadNewsImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
+    public async Task<string> UploadBannerImageAsync(IFormFile imageFile, CancellationToken cancellationToken = default)
     {
         var folder = string.IsNullOrWhiteSpace(_settings.Folder)
-            ? "oisipan/news"
-            : $"{_settings.Folder.TrimEnd('/')}/news";
+            ? "oisipan/banners"
+            : $"{_settings.Folder.TrimEnd('/')}/banners";
         return await UploadImageAsync(imageFile, folder, cancellationToken);
     }
 

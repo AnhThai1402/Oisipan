@@ -15,15 +15,14 @@ public class ProductRequest
 
     public string? Sku { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Số lượng không được âm.")]
-    public int StockQuantity { get; set; }
+    [Range(0, short.MaxValue, ErrorMessage = "Số lượng không được âm.")]
+    public short StockQuantity { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
 
     public string? Description { get; set; }
 
-    public int? MinimumStock { get; set; }
+    public byte? MinimumStock { get; set; }
 
     [StringLength(30)]
     public string Status { get; set; } = "active";

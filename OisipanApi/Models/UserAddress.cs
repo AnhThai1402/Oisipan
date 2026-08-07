@@ -6,12 +6,13 @@ namespace Oishipan.Models;
 public class UserAddress : BaseEntity
 {
     [Key]
-    public int AddressId { get; set; }
+    public Guid AddressId { get; set; }
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [Required]
     [StringLength(500)]
+    [Column(TypeName = "nvarchar(500)")]
     public string FullAddress { get; set; } = null!;
 
     public bool IsDefault { get; set; } = false;

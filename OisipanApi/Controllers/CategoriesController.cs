@@ -34,8 +34,8 @@ public class CategoriesController : ControllerBase
         return Ok(categories);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<CategoryResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<CategoryResponse>> GetById(Guid id)
     {
         var category = await _context.Categories
             .Include(c => c.Products)
@@ -59,8 +59,8 @@ public class CategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = category.CategoryId }, ToResponse(category));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, CategoryRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, CategoryRequest request)
     {
         var category = await _context.Categories.FindAsync(id);
         if (category is null)
@@ -75,8 +75,8 @@ public class CategoriesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var category = await _context.Categories
             .Include(c => c.Products)

@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
             Role = "User",
-            Status = "Active"
+            Status = true
         };
 
         account.Password = _passwordHasher.HashPassword(account, request.Password);
@@ -67,7 +67,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Email hoặc mật khẩu không đúng." });
         }
 
-        if (account.Status != "Active")
+        if (!account.Status)
         {
             return BadRequest(new { message = "Tài khoản đã bị khóa." });
         }
@@ -87,7 +87,7 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "Không tìm thấy tài khoản với email và số điện thoại này." });
         }
 
-        if (account.Status != "Active")
+        if (!account.Status)
         {
             return BadRequest(new { message = "Tài khoản đã bị khóa." });
         }

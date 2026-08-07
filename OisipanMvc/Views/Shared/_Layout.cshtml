@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body data-cart-message="@TempData["CartMessage"]" data-cart-error="@TempData["CartError"]">
 
@@ -30,7 +31,6 @@
             <a asp-controller="Home" asp-action="Index" asp-fragment="menu">Menu bánh</a>
             <a asp-controller="Home" asp-action="Index" asp-fragment="about">Về Oishipan</a>
             <a asp-controller="Home" asp-action="Index" asp-fragment="footer">Liên hệ</a>
-            <a asp-controller="Home" asp-action="Index" asp-fragment="news">Tin tức</a>
         </nav>
         <div class="header-actions">
             <button class="icon-btn" id="open-cart-btn" aria-label="Open Cart">
@@ -39,20 +39,20 @@
             </button>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a asp-controller="Orders" asp-action="Index" class="btn-login">
-                    <i class="bi bi-receipt"></i> Lịch sử đơn hàng
+                <a asp-controller="Orders" asp-action="Index" class="icon-btn" title="Lịch sử đơn hàng">
+                    <i class="bi bi-receipt"></i>
                 </a>
-                <a asp-controller="Vouchers" asp-action="Index" class="btn-login">
-                    <i class="bi bi-ticket"></i> Vouchers
+                <a asp-controller="Vouchers" asp-action="Index" class="icon-btn" title="Vouchers">
+                    <i class="bi bi-ticket"></i>
                 </a>
                 @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
                 {
                     <a asp-area="Admin"
                        asp-controller="Dashboard"
                        asp-action="Index"
-                       class="btn-login"
-                       title="Mở trang quản trị">
-                        <i class="bi bi-person-check"></i> @User.Identity.Name
+                       class="icon-btn"
+                       title="Quản trị viên (@User.Identity.Name)">
+                        <i class="bi bi-person-gear"></i>
                     </a>
                 }
                 else
@@ -60,15 +60,15 @@
                     <a asp-area=""
                        asp-controller="Account"
                        asp-action="Profile"
-                       class="btn-login"
-                       title="Xem hồ sơ cá nhân">
-                        <i class="bi bi-person-check"></i> @User.Identity.Name
+                       class="icon-btn"
+                       title="Hồ sơ của @User.Identity.Name">
+                        <i class="bi bi-person-circle"></i>
                     </a>
                 }
                 <form method="post" asp-controller="Account" asp-action="Logout" style="display: inline;">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-login">
-                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    <button type="submit" class="icon-btn text-danger" title="Đăng xuất">
+                        <i class="bi bi-box-arrow-right"></i>
                     </button>
                 </form>
             }
@@ -143,77 +143,12 @@
                 <span>Tổng tiền hàng:</span>
                 <span class="cart-total-price" id="cart-total-price">@cartTotalAmount.ToString("N0")đ</span>
             </div>
-            <button class="btn-primary" style="width: 100%; text-align: center;" id="cart-checkout-btn" @(cartItems.Any() ? "" : "disabled")>
+            <a href="@Url.Action("Checkout", "Cart")" class="btn-primary" style="width: 100%; text-align: center; text-decoration: none; @(!cartItems.Any() ? "pointer-events: none; opacity: 0.6;" : "")" id="cart-checkout-btn">
                 Tiến hành thanh toán
-            </button>
+            </a>
         </div>
     </div>
 
-    <div class="modal-overlay" id="checkout-modal-overlay">
-        <div class="custom-modal">
-            <button class="modal-close-btn" id="close-checkout-modal"><i class="bi bi-x-lg"></i></button>
-            <h3 class="modal-title">Thông Tin Giao Hàng</h3>
-            <form id="checkout-form" method="post" asp-controller="Cart" asp-action="Checkout" novalidate>
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnUrl" value="@currentUrl" />
-                <input type="hidden" id="buy-now-product-variant-id" name="BuyNowProductVariantId" value="" />
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <label for="customer-name" style="margin-bottom: 0;">Họ và tên khách hàng</label>
-                        <button type="button" id="edit-info-btn" style="display: none; background: none; border: none; color: var(--accent-green); font-size: 0.85rem; cursor: pointer; text-decoration: underline; padding: 0;">Sửa thông tin</button>
-                    </div>
-                    <input type="text" id="customer-name" name="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
-                </div>
-                <div class="form-group">
-                    <label for="customer-phone">Số điện thoại liên hệ</label>
-                    <input type="tel" id="customer-phone" name="CustomerPhone" class="form-control" placeholder="Ví dụ: 0901234567" required>
-                </div>
-                <div class="form-group">
-                    <label>Địa chỉ nhận bánh</label>
-                    <div id="address-container">
-                        <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                            <input type="hidden" id="customer-address" name="CustomerAddress" value="" required>
-                            <select id="checkoutProvince" class="form-control">
-                                <option value="">Chọn Tỉnh/Thành phố</option>
-                            </select>
-                            <select id="checkoutWard" class="form-control" disabled>
-                                <option value="">Chọn Phường/Xã (Quận/Huyện)</option>
-                            </select>
-                            <input type="text" id="checkoutDetail" class="form-control" placeholder="Số nhà, đường..." oninput="updateCheckoutAddress()">
-                        </div>
-                    </div>
-                </div>
-                <input type="hidden" id="payment-method" name="PaymentMethod" value="COD" />
-                <div class="form-group">
-                    <label>Phương thức thanh toán</label>
-                    <div class="payment-options">
-                        <div class="pay-opt-card active" data-method="COD" onclick="selectPaymentMethod(this)">
-                            <i class="bi bi-cash-stack"></i>
-                            <span>Khi nhận hàng</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-top: 1rem;">
-                    <label for="checkout-voucher">Mã giảm giá (Nếu có)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="checkout-voucher" name="VoucherCode" class="form-control" placeholder="Nhập mã giảm giá..." style="text-transform: uppercase;">
-                        <button type="button" id="apply-voucher-btn" class="btn-primary" style="padding: 0 1.5rem; white-space: nowrap;">Áp Dụng</button>
-                    </div>
-                    <small id="voucher-message" style="display: block; margin-top: 0.5rem; font-weight: 500;"></small>
-                </div>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">Tổng thanh toán: <span id="checkout-subtotal-display">@cartTotalAmount.ToString("N0")đ</span></span>
-                        <span id="checkout-discount-row" style="font-size: 0.85rem; color: #e74c3c; display: none;">Giảm giá: -<span id="checkout-discount-display">0đ</span></span>
-                        <div id="checkout-total-display" style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--accent-green); font-weight: 700;">@cartTotalAmount.ToString("N0")đ</div>
-                        <input type="hidden" id="base-cart-total" value="@cartTotalAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-original-total="@cartTotalAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
-                        <input type="hidden" id="base-cart-items-count" value="@cartItems.Sum(x => x.Quantity)" data-original-count="@cartItems.Sum(x => x.Quantity)" />
-                    </div>
-                    <button type="submit" class="btn-primary" style="padding: 0.8rem 2rem;">Xác Nhận Đặt Hàng</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <div class="modal-overlay" id="login-modal-overlay">
         <div class="auth-grid">

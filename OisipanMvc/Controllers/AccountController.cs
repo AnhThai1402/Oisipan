@@ -111,7 +111,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Profile()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
             await HttpContext.SignOutAsync("OisipanCookie");
             return RedirectToAction(nameof(Login));
@@ -142,7 +142,7 @@ public class AccountController : Controller
     public async Task<IActionResult> GetCheckoutProfile()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         try
         {
@@ -166,7 +166,7 @@ public class AccountController : Controller
     public async Task<IActionResult> EditProfile()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
             return RedirectToAction(nameof(Login));
         }
@@ -204,7 +204,7 @@ public class AccountController : Controller
         }
 
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
             return RedirectToAction(nameof(Login));
         }
@@ -247,7 +247,7 @@ public class AccountController : Controller
     public async Task<IActionResult> AddAddress([FromForm] string province, [FromForm] string ward, [FromForm] string detail)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
             return RedirectToAction(nameof(Login));
         }
@@ -282,10 +282,10 @@ public class AccountController : Controller
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteAddress(int addressId)
+    public async Task<IActionResult> DeleteAddress(Guid addressId)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
             return RedirectToAction(nameof(Login));
         }

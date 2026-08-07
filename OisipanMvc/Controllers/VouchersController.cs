@@ -18,7 +18,7 @@ namespace FrontendMvc.Controllers
         public async Task<IActionResult> Index()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userId, out var userIdInt))
+            if (!Guid.TryParse(userId, out var userIdInt))
             {
                 return Unauthorized();
             }

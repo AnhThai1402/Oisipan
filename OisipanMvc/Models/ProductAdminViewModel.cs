@@ -5,7 +5,7 @@ namespace FrontendMvc.Models;
 
 public class ProductAdminViewModel
 {
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm.")]
     [StringLength(200, ErrorMessage = "Tên sản phẩm không được vượt quá 200 ký tự.")]
@@ -36,23 +36,22 @@ public class ProductAdminViewModel
     [Display(Name = "Ảnh tải lên")]
     public IFormFile? ImageFile { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
+    [Range(0, short.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
     [Display(Name = "Tồn kho")]
-    public int StockQuantity { get; set; }
+    public short StockQuantity { get; set; }
 
     // Alias for views
     public int Stock
     {
         get => StockQuantity;
-        set => StockQuantity = value;
+        set => StockQuantity = (short)value;
     }
 
     [Display(Name = "Tồn kho tối thiểu")]
-    public int? MinimumStock { get; set; }
+    public byte? MinimumStock { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
     [Display(Name = "Danh mục")]
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
 
     public string? CategoryName { get; set; }
 
@@ -93,9 +92,9 @@ public class ProductAdminViewModel
 
 public class ProductVariantAdminViewModel
 {
-    public int ProductVariantId { get; set; }
+    public Guid ProductVariantId { get; set; }
 
-    public int Id
+    public Guid Id
     {
         get => ProductVariantId;
         set => ProductVariantId = value;
@@ -107,7 +106,7 @@ public class ProductVariantAdminViewModel
     [Display(Name = "Giá trị")]
     public string Value { get; set; } = string.Empty;
 
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
     public string? ProductName { get; set; }
 
@@ -116,8 +115,8 @@ public class ProductVariantAdminViewModel
     [Range(0, double.MaxValue)]
     public decimal Price { get; set; }
 
-    [Range(0, int.MaxValue)]
-    public int StockQuantity { get; set; }
+    [Range(0, short.MaxValue)]
+    public short StockQuantity { get; set; }
 
     public bool IsActive { get; set; } = true;
 
@@ -128,24 +127,24 @@ public class ProductVariantAdminViewModel
 
 public class ProductVariantValueAdminViewModel
 {
-    public int ProductOptionId { get; set; }
+    public Guid ProductOptionId { get; set; }
     public string OptionName { get; set; } = string.Empty;
-    public int ProductValueId { get; set; }
+    public Guid ProductValueId { get; set; }
     public string ValueName { get; set; } = string.Empty;
 }
 
 public class ProductOptionAdminViewModel
 {
-    public int ProductOptionId { get; set; }
-    public int ProductId { get; set; }
+    public Guid ProductOptionId { get; set; }
+    public Guid ProductId { get; set; }
     public string OptionName { get; set; } = string.Empty;
     public List<ProductValueAdminViewModel> ProductValues { get; set; } = new();
 }
 
 public class ProductValueAdminViewModel
 {
-    public int ProductValueId { get; set; }
-    public int ProductOptionId { get; set; }
+    public Guid ProductValueId { get; set; }
+    public Guid ProductOptionId { get; set; }
 
     [Required]
     [StringLength(100)]
@@ -157,7 +156,7 @@ public class ProductValueAdminViewModel
 
 public class ProductOptionManagementViewModel
 {
-    public int? SelectedProductId { get; set; }
+    public Guid? SelectedProductId { get; set; }
     public string? SelectedProductName { get; set; }
     public List<SelectListItem> Products { get; set; } = new();
     public List<ProductOptionAdminViewModel> Options { get; set; } = new();

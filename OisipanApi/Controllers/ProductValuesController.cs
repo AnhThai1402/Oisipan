@@ -28,16 +28,16 @@ public class ProductValuesController : ControllerBase
         return Ok(values);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductValueResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductValueResponse>> GetById(Guid id)
     {
         var value = await _context.ProductValues.FindAsync(id);
 
         return value is null ? NotFound(new { message = "Khong tim thay gia tri tuy chon." }) : Ok(ToResponse(value));
     }
 
-    [HttpGet("option/{productOptionId:int}")]
-    public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetByOptionId(int productOptionId)
+    [HttpGet("option/{productOptionId:guid}")]
+    public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetByOptionId(Guid productOptionId)
     {
         if (!await _context.ProductOptions.AnyAsync(po => po.ProductOptionId == productOptionId))
         {
@@ -86,8 +86,8 @@ public class ProductValuesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = value.ProductValueId }, ToResponse(value));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, ProductValueRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductValueRequest request)
     {
         var value = await _context.ProductValues.FindAsync(id);
         if (value is null)
@@ -122,8 +122,8 @@ public class ProductValuesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var value = await _context.ProductValues.FindAsync(id);
         if (value is null)

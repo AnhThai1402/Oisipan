@@ -568,45 +568,16 @@ function handleForgotPasswordRequest(event) {
 }
 
 function triggerBuyNow(productId) {
-    let buyNowPrice = 0;
     const variantIdInput = document.getElementById('productVariantId');
     if (variantIdInput) {
         const variantId = variantIdInput.value;
-        if (!variantId || variantId === "0") {
-            alert("Vui lòng chọn size và nhân bánh trước khi mua ngay.");
+        if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
+            alert("Vui lòng chọn đầy đủ các lựa chọn trước khi mua ngay.");
             return;
         }
         
-        const buyNowVariantInput = document.getElementById('buy-now-product-variant-id');
-        if (buyNowVariantInput) buyNowVariantInput.value = variantId;
-        
-        const priceText = document.querySelector('[data-product-total-price]')?.textContent;
-        if (priceText) {
-            buyNowPrice = Number(priceText.replace(/[^0-9]/g, ''));
-        }
+        window.location.href = '/Cart/Checkout?buyNowVariantId=' + variantId;
+    } else {
+        alert("Có lỗi xảy ra, không tìm thấy sản phẩm.");
     }
-
-    const price = buyNowPrice;
-    
-    // Set checkout modal to buy-now price
-    const baseTotalInput = document.getElementById('base-cart-total');
-    const itemsCountInput = document.getElementById('base-cart-items-count');
-    const subtotalDisplay = document.getElementById('checkout-subtotal-display');
-    const checkoutTotalDisplay = document.getElementById('checkout-total-display');
-    
-    if (baseTotalInput) baseTotalInput.value = price;
-    if (itemsCountInput) itemsCountInput.value = 1;
-    
-    if (subtotalDisplay) subtotalDisplay.textContent = price.toLocaleString('vi-VN') + 'đ';
-    if (checkoutTotalDisplay) checkoutTotalDisplay.textContent = price.toLocaleString('vi-VN') + 'đ';
-
-    // Reset voucher
-    const voucherInput = document.getElementById('checkout-voucher');
-    const voucherMsg = document.getElementById('voucher-message');
-    const discountRow = document.getElementById('checkout-discount-row');
-    if (voucherInput) voucherInput.value = '';
-    if (voucherMsg) voucherMsg.textContent = '';
-    if (discountRow) discountRow.style.display = 'none';
-    
-    document.getElementById('checkout-modal-overlay')?.classList.add('open');
 }

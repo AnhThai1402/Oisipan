@@ -9,13 +9,13 @@ namespace FrontendMvc.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
-public class NewsController : Controller
+public class BannersController : Controller
 {
-    private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    private static readonly string[] AllowedImageTypes = { "image/jpeg", "image/png", "image/webp", "image/gif" };
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IImageStorageService _imageStorageService;
 
-    public NewsController(IHttpClientFactory httpClientFactory, IImageStorageService imageStorageService)
+    public BannersController(IHttpClientFactory httpClientFactory, IImageStorageService imageStorageService)
     {
         _httpClientFactory = httpClientFactory;
         _imageStorageService = imageStorageService;
@@ -23,114 +23,91 @@ public class NewsController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var articles = await Api.GetFromJsonAsync<List<NewsArticleViewModel>>(
-            "api/newsarticles?includeUnpublished=true") ?? new();
-        return View(articles);
+        var banners = await Api.GetFromJsonAsync<List<BannerViewModel>>(
+            "api/banners?includeInactive=true") ?? new List<BannerViewModel>();
+        return View(banners);
     }
 
     [HttpGet]
-    public IActionResult Create() => View("CreateEdit", new NewsArticleViewModel());
+    public IActionResult Create() => View("CreateEdit", new BannerViewModel());
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(NewsArticleViewModel model)
+    public async Task<IActionResult> Create(BannerViewModel model)
     {
         await SaveImageIfValid(model);
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
-        var response = await Api.PostAsJsonAsync("api/newsarticles", ToRequest(model));
+        var response = await Api.PostAsJsonAsync("api/banners", ToRequest(model));
         if (!response.IsSuccessStatusCode)
         {
             await AddApiErrors(response);
             return View("CreateEdit", model);
         }
 
-        TempData["SuccessMessage"] = "Thêm tin tức thành công.";
+        TempData["AdminMessage"] = "Thêm banner thành công.";
+        TempData["AdminMessageType"] = "create";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
-        var article = await Api.GetFromJsonAsync<NewsArticleViewModel>(
-            $"api/newsarticles/{id}?includeUnpublished=true");
-        return article is null ? NotFound() : View("CreateEdit", article);
+        var banner = await Api.GetFromJsonAsync<BannerViewModel>($"api/banners/{id}");
+        return banner is null ? NotFound() : View("CreateEdit", banner);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, NewsArticleViewModel model)
+    public async Task<IActionResult> Edit(Guid id, BannerViewModel model)
     {
-        if (id != model.NewsArticleId) return BadRequest();
+        if (id != model.BannerId) return BadRequest();
 
         await SaveImageIfValid(model);
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
-        var response = await Api.PutAsJsonAsync($"api/newsarticles/{id}", ToRequest(model));
+        var response = await Api.PutAsJsonAsync($"api/banners/{id}", ToRequest(model));
         if (!response.IsSuccessStatusCode)
         {
             await AddApiErrors(response);
             return View("CreateEdit", model);
         }
 
-        TempData["SuccessMessage"] = "Cập nhật tin tức thành công.";
+        TempData["AdminMessage"] = "Cập nhật banner thành công.";
+        TempData["AdminMessageType"] = "edit";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var response = await Api.DeleteAsync($"api/newsarticles/{id}");
-        TempData[response.IsSuccessStatusCode ? "SuccessMessage" : "ErrorMessage"] =
-            response.IsSuccessStatusCode ? "Xóa tin tức thành công." : "Không thể xóa tin tức.";
+        var response = await Api.DeleteAsync($"api/banners/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["AdminMessage"] = "Xóa banner thành công.";
+            TempData["AdminMessageType"] = "delete";
+        }
+        else
+        {
+            TempData["AdminMessage"] = "Không thể xóa banner.";
+            TempData["AdminMessageType"] = "error";
+        }
         return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadContentImage(IFormFile upload)
-    {
-        if (upload is null || upload.Length == 0)
-        {
-            return BadRequest(new { error = new { message = "Vui lòng chọn ảnh để tải lên." } });
-        }
-
-        if (!AllowedImageTypes.Contains(upload.ContentType))
-        {
-            return BadRequest(new { error = new { message = "Ảnh phải là JPG, PNG, WEBP hoặc GIF." } });
-        }
-
-        if (upload.Length > 4 * 1024 * 1024)
-        {
-            return BadRequest(new { error = new { message = "Dung lượng ảnh không được vượt quá 4MB." } });
-        }
-
-        try
-        {
-            var url = await _imageStorageService.UploadNewsImageAsync(
-                upload, HttpContext.RequestAborted);
-            return Ok(new { url });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = new { message = $"Không thể tải ảnh: {ex.Message}" } });
-        }
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 
-    private static object ToRequest(NewsArticleViewModel model) => new
+    private static object ToRequest(BannerViewModel model) => new
     {
         model.Title,
-        model.Summary,
-        model.Content,
-        model.Image,
-        model.IsPublished,
-        model.PublishedAt
+        model.ImageUrl,
+        model.Link,
+        model.IsActive,
+        model.DisplayOrder
     };
 
-    private async Task SaveImageIfValid(NewsArticleViewModel model)
+    private async Task SaveImageIfValid(BannerViewModel model)
     {
         if (model.ImageFile is null || model.ImageFile.Length == 0) return;
 
@@ -148,7 +125,7 @@ public class NewsController : Controller
 
         try
         {
-            model.Image = await _imageStorageService.UploadNewsImageAsync(
+            model.ImageUrl = await _imageStorageService.UploadBannerImageAsync(
                 model.ImageFile, HttpContext.RequestAborted);
         }
         catch (InvalidOperationException ex)

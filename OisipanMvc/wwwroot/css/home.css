@@ -458,7 +458,7 @@ nav a:hover::after, nav a.active::after { width: 100%; }
 .pay-opt-card span { font-size: 0.75rem; font-weight: 600; }
 .pay-opt-card.active { border-color: var(--accent-green); background: var(--accent-green-light); }
 
-#toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.8rem; max-width: 420px; width: calc(100% - 4rem); pointer-events: none; }
+#toast-container { position: fixed; top: 6rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.8rem; max-width: 420px; width: calc(100% - 4rem); pointer-events: none; }
 .gorgeous-toast { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 5px; padding: 1.1rem 1.4rem; box-shadow: 0 15px 35px rgba(17, 60, 43, 0.08); display: flex; align-items: flex-start; gap: 0.9rem; transform: translateX(120%); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: auto; position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.5); }
 .gorgeous-toast.show { transform: translateX(0); opacity: 1; }
 .gorgeous-toast.hide { transform: translateX(120%) scale(0.9); opacity: 0; margin-top: -65px; }

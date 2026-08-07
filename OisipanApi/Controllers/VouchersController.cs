@@ -28,8 +28,8 @@ public class VouchersController : ControllerBase
         return Ok(vouchers);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<VoucherResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<VoucherResponse>> GetById(Guid id)
     {
         var voucher = await _context.Vouchers.FindAsync(id);
 
@@ -65,7 +65,7 @@ public class VouchersController : ControllerBase
             TotalQuantity = request.TotalQuantity,
             StartDate = request.StartDate,
             ExpiryDate = request.ExpiryDate,
-            Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status,
+            Status = IsActiveStatus(request.Status),
             CreatedAt = DateTime.Now
         };
 
@@ -75,8 +75,8 @@ public class VouchersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = voucher.VoucherId }, ToResponse(voucher));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, VoucherRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, VoucherRequest request)
     {
         var voucher = await _context.Vouchers.FindAsync(id);
 
@@ -108,7 +108,7 @@ public class VouchersController : ControllerBase
         voucher.TotalQuantity = request.TotalQuantity;
         voucher.StartDate = request.StartDate;
         voucher.ExpiryDate = request.ExpiryDate;
-        voucher.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status;
+        voucher.Status = IsActiveStatus(request.Status);
 
         _context.Vouchers.Update(voucher);
         await _context.SaveChangesAsync();
@@ -116,8 +116,8 @@ public class VouchersController : ControllerBase
         return Ok(ToResponse(voucher));
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var voucher = await _context.Vouchers.FindAsync(id);
 
@@ -143,7 +143,7 @@ public class VouchersController : ControllerBase
             return BadRequest(new { message = "Mã giảm giá không tồn tại." });
         }
 
-        if (voucher.Status != "Active" || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+        if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
         {
             return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
         }
@@ -204,6 +204,11 @@ public class VouchersController : ControllerBase
         StartDate = voucher.StartDate,
         ExpiryDate = voucher.ExpiryDate,
         CreatedDate = voucher.CreatedAt,
-        Status = voucher.Status
+        Status = voucher.Status ? "Active" : "Inactive"
     };
+
+    private static bool IsActiveStatus(string? status)
+    {
+        return !string.Equals(status?.Trim(), "inactive", StringComparison.OrdinalIgnoreCase);
+    }
 }

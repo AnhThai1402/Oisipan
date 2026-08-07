@@ -4,9 +4,9 @@ namespace Oishipan.DTOs
 {
     public class UserVoucherDto
     {
-        public int UserVoucherId { get; set; }
-        public int UserId { get; set; }
-        public int VoucherId { get; set; }
+        public Guid UserVoucherId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid VoucherId { get; set; }
         
         [Display(Name = "Mã voucher")]
         public string VoucherCode { get; set; } = string.Empty;
@@ -17,7 +17,7 @@ namespace Oishipan.DTOs
         public string DiscountType { get; set; } = "Fixed";
         
         [Display(Name = "Yêu cầu tối thiểu")]
-        public int MinimumItems { get; set; }
+        public byte MinimumItems { get; set; }
         
         [Display(Name = "Hết hạn")]
         public DateTime ExpiryDate { get; set; }

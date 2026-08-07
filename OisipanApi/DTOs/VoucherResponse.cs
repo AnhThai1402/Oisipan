@@ -2,13 +2,13 @@ namespace Oishipan.DTOs
 {
     public class VoucherResponse
     {
-        public int VoucherId { get; set; }
+        public Guid VoucherId { get; set; }
 
         public string Code { get; set; } = null!;
 
         public decimal DiscountValue { get; set; }
 
-        public int MinimumItems { get; set; }
+        public byte MinimumItems { get; set; }
 
         public DateTime ExpiryDate { get; set; }
 
@@ -24,7 +24,7 @@ namespace Oishipan.DTOs
 
         public decimal MinOrderValue { get; set; }
 
-        public int TotalQuantity { get; set; }
+        public short TotalQuantity { get; set; }
 
         public DateTime StartDate { get; set; }
 

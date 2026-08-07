@@ -4,7 +4,7 @@ namespace FrontendMvc.Models;
 
 public class VoucherAdminViewModel
 {
-    public int VoucherId { get; set; }
+    public Guid VoucherId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập mã voucher.")]
     [StringLength(20, ErrorMessage = "Mã voucher không được vượt quá 20 ký tự.")]
@@ -15,9 +15,9 @@ public class VoucherAdminViewModel
     [Display(Name = "Giá trị chiết khấu")]
     public decimal DiscountValue { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
+    [Range(0, byte.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
     [Display(Name = "Số lượng tối thiểu")]
-    public int MinimumItems { get; set; } = 0;
+    public byte MinimumItems { get; set; } = 0;
 
     [Required(ErrorMessage = "Vui lòng chọn hạn sử dụng.")]
     [Display(Name = "Hạn sử dụng")]
@@ -39,7 +39,7 @@ public class VoucherAdminViewModel
 
     public decimal MinOrderValue { get; set; } = 0;
 
-    public int TotalQuantity { get; set; } = 100;
+    public short TotalQuantity { get; set; } = 100;
 
     [Required(ErrorMessage = "Vui lòng chọn ngày bắt đầu.")]
     [Display(Name = "Ngày bắt đầu")]

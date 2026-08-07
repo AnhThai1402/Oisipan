@@ -27,7 +27,7 @@ public class ProductsController : AdminBaseController
         _imageStorageService = imageStorageService;
     }
 
-    public async Task<IActionResult> Index([FromQuery] int? categoryId = null)
+    public async Task<IActionResult> Index([FromQuery] Guid? categoryId = null)
     {
         var url = categoryId.HasValue ? $"api/products/admin/products?categoryId={categoryId.Value}" : "api/products/admin/products";
         var products = await Api.GetFromJsonAsyncWithOptions<List<ProductAdminViewModel>>(url) ?? new();
@@ -104,7 +104,7 @@ public class ProductsController : AdminBaseController
     }
 
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
         if (model is null) return NotFound();
@@ -116,7 +116,7 @@ public class ProductsController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ProductAdminViewModel model)
+    public async Task<IActionResult> Edit(Guid id, ProductAdminViewModel model)
     {
         if (id != model.ProductId)
         {
@@ -142,7 +142,7 @@ public class ProductsController : AdminBaseController
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
         return model is null ? NotFound() : View(model);
@@ -151,7 +151,7 @@ public class ProductsController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var response = await Api.DeleteAsync($"api/products/{id}");
         SetFlashMessage(
@@ -163,7 +163,7 @@ public class ProductsController : AdminBaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateQuantity(int id, int quantity)
+    public async Task<IActionResult> UpdateQuantity(Guid id, int quantity)
     {
         // Get current product
         var product = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
@@ -173,7 +173,7 @@ public class ProductsController : AdminBaseController
         }
 
         // Update quantity
-        product.StockQuantity = quantity;
+        product.StockQuantity = (short)quantity;
         var response = await Api.PutAsJsonAsync($"api/products/{id}", product);
 
         SetFlashMessage(

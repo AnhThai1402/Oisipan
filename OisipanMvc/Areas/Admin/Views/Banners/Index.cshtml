@@ -1,0 +1,88 @@
+@model List<FrontendMvc.Models.BannerViewModel>
+@{
+    ViewData["Title"] = "Quản lý Banner";
+}
+
+<section class="page-title-row">
+    <div>
+        <h1>Danh sách Banner</h1>
+    </div>
+    <a asp-area="Admin" asp-controller="Banners" asp-action="Create" class="primary-action">
+        <i class="bi bi-plus-circle"></i> Thêm banner mới
+    </a>
+</section>
+
+<section class="panel">
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%">Hình ảnh</th>
+                    <th style="width: 25%">Tiêu đề</th>
+                    <th style="width: 30%">Đường dẫn</th>
+                    <th style="width: 10%" class="text-center">Thứ tự</th>
+                    <th style="width: 15%" class="text-center">Trạng thái</th>
+                    <th style="width: 150px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        var statusClass = item.IsActive ? "live" : "muted";
+                        var statusText = item.IsActive ? "Đang hiện" : "Đang ẩn";
+                        <tr style="cursor: pointer;" onclick="window.location='@Url.Action("Edit", "Banners", new { area = "Admin", id = item.BannerId })'">
+                            <td class="product-name-cell">
+                                <div class="product-list-item">
+                                    <div class="product-list-thumb @(string.IsNullOrEmpty(item.ImageUrl) ? "" : "has-image")">
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.Title" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <div class="product-list-icon"><i class="bi bi-image"></i></div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td><strong>@item.Title</strong></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Link))
+                                {
+                                    <span class="text-muted text-truncate" style="max-width: 200px; display: inline-block;" title="@item.Link">@item.Link</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Không có</span>
+                                }
+                            </td>
+                            <td class="text-center">@item.DisplayOrder</td>
+                            <td class="text-center"><span class="status @statusClass">@statusText</span></td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="action-buttons product-action-buttons">
+                                    <a asp-area="Admin" asp-controller="Banners" asp-action="Edit" asp-route-id="@item.BannerId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                    <form method="post" asp-area="Admin" asp-controller="Banners" asp-action="Delete" asp-route-id="@item.BannerId" class="delete-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa banner này?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center" style="padding: 40px; color: var(--admin-muted);">
+                            <i class="bi bi-images" style="font-size: 40px; margin-bottom: 12px;"></i>
+                            <div>Chưa có banner nào</div>
+                            <div>Thêm banner đầu tiên để hiển thị trên website.</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

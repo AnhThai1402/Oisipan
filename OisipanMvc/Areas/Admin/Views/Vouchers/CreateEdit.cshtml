@@ -1,7 +1,7 @@
 @model FrontendMvc.Models.VoucherAdminViewModel
 @{
-    ViewData["Title"] = Model?.VoucherId > 0 ? "Chỉnh sửa Voucher" : "Tạo Voucher mới";
-    var isEdit = Model?.VoucherId > 0;
+    ViewData["Title"] = Model?.VoucherId != Guid.Empty ? "Chỉnh sửa Voucher" : "Tạo Voucher mới";
+    var isEdit = Model?.VoucherId != Guid.Empty;
 }
 
 <style>

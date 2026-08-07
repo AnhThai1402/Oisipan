@@ -49,7 +49,7 @@ public class VouchersController : AdminBaseController
     }
 
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<VoucherAdminViewModel>($"api/vouchers/{id}");
         if (model is null) return NotFound();
@@ -60,7 +60,7 @@ public class VouchersController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, VoucherAdminViewModel model)
+    public async Task<IActionResult> Edit(Guid id, VoucherAdminViewModel model)
     {
         if (!ModelState.IsValid)
         {
@@ -78,7 +78,7 @@ public class VouchersController : AdminBaseController
         return RedirectToAction("Index");
     }
 
-    public async Task<IActionResult> Detail(int id)
+    public async Task<IActionResult> Detail(Guid id)
     {
         var model = await Api.GetFromJsonAsyncWithOptions<VoucherAdminViewModel>($"api/vouchers/{id}");
         return model is null ? NotFound() : View(model);
@@ -87,7 +87,7 @@ public class VouchersController : AdminBaseController
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var response = await Api.DeleteAsync($"api/vouchers/{id}");
         SetFlashMessage(

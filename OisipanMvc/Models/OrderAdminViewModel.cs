@@ -4,8 +4,8 @@ namespace FrontendMvc.Models;
 
 public class OrderAdminViewModel
 {
-    public int OrderId { get; set; }
-    public int UserId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid UserId { get; set; }
 
     [Display(Name = "Tên khách hàng")]
     public string CustomerName { get; set; } = string.Empty;
@@ -71,8 +71,8 @@ public class OrderAdminViewModel
 
 public class UserOrderApiResponse
 {
-    public int OrderId { get; set; }
-    public int UserId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid UserId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }
     public string? ShippingAddress { get; set; }
@@ -88,20 +88,20 @@ public class UserOrderApiResponse
 
 public class UserOrderItemApiResponse
 {
-    public int OrderDetailId { get; set; }
-    public int ProductVariantId { get; set; }
-    public int ProductId { get; set; }
+    public Guid OrderDetailId { get; set; }
+    public Guid ProductVariantId { get; set; }
+    public Guid ProductId { get; set; }
     public string? ProductName { get; set; }
     public string? VariantName { get; set; }
     public decimal UnitPrice { get; set; }
-    public int Quantity { get; set; }
+    public byte Quantity { get; set; }
     public string? Note { get; set; }
 }
 
 public class OrderCancellationViewModel
 {
-    public int OrderCancellationId { get; set; }
-    public int OrderId { get; set; }
+    public Guid OrderCancellationId { get; set; }
+    public Guid OrderId { get; set; }
     public string Reason { get; set; } = string.Empty;
     public string? CancelledBy { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -112,14 +112,14 @@ public class OrderCancellationViewModel
 
 public class OrderItemAdminViewModel
 {
-    public int OrderItemId { get; set; }
-    public int OrderDetailId
+    public Guid OrderItemId { get; set; }
+    public Guid OrderDetailId
     {
         get => OrderItemId;
         set => OrderItemId = value;
     }
-    public int ProductVariantId { get; set; }
-    public int ProductId { get; set; }
+    public Guid ProductVariantId { get; set; }
+    public Guid ProductId { get; set; }
 
     [Display(Name = "Tên sản phẩm")]
     public string ProductName { get; set; } = string.Empty;
@@ -130,7 +130,7 @@ public class OrderItemAdminViewModel
     public decimal UnitPrice { get; set; }
 
     [Display(Name = "Số lượng")]
-    public int Quantity { get; set; }
+    public byte Quantity { get; set; }
 
     [Display(Name = "Thành tiền")]
     public decimal Total => UnitPrice * Quantity;

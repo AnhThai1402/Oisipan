@@ -17,7 +17,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll([FromQuery] int? categoryId = null)
+    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll([FromQuery] Guid? categoryId = null)
     {
         var query = _context.Products
             .Include(p => p.Category)
@@ -69,8 +69,8 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductResponse>> GetById(Guid id)
     {
         var product = await _context.Products
             .Include(p => p.Category)
@@ -91,40 +91,57 @@ public class ProductsController : ControllerBase
 
     private async Task EnsureVariantsExistAsync(Product product)
     {
-        var sizeOption = product.ProductOptions.FirstOrDefault(po => po.OptionName.Equals("Size", StringComparison.OrdinalIgnoreCase));
-        var fillingOption = product.ProductOptions.FirstOrDefault(po => !po.OptionName.Equals("Size", StringComparison.OrdinalIgnoreCase));
+        if (product.ProductOptions == null || !product.ProductOptions.Any()) return;
 
-        if (sizeOption == null || fillingOption == null) return;
+        var validOptions = product.ProductOptions
+            .Where(o => o.ProductValues != null && o.ProductValues.Any())
+            .Select(o => o.ProductValues.ToList())
+            .ToList();
+
+        if (!validOptions.Any()) return;
+
+        var combinations = new List<List<ProductValue>>();
+        void Generate(int depth, List<ProductValue> current)
+        {
+            if (depth == validOptions.Count)
+            {
+                combinations.Add(new List<ProductValue>(current));
+                return;
+            }
+            foreach (var val in validOptions[depth])
+            {
+                current.Add(val);
+                Generate(depth + 1, current);
+                current.RemoveAt(current.Count - 1);
+            }
+        }
+
+        Generate(0, new List<ProductValue>());
 
         bool added = false;
-        foreach (var s in sizeOption.ProductValues)
+        foreach (var combo in combinations)
         {
-            foreach (var f in fillingOption.ProductValues)
-            {
-                bool exists = product.ProductVariants.Any(pv => 
-                    pv.ProductVariantValues != null &&
-                    pv.ProductVariantValues.Any(pvv => pvv.ProductValueId == s.ProductValueId) &&
-                    pv.ProductVariantValues.Any(pvv => pvv.ProductValueId == f.ProductValueId)
-                );
+            var comboIds = combo.Select(c => c.ProductValueId).OrderBy(id => id).ToList();
 
-                if (!exists)
+            bool exists = product.ProductVariants.Any(pv => 
+                pv.ProductVariantValues != null &&
+                pv.ProductVariantValues.Count == comboIds.Count &&
+                pv.ProductVariantValues.Select(pvv => pvv.ProductValueId).OrderBy(id => id).SequenceEqual(comboIds)
+            );
+
+            if (!exists)
+            {
+                var variant = new ProductVariant
                 {
-                    var variant = new ProductVariant
-                    {
-                        ProductId = product.ProductId,
-                        Price = s.AdditionalPrice + f.AdditionalPrice,
-                        StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : 0,
-                        Status = "Active",
-                        ProductVariantValues = new List<ProductVariantValue>
-                        {
-                            new ProductVariantValue { ProductValueId = s.ProductValueId },
-                            new ProductVariantValue { ProductValueId = f.ProductValueId }
-                        }
-                    };
-                    _context.ProductVariants.Add(variant);
-                    product.ProductVariants.Add(variant);
-                    added = true;
-                }
+                    ProductId = product.ProductId,
+                    Price = combo.Sum(c => c.AdditionalPrice),
+                    StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
+                    Status = true,
+                    ProductVariantValues = combo.Select(c => new ProductVariantValue { ProductValueId = c.ProductValueId }).ToList()
+                };
+                _context.ProductVariants.Add(variant);
+                product.ProductVariants.Add(variant);
+                added = true;
             }
         }
 
@@ -135,7 +152,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("admin/products")]
-    public async Task<ActionResult<IEnumerable<AdminProductResponse>>> GetAllForAdmin([FromQuery] int? categoryId = null)
+    public async Task<ActionResult<IEnumerable<AdminProductResponse>>> GetAllForAdmin([FromQuery] Guid? categoryId = null)
     {
         var query = _context.Products
             .Include(p => p.ProductOptions)
@@ -164,8 +181,8 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("admin/{id:int}")]
-    public async Task<ActionResult<AdminProductResponse>> GetByIdForAdmin(int id)
+    [HttpGet("admin/{id:guid}")]
+    public async Task<ActionResult<AdminProductResponse>> GetByIdForAdmin(Guid id)
     {
         var product = await _context.Products
             .Include(p => p.ProductOptions)
@@ -208,7 +225,7 @@ public class ProductsController : ControllerBase
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Sku = request.Name.Trim().ToUpper().Substring(0, Math.Min(30, request.Name.Trim().Length)).Replace(" ", "-"),
             MinimumStock = request.MinimumStock,
-            Status = request.Status ?? "active",
+            Status = request.Status?.ToLower() == "active",
             CreatedAt = DateTime.UtcNow
         };
 
@@ -218,8 +235,8 @@ public class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = product.ProductId }, ToResponse(product));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, ProductRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductRequest request)
     {
         var product = await _context.Products.FindAsync(id);
         if (product is null)
@@ -243,15 +260,15 @@ public class ProductsController : ControllerBase
         product.StockQuantity = request.StockQuantity;
         product.CategoryId = request.CategoryId;
         product.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
-        product.Status = request.Status?.Trim() ?? "active";
+        product.Status = request.Status?.ToLower() == "active";
         product.MinimumStock = request.MinimumStock;
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var product = await _context.Products.FindAsync(id);
         if (product is null)
@@ -305,7 +322,7 @@ public class ProductsController : ControllerBase
                     Price = pv.Price,
                     StockQuantity = pv.StockQuantity,
                     Sku = pv.Sku,
-                    IsActive = pv.Status == "Active",
+                    IsActive = pv.Status,
                     VariantValues = pv.ProductVariantValues != null ? pv.ProductVariantValues
                         .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
                         .Select(pvv => new ProductVariantValueResponse
@@ -333,7 +350,7 @@ public class ProductsController : ControllerBase
             CategoryId = product.CategoryId,
             CategoryName = categoryName ?? product.Category?.CategoryName,
             Description = product.Description,
-            Status = product.Status ?? "active",
+            Status = product.Status ? "active" : "inactive",
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt,
             ProductOptions = product.ProductOptions

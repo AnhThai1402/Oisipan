@@ -24,21 +24,21 @@ public class DashboardController : ControllerBase
 
         // Today's revenue
         var todayOrders = await _context.Orders
-            .Where(o => o.CreatedAt.Date == today && o.Status == "Đã hoàn thành")
+            .Where(o => o.CreatedAt.Date == today && o.OrderStatus == "Đã hoàn thành")
             .ToListAsync();
         var todayRevenue = todayOrders.Sum(o => o.TotalAmount);
 
         // Month revenue
         var monthOrders = await _context.Orders
-            .Where(o => o.CreatedAt >= startOfMonth && o.Status == "Đã hoàn thành")
+            .Where(o => o.CreatedAt >= startOfMonth && o.OrderStatus == "Đã hoàn thành")
             .ToListAsync();
         var monthRevenue = monthOrders.Sum(o => o.TotalAmount);
 
         // Order counts
         var pendingOrders = await _context.Orders
-            .CountAsync(o => o.Status == "Chờ xác nhận");
+            .CountAsync(o => o.OrderStatus == "Chờ xác nhận");
         var confirmedOrders = await _context.Orders
-            .CountAsync(o => o.Status == "Đã xác nhận" || o.Status == "Đang chuẩn bị");
+            .CountAsync(o => o.OrderStatus == "Đã xác nhận" || o.OrderStatus == "Đang chuẩn bị");
 
         // Stock info
         var lowStockProducts = await _context.Products.CountAsync(p => p.StockQuantity > 0 && p.StockQuantity <= (p.MinimumStock ?? 10));
@@ -46,9 +46,9 @@ public class DashboardController : ControllerBase
 
         // Customer info
         var newCustomersThisMonth = await _context.Accounts
-            .CountAsync(a => a.CreatedAt >= startOfMonth && a.Status == "Active");
+            .CountAsync(a => a.CreatedAt >= startOfMonth && a.Status);
         var totalCustomers = await _context.Accounts
-            .CountAsync(a => a.Status == "Active");
+            .CountAsync(a => a.Status);
 
         // Recent orders
         var recentOrders = await _context.Orders
@@ -63,9 +63,9 @@ public class DashboardController : ControllerBase
                 CustomerPhone = o.Account == null ? "N/A" : o.Account.PhoneNumber,
                 TotalAmount = o.TotalAmount,
                 PaymentMethod = o.PaymentMethod,
-                Status = o.Status,
+                Status = o.OrderStatus,
                 CreatedDate = o.CreatedAt,
-                EstimatedDelivery = GetEstimatedDelivery(o.Status)
+                EstimatedDelivery = GetEstimatedDelivery(o.OrderStatus)
             })
             .ToListAsync();
 

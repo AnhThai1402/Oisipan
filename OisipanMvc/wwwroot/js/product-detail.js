@@ -50,12 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 : "Chưa chọn đầy đủ";
         }
 
-        let foundVariantId = 0;
+        let foundVariantId = "";
         if (window.ProductVariantsData && selected.length > 0) {
-            const selectedValueIds = selected.map(i => parseInt(i.value)).sort();
+            const selectedValueIds = selected.map(i => String(i.value).toLowerCase()).sort();
             
             const variant = window.ProductVariantsData.find(v => {
-                const vValues = (v.VariantValues || v.variantValues || []).map(vv => vv.ProductValueId || vv.productValueId).sort();
+                const vValues = (v.VariantValues || v.variantValues || [])
+                    .map(vv => String(vv.ProductValueId || vv.productValueId).toLowerCase())
+                    .sort();
                 if (vValues.length !== selectedValueIds.length) return false;
                 for (let i = 0; i < vValues.length; i++) {
                     if (vValues[i] !== selectedValueIds[i]) return false;
@@ -79,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (form) {
         form.addEventListener("submit", event => {
             const variantId = document.getElementById("productVariantId")?.value;
-            if (!variantId || variantId === "0") {
+            if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
                 event.preventDefault();
                 alert("Vui lòng chọn đầy đủ các lựa chọn trước khi thêm vào giỏ hàng.");
             }

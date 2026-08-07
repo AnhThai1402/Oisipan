@@ -5,7 +5,7 @@ namespace FrontendMvc.Models;
 
 public class UserAdminViewModel
 {
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập họ tên.")]
     [StringLength(100, ErrorMessage = "Họ tên không được vượt quá 100 ký tự.")]

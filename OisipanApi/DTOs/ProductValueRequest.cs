@@ -4,8 +4,7 @@ namespace Oishipan.DTOs;
 
 public class ProductValueRequest
 {
-    [Range(1, int.MaxValue, ErrorMessage = "Vui long chon tuy chon san pham.")]
-    public int ProductOptionId { get; set; }
+    public Guid ProductOptionId { get; set; }
 
     [Required(ErrorMessage = "Vui long nhap gia tri tuy chon.")]
     [StringLength(100, ErrorMessage = "Gia tri tuy chon khong duoc vuot qua 100 ky tu.")]

@@ -6,9 +6,9 @@ namespace Oishipan.Models
     public class Payment : BaseEntity
     {
         [Key]
-        public int PaymentId { get; set; }
+        public Guid PaymentId { get; set; }
 
-        public int OrderId { get; set; }
+        public Guid OrderId { get; set; }
         [ForeignKey("OrderId")]
         public virtual Order? Order { get; set; }
 
@@ -16,9 +16,11 @@ namespace Oishipan.Models
         public decimal Amount { get; set; }
 
         [StringLength(50)]
+        [Column(TypeName = "nvarchar(50)")]
         public string PaymentMethod { get; set; } = string.Empty;
 
         [StringLength(100)]
+        [Column(TypeName = "varchar(100)")]
         public string? TransactionCode { get; set; }
 
         public DateTime? PaidAt { get; set; }
