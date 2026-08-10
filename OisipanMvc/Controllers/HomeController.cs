@@ -74,8 +74,8 @@ public class HomeController : Controller
     {
         var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
         var productsTask = Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
-        var bannersTask = Api.GetFromJsonAsync<List<BannerViewModel>>("api/banners");
-        var categoriesTask = Api.GetFromJsonAsync<List<CategoryAdminViewModel>>("api/categories");
+        var bannersTask = Api.GetFromJsonAsyncWithOptions<List<BannerViewModel>>("api/banners");
+        var categoriesTask = Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories");
         
         await Task.WhenAll(productsTask, bannersTask, categoriesTask);
 

@@ -1,7 +1,7 @@
 @model FrontendMvc.Models.OrderAdminViewModel
 @{
     Layout = null;
-    ViewData["Title"] = $"Hóa đơn #OP-{Model.OrderId:0000}";
+    ViewData["Title"] = $"Hóa đơn #OP-{Model.OrderId.ToString("N")}";
 }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +21,7 @@
         </div>
         <div class="meta">
             <h3>HÓA ĐƠN BÁN HÀNG</h3>
-            <div>Mã đơn: <strong>#OP-@Model.OrderId.ToString("0000")</strong></div>
+            <div>Mã đơn: <strong>#OP-@Model.OrderId.ToString("N")</strong></div>
             <div>Ngày: <strong>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
         </div>
     </header>

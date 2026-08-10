@@ -83,7 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const variantId = document.getElementById("productVariantId")?.value;
             if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
                 event.preventDefault();
-                alert("Vui lòng chọn đầy đủ các lựa chọn trước khi thêm vào giỏ hàng.");
+                if (typeof triggerToast === 'function') {
+                    triggerToast("Vui lòng chọn đầy đủ các lựa chọn trước khi thêm vào giỏ hàng.", 'warning');
+                } else {
+                    alert("Vui lòng chọn đầy đủ các lựa chọn trước khi thêm vào giỏ hàng.");
+                }
             }
         });
     }

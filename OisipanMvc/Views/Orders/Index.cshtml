@@ -30,7 +30,7 @@
                     @foreach (var order in Model)
                     {
                         <tr>
-                            <td><strong>#OP-@order.OrderId.ToString("0000")</strong></td>
+                            <td><strong>#OP-@order.OrderId.ToString("N")</strong></td>
                             <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
                                 @{
@@ -66,9 +66,6 @@
                                 <div style="display: flex; gap: 6px;">
                                     <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;" title="Xem chi tiết">
                                         <i class="bi bi-eye"></i> Xem chi tiết
-                                    </a>
-                                    <a asp-controller="Orders" asp-action="Print" asp-route-id="@order.OrderId" asp-route-print="true" target="_blank" rel="noopener noreferrer" class="btn-small" style="padding: 0.5rem 1rem;" title="In hóa đơn">
-                                        <i class="bi bi-printer"></i>
                                     </a>
                                 </div>
                             </td>

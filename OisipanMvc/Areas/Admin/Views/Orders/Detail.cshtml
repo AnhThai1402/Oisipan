@@ -1,6 +1,6 @@
 @model FrontendMvc.Models.OrderAdminViewModel
 @{
-    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:0000}";
+    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId.ToString("N")}";
 }
 
 <section class="page-breadcrumb">
@@ -12,7 +12,7 @@
 <section class="page-title-row">
     <div>
         <span class="eyebrow">Chi tiết đơn hàng</span>
-        <h1>#OP-@Model.OrderId.ToString("0000")</h1>
+        <h1>#OP-@Model.OrderId.ToString("N")</h1>
         <p>Đặt hàng bởi <strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách hàng" : Model.CustomerName)</strong></p>
     </div>
     <div class="button-group">
@@ -33,7 +33,7 @@
         </div>
 
         <div class="detail-group">
-            <div class="detail-row"><span class="detail-label">Mã đơn</span><strong>#OP-@Model.OrderId.ToString("0000")</strong></div>
+            <div class="detail-row"><span class="detail-label">Mã đơn</span><strong>#OP-@Model.OrderId.ToString("N")</strong></div>
             <div class="detail-row"><span class="detail-label">Ngày đặt</span><strong>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
             <div class="detail-row"><span class="detail-label">Khách hàng</span><strong>@Model.CustomerName</strong></div>
             <div class="detail-row"><span class="detail-label">Số điện thoại</span><strong>@Model.CustomerPhone</strong></div>
@@ -224,10 +224,10 @@
                 @if (cancReq.Status == "Pending")
                 {
                     <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="button" class="btn-approve" onclick="showResponseModal(@cancReq.OrderCancellationId, true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
+                        <button type="button" class="btn-approve" onclick="showResponseModal('@cancReq.OrderCancellationId', true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
                             <i class="bi bi-check-circle"></i> Phê duyệt
                         </button>
-                        <button type="button" class="btn-reject" onclick="showResponseModal(@cancReq.OrderCancellationId, false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
+                        <button type="button" class="btn-reject" onclick="showResponseModal('@cancReq.OrderCancellationId', false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
                             <i class="bi bi-x-circle"></i> Từ chối
                         </button>
                     </div>

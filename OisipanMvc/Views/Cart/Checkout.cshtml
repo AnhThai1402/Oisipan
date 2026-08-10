@@ -481,6 +481,9 @@
             if(openModalBtn) {
                 openModalBtn.addEventListener('click', () => {
                     addressModal.classList.add('open');
+                    if (document.getElementById('checkoutProvince')?.options.length <= 1) {
+                        loadCheckoutProvinces();
+                    }
                 });
             }
 
@@ -488,6 +491,14 @@
                 closeModalBtn.addEventListener('click', () => {
                     addressModal.classList.remove('open');
                 });
+            }
+
+            if (document.getElementById('checkoutProvince')) {
+                const pSelect = document.getElementById('checkoutProvince');
+                const wSelect = document.getElementById('checkoutWard');
+                pSelect?.addEventListener('change', () => loadCheckoutWards());
+                wSelect?.addEventListener('change', () => updateCheckoutAddress());
+                loadCheckoutProvinces();
             }
 
             if(saveAddressBtn) {
@@ -507,7 +518,7 @@
                     }
 
                     if(!name || !phone || !address) {
-                        alert('Vui lòng nhập đầy đủ thông tin nhận hàng!');
+                        triggerToast('Vui lòng nhập đầy đủ thông tin nhận hàng!', 'warning');
                         return;
                     }
 
@@ -540,7 +551,7 @@
 
                     if (!name || !phone || !addr) {
                         addressModal.classList.add('open');
-                        alert('Vui lòng điền thông tin địa chỉ nhận hàng trước khi thanh toán.');
+                        triggerToast('Vui lòng điền thông tin địa chỉ nhận hàng trước khi thanh toán.', 'warning');
                         return;
                     }
 

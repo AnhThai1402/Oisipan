@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "GzcgsoqJ0MI=",
+  "dgSpecHash": "0Bf9aQ0WypU=",
   "success": true,
-  "projectFilePath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
+  "projectFilePath": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\ACER NITRO\\.nuget\\packages\\cloudinarydotnet\\1.29.2\\cloudinarydotnet.1.29.2.nupkg.sha512",
-    "C:\\Users\\ACER NITRO\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+    "C:\\Users\\GALLERIA\\.nuget\\packages\\cloudinarydotnet\\1.29.2\\cloudinarydotnet.1.29.2.nupkg.sha512",
+    "C:\\Users\\GALLERIA\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
   ],
   "logs": []
 }
