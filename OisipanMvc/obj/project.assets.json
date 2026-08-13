@@ -90,19 +90,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ACER NITRO\\.nuget\\packages\\": {}
+    "C:\\Users\\GALLERIA\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
+      "projectUniqueName": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
       "projectName": "FrontendMvc",
-      "projectPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\FrontendMvc.csproj",
-      "packagesPath": "C:\\Users\\ACER NITRO\\.nuget\\packages\\",
-      "outputPath": "D:\\DATN_Oisipan_2026\\OisipanMvc\\obj\\",
+      "projectPath": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanMvc\\FrontendMvc.csproj",
+      "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
+      "outputPath": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanMvc\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\ACER NITRO\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
@@ -158,7 +158,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

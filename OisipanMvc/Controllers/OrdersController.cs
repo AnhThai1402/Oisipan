@@ -130,7 +130,7 @@ public class OrdersController : Controller
         }
 
         // Send cancellation request to API
-        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { reason = trimmedReason });
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { Reason = trimmedReason });
 
         if (!response.IsSuccessStatusCode)
         {

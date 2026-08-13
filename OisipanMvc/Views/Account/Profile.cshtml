@@ -169,7 +169,7 @@
             $('#provinceSelect').trigger('change.select2');
         } catch (error) {
             console.error('Error loading provinces:', error);
-            alert('Không thể tải danh sách tỉnh thành.');
+            triggerToast('Không thể tải danh sách tỉnh thành.', 'error');
         }
     }
 

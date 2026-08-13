@@ -74,7 +74,7 @@ public class OrdersController : AdminBaseController
         }
 
         var pdfBytes = await response.Content.ReadAsByteArrayAsync();
-        return File(pdfBytes, "application/pdf", $"OP-{id:0000}-invoice.pdf");
+        return File(pdfBytes, "application/pdf", $"OP-{id.ToString("N")}-invoice.pdf");
     }
 
     [HttpPost]

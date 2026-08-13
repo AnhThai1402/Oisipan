@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Oishipan.DTOs;
 
@@ -89,5 +90,6 @@ public class OrderCancellationDto
 
 public class OrderCancellationCreateDto
 {
+    [JsonPropertyName("reason")]
     public string Reason { get; set; } = string.Empty;
 }

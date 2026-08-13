@@ -37,7 +37,7 @@
                     @foreach (var order in Model)
                     {
                         <tr>
-                            <td><strong>#OP-@order.OrderId.ToString("0000")</strong></td>
+                            <td><strong>#OP-@order.OrderId.ToString("N")</strong></td>
                             <td>
                                 <span>@(string.IsNullOrWhiteSpace(order.CustomerName) ? "Khách hàng" : order.CustomerName)</span><br />
                                 <span class="text-muted" style="font-size: 12px;">@order.CustomerPhone</span>

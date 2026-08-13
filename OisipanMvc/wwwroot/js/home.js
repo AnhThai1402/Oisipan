@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const header = document.getElementById('main-header');
     const cartSidebar = document.getElementById('cart-sidebar');
+    const cartBackdrop = document.getElementById('cart-backdrop');
     const openCartBtn = document.getElementById('open-cart-btn');
     const closeCartBtn = document.getElementById('close-cart-btn');
     const checkoutBtn = document.getElementById('cart-checkout-btn');
@@ -65,8 +66,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', onScroll);
     onScroll(); // Trigger once on load
 
-    openCartBtn?.addEventListener('click', () => cartSidebar?.classList.add('open'));
-    closeCartBtn?.addEventListener('click', () => cartSidebar?.classList.remove('open'));
+    const toggleCartSidebar = (isOpen) => {
+        cartSidebar?.classList.toggle('open', isOpen);
+        cartBackdrop?.classList.toggle('open', isOpen);
+    };
+
+    openCartBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleCartSidebar(true);
+    });
+    closeCartBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleCartSidebar(false);
+    });
+    cartBackdrop?.addEventListener('click', () => toggleCartSidebar(false));
 
     checkoutBtn?.addEventListener('click', () => {
         if (checkoutBtn.disabled) {
@@ -74,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        cartSidebar?.classList.remove('open');
+        toggleCartSidebar(false);
         const buyNowInput = document.getElementById('buy-now-product-id');
         if (buyNowInput) buyNowInput.value = '';
         
@@ -471,11 +486,19 @@ function triggerToast(message, type = 'success') {
 
     const iconClass = type === 'error'
         ? 'bi bi-exclamation-triangle'
-        : type === 'info'
-            ? 'bi bi-info-circle'
-            : 'bi bi-check-circle';
+        : type === 'warning'
+            ? 'bi bi-exclamation-triangle-fill'
+            : type === 'info'
+                ? 'bi bi-info-circle'
+                : 'bi bi-check-circle';
 
-    const titleText = type === 'error' ? 'Có lỗi' : type === 'info' ? 'Thông báo' : 'Thành công';
+    const titleText = type === 'error'
+        ? 'Có lỗi'
+        : type === 'warning'
+            ? 'Cảnh báo'
+            : type === 'info'
+                ? 'Thông báo'
+                : 'Thành công';
 
     toast.innerHTML = `
         <div class="toast-icon-wrap"><i class="${iconClass}"></i></div>
@@ -572,12 +595,12 @@ function triggerBuyNow(productId) {
     if (variantIdInput) {
         const variantId = variantIdInput.value;
         if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
-            alert("Vui lòng chọn đầy đủ các lựa chọn trước khi mua ngay.");
-            return;
+                triggerToast("Vui lòng chọn đầy đủ các lựa chọn trước khi mua ngay.", 'warning');
+                return;
+            }
+            
+            window.location.href = '/Cart/Checkout?buyNowVariantId=' + variantId;
+        } else {
+            triggerToast("Có lỗi xảy ra, không tìm thấy sản phẩm.", 'error');
         }
-        
-        window.location.href = '/Cart/Checkout?buyNowVariantId=' + variantId;
-    } else {
-        alert("Có lỗi xảy ra, không tìm thấy sản phẩm.");
     }
-}

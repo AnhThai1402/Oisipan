@@ -18,6 +18,34 @@
 
   function formatCurrency(v){return (Number(v)||0).toLocaleString('vi-VN') + 'đ';}
 
+  function normalizeDashboardStats(data){
+    if(!data) return {
+      todayRevenue: 0,
+      monthRevenue: 0,
+      pendingOrders: 0,
+      confirmedOrders: 0,
+      lowStockProducts: 0,
+      outOfStockProducts: 0,
+      newCustomersThisMonth: 0,
+      totalCustomers: 0,
+      recentOrders: [],
+      dailyRevenues: []
+    };
+
+    return {
+      todayRevenue: data.todayRevenue ?? data.TodayRevenue ?? 0,
+      monthRevenue: data.monthRevenue ?? data.MonthRevenue ?? 0,
+      pendingOrders: data.pendingOrders ?? data.PendingOrders ?? 0,
+      confirmedOrders: data.confirmedOrders ?? data.ConfirmedOrders ?? 0,
+      lowStockProducts: data.lowStockProducts ?? data.LowStockProducts ?? 0,
+      outOfStockProducts: data.outOfStockProducts ?? data.OutOfStockProducts ?? 0,
+      newCustomersThisMonth: data.newCustomersThisMonth ?? data.NewCustomersThisMonth ?? 0,
+      totalCustomers: data.totalCustomers ?? data.TotalCustomers ?? 0,
+      recentOrders: data.recentOrders ?? data.RecentOrders ?? [],
+      dailyRevenues: data.dailyRevenues ?? data.DailyRevenues ?? []
+    };
+  }
+
   function createSvgElement(tag, attrs = {}){
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
     Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
@@ -33,6 +61,9 @@
     if(lowStockEl) lowStockEl.textContent = (data.lowStockProducts || 0);
     const customersEl = document.querySelector('.metric-card.glow-blue strong');
     if(customersEl) customersEl.textContent = (data.totalCustomers || 0);
+
+    const monthRevenueEl = document.querySelector('.chart-meta-right strong');
+    if(monthRevenueEl) monthRevenueEl.textContent = formatCurrency(data.monthRevenue);
   }
 
   function renderTasks(data){
@@ -48,14 +79,22 @@
     if(!tbody) return;
     tbody.innerHTML = '';
     (data.recentOrders||[]).forEach(order =>{
+      const orderId = order.orderId ?? order.OrderId ?? '';
+      const orderCode = order.orderCode ?? order.OrderCode ?? '';
+      const customerName = order.customerName ?? order.CustomerName ?? '';
+      const totalAmount = order.totalAmount ?? order.TotalAmount ?? 0;
+      const paymentMethod = order.paymentMethod ?? order.PaymentMethod ?? '';
+      const status = order.status ?? order.Status ?? '';
+      const estimatedDelivery = order.estimatedDelivery ?? order.EstimatedDelivery ?? '';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><a href="/Admin/Orders/Detail/${order.orderId}" style="text-decoration:none;color:inherit;font-weight:500">#${order.orderCode}</a></td>
-        <td>${order.customerName}</td>
-        <td>${formatCurrency(order.totalAmount)}</td>
-        <td>${order.paymentMethod}</td>
-        <td><span class="status">${order.status}</span></td>
-        <td>${order.estimatedDelivery}</td>
+        <td><a href="/Admin/Orders/Detail/${orderId}" style="text-decoration:none;color:inherit;font-weight:500">#${orderCode}</a></td>
+        <td>${customerName}</td>
+        <td>${formatCurrency(totalAmount)}</td>
+        <td>${paymentMethod}</td>
+        <td><span class="status">${status}</span></td>
+        <td>${estimatedDelivery}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -153,15 +192,11 @@
   async function init(){
     const data = await fetchStats();
     if(!data) return;
-    renderMetrics({
-      todayRevenue: data.todayRevenue,
-      pendingOrders: data.pendingOrders,
-      lowStockProducts: data.lowStockProducts,
-      totalCustomers: data.totalCustomers
-    });
-    renderTasks(data);
-    renderOrders(data);
-    renderChart(data);
+    const stats = normalizeDashboardStats(data);
+    renderMetrics(stats);
+    renderTasks(stats);
+    renderOrders(stats);
+    renderChart(stats);
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
