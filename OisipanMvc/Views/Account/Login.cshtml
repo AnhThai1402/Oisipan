@@ -67,13 +67,12 @@
                     <span>HOẶC</span>
                 </div>
 
-                <div class="social-buttons">
-                    <button type="button" class="btn-social">
-                        <i class="bi bi-google"></i> Google
-                    </button>
-                    <button type="button" class="btn-social">
-                        <i class="bi bi-facebook"></i> Facebook
-                    </button>
+                <div class="google-signin-container">
+                    <div id="google-signin-button"></div>
+                </div>
+
+                <div id="loading-overlay">
+                    <div class="loading-spinner"></div>
                 </div>
 
                 <div class="signup-link">
@@ -85,10 +84,19 @@
     </div>
 
     <script src="~/js/auth.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/css/google-login.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="~/js/google-login.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             initializeFormValidation();
             initializeFormSubmission();
+        });
+        window.addEventListener('load', function () {
+            var clientId = '@ViewBag.GoogleClientId';
+            if (clientId && window.GoogleLoginHandler) {
+                GoogleLoginHandler.initialize(clientId);
+            }
         });
     </script>
 </body>

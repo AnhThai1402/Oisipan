@@ -18,14 +18,18 @@ namespace Oishipan.Models
         [Column(TypeName = "varchar(100)")]
         public string Email { get; set; } = null!;
 
-        [Required]
         [StringLength(15)]
-        [Column(TypeName = "varchar(15)")]
-        public string PhoneNumber { get; set; } = null!;
+        public string? PhoneNumber { get; set; }
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? Password { get; set; }
+
+        [StringLength(100)]
+        public string? GoogleId { get; set; }
 
         [Required]
-        [Column(TypeName = "varchar(max)")]
-        public string Password { get; set; } = null!;
+        [StringLength(20)]
+        public string AuthProvider { get; set; } = "Local";
 
         [Required]
         [StringLength(20)]
