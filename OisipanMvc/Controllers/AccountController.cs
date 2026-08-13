@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -13,16 +13,12 @@ public class AccountController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly FrontendMvc.Services.IImageStorageService _imageStorageService;
+    private readonly IConfiguration _configuration;
 
-    public AccountController(IHttpClientFactory httpClientFactory, FrontendMvc.Services.IImageStorageService imageStorageService)
+    public AccountController(IHttpClientFactory httpClientFactory, FrontendMvc.Services.IImageStorageService imageStorageService, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
         _imageStorageService = imageStorageService;
-    private readonly IConfiguration _configuration;
-
-    public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
-    {
-        _httpClientFactory = httpClientFactory;
         _configuration = configuration;
     }
 
@@ -51,12 +47,12 @@ public class AccountController : Controller
         var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
         if (account is null)
         {
-            ModelState.AddModelError(string.Empty, "KhÃ´ng Ä‘á»c Ä‘Æ°á»£c thÃ´ng tin tÃ i khoáº£n.");
+            ModelState.AddModelError(string.Empty, "Không đọc được thông tin tài khoản.");
             return View(model);
         }
 
         await SignIn(account, rememberMe: false);
-        TempData["CartMessage"] = "ÄÄƒng kÃ½ thÃ nh cÃ´ng.";
+        TempData["CartMessage"] = "Đăng ký thành công.";
         return RedirectToAction("Index", "Home");
     }
 
@@ -86,7 +82,7 @@ public class AccountController : Controller
         var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
         if (account is null)
         {
-            ModelState.AddModelError(string.Empty, "KhÃ´ng Ä‘á»c Ä‘Æ°á»£c thÃ´ng tin Ä‘Äƒng nháº­p.");
+            ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
             return View(model);
         }
 
@@ -110,6 +106,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync("OisipanCookie");
+        HttpContext.Session.Remove("Cart");
         return RedirectToAction("Index", "Home");
     }
 
@@ -122,12 +119,6 @@ public class AccountController : Controller
         {
             await HttpContext.SignOutAsync("OisipanCookie");
             return RedirectToAction(nameof(Login));
-    [HttpPost]
-    public async Task<IActionResult> GoogleLoginCallback([FromBody] GoogleLoginRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request?.IdToken))
-        {
-            return Json(new { success = false, message = "Thiáº¿u Google ID Token." });
         }
 
         try
@@ -145,7 +136,7 @@ public class AccountController : Controller
         }
         catch (HttpRequestException)
         {
-            TempData["CartError"] = "KhÃ´ng thá»ƒ táº£i há»“ sÆ¡. Vui lÃ²ng thá»­ láº¡i.";
+            TempData["CartError"] = "Không thể tải hồ sơ. Vui lòng thử lại.";
             return RedirectToAction("Index", "Home");
         }
     }
@@ -201,7 +192,7 @@ public class AccountController : Controller
         }
         catch (HttpRequestException)
         {
-            TempData["CartError"] = "KhÃ´ng thá»ƒ táº£i há»“ sÆ¡. Vui lÃ²ng thá»­ láº¡i.";
+            TempData["CartError"] = "Không thể tải hồ sơ. Vui lòng thử lại.";
             return RedirectToAction("Profile");
         }
     }
@@ -209,11 +200,12 @@ public class AccountController : Controller
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditProfile(ProfileUpdateViewModel model)
+    public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
     {
         if (!ModelState.IsValid)
         {
-            return View(model);
+            TempData["CartError"] = "Vui lòng kiểm tra lại thông tin nhập.";
+            return RedirectToAction(nameof(Profile), new { tab = "profile" });
         }
 
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -231,8 +223,8 @@ public class AccountController : Controller
         var response = await Api.PatchAsJsonAsync($"api/accounts/{userId}/profile", model);
         if (!response.IsSuccessStatusCode)
         {
-            await AddApiErrors(response);
-            return View(model);
+            TempData["CartError"] = "Lỗi khi cập nhật hồ sơ.";
+            return RedirectToAction(nameof(Profile), new { tab = "profile" });
         }
 
         // Update cookie claims if Email or FullName changed
@@ -250,14 +242,14 @@ public class AccountController : Controller
             await HttpContext.SignInAsync("OisipanCookie", new ClaimsPrincipal(identity));
         }
 
-        TempData["CartMessage"] = "Cáº­p nháº­t há»“ sÆ¡ thÃ nh cÃ´ng.";
+        TempData["CartMessage"] = "Cập nhật hồ sơ thành công.";
         return RedirectToAction(nameof(Profile));
     }
 
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddAddress([FromForm] string province, [FromForm] string ward, [FromForm] string detail)
+    public async Task<IActionResult> AddAddress([FromForm] string recipientName, [FromForm] string phoneNumber, [FromForm] string province, [FromForm] string ward, [FromForm] string detail, [FromForm] bool isDefault)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdValue, out var userId))
@@ -265,31 +257,33 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        if (string.IsNullOrWhiteSpace(province) || string.IsNullOrWhiteSpace(ward) || string.IsNullOrWhiteSpace(detail))
+        if (string.IsNullOrWhiteSpace(recipientName) || string.IsNullOrWhiteSpace(phoneNumber) || string.IsNullOrWhiteSpace(province) || string.IsNullOrWhiteSpace(ward) || string.IsNullOrWhiteSpace(detail))
         {
-            TempData["CartError"] = "Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin Ä‘á»‹a chá»‰.";
-            return RedirectToAction(nameof(Profile));
+            TempData["CartError"] = "Vui lòng điền đầy đủ thông tin địa chỉ.";
+            return RedirectToAction(nameof(Profile), new { tab = "address" });
         }
 
         var fullAddress = $"{detail.Trim()}, {ward}, {province}";
 
         var request = new UserAddressCreateViewModel
         {
+            RecipientName = recipientName.Trim(),
+            PhoneNumber = phoneNumber.Trim(),
             FullAddress = fullAddress,
-            IsDefault = false
+            IsDefault = isDefault
         };
 
         var response = await Api.PostAsJsonAsync($"api/accounts/{userId}/addresses", request);
         if (!response.IsSuccessStatusCode)
         {
-            TempData["CartError"] = "KhÃ´ng thá»ƒ thÃªm Ä‘á»‹a chá»‰ má»›i. Vui lÃ²ng thá»­ láº¡i.";
+            TempData["CartError"] = "Không thể thêm địa chỉ mới. Vui lòng thử lại.";
         }
         else
         {
-            TempData["CartMessage"] = "ThÃªm Ä‘á»‹a chá»‰ thÃ nh cÃ´ng.";
+            TempData["CartMessage"] = "Thêm địa chỉ thành công.";
         }
 
-        return RedirectToAction(nameof(Profile));
+        return RedirectToAction(nameof(Profile), new { tab = "address" });
     }
 
     [Authorize]
@@ -306,16 +300,26 @@ public class AccountController : Controller
         var response = await Api.DeleteAsync($"api/accounts/{userId}/addresses/{addressId}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["CartError"] = "KhÃ´ng thá»ƒ xÃ³a Ä‘á»‹a chá»‰. Vui lÃ²ng thá»­ láº¡i.";
+            TempData["CartError"] = "Không thể xóa địa chỉ. Vui lòng thử lại.";
         }
         else
         {
-            TempData["CartMessage"] = "ÄÃ£ xÃ³a Ä‘á»‹a chá»‰ thÃ nh cÃ´ng.";
+            TempData["CartMessage"] = "Đã xóa địa chỉ thành công.";
         }
 
         return RedirectToAction(nameof(Profile));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> GoogleLoginCallback([FromBody] GoogleLoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.IdToken))
+        {
+            return Json(new { success = false, message = "Thiếu Google ID Token." });
+        }
+
+        try
+        {
             var response = await Api.PostAsJsonAsync("api/auth/google-login", request);
             if (!response.IsSuccessStatusCode)
             {
@@ -326,7 +330,7 @@ public class AccountController : Controller
             var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
             if (account is null)
             {
-                return Json(new { success = false, message = "KhÃ´ng Ä‘á»c Ä‘Æ°á»£c thÃ´ng tin Ä‘Äƒng nháº­p." });
+                return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
             }
 
             await SignIn(account, rememberMe: true);
@@ -339,11 +343,65 @@ public class AccountController : Controller
         }
         catch (HttpRequestException ex)
         {
-            return Json(new { success = false, message = "KhÃ´ng thá»ƒ káº¿t ná»‘i tá»›i mÃ¡y chá»§ xÃ¡c thá»±c. Vui lÃ²ng kiá»ƒm tra Backend API Ä‘ang cháº¡y. Chi tiáº¿t: " + ex.Message });
+            return Json(new { success = false, message = "Không thể kết nối tới máy chủ xác thực. Chi tiết: " + ex.Message });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "CÃ³ lá»—i xáº£y ra khi Ä‘Äƒng nháº­p báº±ng Google: " + ex.Message });
+            return Json(new { success = false, message = "Có lỗi xảy ra khi đăng nhập: " + ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult PhoneLogin()
+    {
+        ViewBag.ApiKey = _configuration["Firebase:apiKey"];
+        ViewBag.AuthDomain = _configuration["Firebase:authDomain"];
+        ViewBag.ProjectId = _configuration["Firebase:projectId"];
+        ViewBag.StorageBucket = _configuration["Firebase:storageBucket"];
+        ViewBag.MessagingSenderId = _configuration["Firebase:messagingSenderId"];
+        ViewBag.AppId = _configuration["Firebase:appId"];
+
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PhoneLoginCallback([FromBody] GoogleLoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.IdToken))
+        {
+            return Json(new { success = false, message = "Thiếu Firebase ID Token." });
+        }
+
+        try
+        {
+            var response = await Api.PostAsJsonAsync("api/auth/phone-login", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await ExtractErrorMessage(response);
+                return Json(new { success = false, message = errorMessage });
+            }
+
+            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (account is null)
+            {
+                return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
+            }
+
+            await SignIn(account, rememberMe: true);
+
+            var redirectUrl = string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? Url.Action("Index", "Admin")
+                : Url.Action("Index", "Home");
+
+            return Json(new { success = true, redirectUrl });
+        }
+        catch (HttpRequestException ex)
+        {
+            return Json(new { success = false, message = "Không thể kết nối tới máy chủ. Chi tiết: " + ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
         }
     }
 
@@ -369,7 +427,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng. Vui lÃ²ng Ä‘Äƒng nháº­p.";
+        TempData["SuccessMessage"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
         return RedirectToAction(nameof(Login));
     }
 
@@ -400,14 +458,14 @@ public class AccountController : Controller
     {
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            ModelState.AddModelError(string.Empty, "Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng.");
+            ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
             return;
         }
 
         var content = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(content))
         {
-            ModelState.AddModelError(string.Empty, "CÃ³ lá»—i xáº£y ra. Vui lÃ²ng thá»­ láº¡i.");
+            ModelState.AddModelError(string.Empty, "Có lỗi xảy ra. Vui lòng thử lại.");
             return;
         }
 
@@ -422,7 +480,7 @@ public class AccountController : Controller
                 {
                     foreach (var message in error.Value.EnumerateArray())
                     {
-                        ModelState.AddModelError(error.Name, message.GetString() ?? "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡.");
+                        ModelState.AddModelError(error.Name, message.GetString() ?? "Dữ liệu không hợp lệ.");
                     }
                 }
 
@@ -431,7 +489,7 @@ public class AccountController : Controller
 
             if (root.TryGetProperty("message", out var messageProperty))
             {
-                ModelState.AddModelError(string.Empty, messageProperty.GetString() ?? "CÃ³ lá»—i xáº£y ra.");
+                ModelState.AddModelError(string.Empty, messageProperty.GetString() ?? "Có lỗi xảy ra.");
                 return;
             }
         }
@@ -439,20 +497,20 @@ public class AccountController : Controller
         {
         }
 
-        ModelState.AddModelError(string.Empty, "CÃ³ lá»—i xáº£y ra. Vui lÃ²ng thá»­ láº¡i.");
+        ModelState.AddModelError(string.Empty, "Có lỗi xảy ra. Vui lòng thử lại.");
     }
 
     private static async Task<string> ExtractErrorMessage(HttpResponseMessage response)
     {
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            return "Google token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.";
+            return "Google token không hợp lệ hoặc đã hết hạn.";
         }
 
         var content = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(content))
         {
-            return "CÃ³ lá»—i xáº£y ra. Vui lÃ²ng thá»­ láº¡i.";
+            return "Có lỗi xảy ra. Vui lòng thử lại.";
         }
 
         try
@@ -462,14 +520,13 @@ public class AccountController : Controller
 
             if (root.TryGetProperty("message", out var messageProperty))
             {
-                return messageProperty.GetString() ?? "CÃ³ lá»—i xáº£y ra.";
+                return messageProperty.GetString() ?? "Có lỗi xảy ra.";
             }
         }
         catch (JsonException)
         {
         }
 
-        return "CÃ³ lá»—i xáº£y ra. Vui lÃ²ng thá»­ láº¡i.";
+        return "Có lỗi xảy ra. Vui lòng thử lại.";
     }
 }
-

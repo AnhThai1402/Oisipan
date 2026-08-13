@@ -1,116 +1,243 @@
 @model FrontendMvc.Models.UserAdminViewModel
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
+    var currentTab = Context.Request.Query["tab"].ToString();
+    if (string.IsNullOrEmpty(currentTab))
+    {
+        currentTab = "profile";
+    }
 }
 
+<style>
+    .profile-container {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+        margin-bottom: 3rem;
+        align-items: flex-start;
+    }
+    .profile-sidebar {
+        flex: 0 0 250px;
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 1.5rem 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .profile-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .profile-menu li a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        color: var(--text-color);
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    .profile-menu li a:hover,
+    .profile-menu li a.active {
+        background-color: var(--accent-green, #113C2B);
+        color: #fff !important;
+    }
+    .profile-content {
+        flex: 1;
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        min-height: 400px;
+    }
+    .tab-pane {
+        display: none;
+    }
+    .tab-pane.active {
+        display: block;
+        animation: fadeIn 0.4s ease forwards;
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
 <section class="section-padding">
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom: 0;">
         <span class="section-subtitle">Tài khoản Oishipan</span>
-        <h1 class="section-title">Hồ sơ cá nhân</h1>
-        <p class="section-desc">Thông tin tài khoản đang đăng nhập của bạn.</p>
+        <h1 class="section-title">Quản lý hồ sơ</h1>
     </div>
 
-    <div style="text-align: right; margin-bottom: 2rem;">
-        <a asp-controller="Account" asp-action="EditProfile" class="btn-primary" style="padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 5px; display: inline-flex; align-items: center; gap: 0.5rem;">
-            <i class="bi bi-pencil-square"></i> Chỉnh sửa hồ sơ
-        </a>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; background: var(--bg-card); padding: 2rem; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-        <div>
-            @if (!string.IsNullOrEmpty(Model.AvatarUrl))
-            {
-                <img src="@Model.AvatarUrl" alt="Avatar" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);" />
-            }
-            else
-            {
-                <div style="width: 150px; height: 150px; border-radius: 50%; background-color: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #ccc;">
-                    <i class="bi bi-person" style="font-size: 4rem; color: #aaa;"></i>
-                </div>
-            }
-        </div>
-        <div>
-            <h2 style="margin-bottom: 0.5rem;">@Model.FullName</h2>
-            <p style="color: var(--text-color); margin-bottom: 0;"><i class="bi bi-envelope"></i> @Model.Email</p>
-            <p style="color: var(--text-color);"><i class="bi bi-telephone"></i> @Model.PhoneNumber</p>
-        </div>
-    </div>
-
-    <div class="address-book" style="background: var(--bg-card); padding: 2rem; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0;">Sổ địa chỉ</h3>
-            <button type="button" class="btn-primary" onclick="openAddressModal()" style="padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
-                <i class="bi bi-plus-lg"></i> Thêm địa chỉ
-            </button>
-        </div>
-        
-        @if (Model.Addresses != null && Model.Addresses.Any())
-        {
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                @foreach (var address in Model.Addresses)
+    <div class="profile-container">
+        <!-- Sidebar -->
+        <div class="profile-sidebar">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                @if (!string.IsNullOrEmpty(Model.AvatarUrl))
                 {
-                    <div style="border: 1px solid #eee; padding: 1rem; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <p style="margin: 0;">@address.FullAddress</p>
-                            @if (address.IsDefault)
-                            {
-                                <span style="display: inline-block; padding: 0.2rem 0.5rem; background: var(--primary-color); color: white; font-size: 0.8rem; border-radius: 5px; margin-top: 0.5rem;">Mặc định</span>
-                            }
+                    <img src="@Model.AvatarUrl" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-green, #113C2B); margin-bottom: 10px;" />
+                }
+                else
+                {
+                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #ccc; margin: 0 auto 10px auto;">
+                        <i class="bi bi-person" style="font-size: 3rem; color: #aaa;"></i>
+                    </div>
+                }
+                <h4 style="margin: 0; font-size: 1.1rem; color: var(--heading-color);">@Model.FullName</h4>
+            </div>
+            
+            <ul class="profile-menu">
+                <li><a href="?tab=profile" class="@(currentTab == "profile" ? "active" : "")"><i class="bi bi-person-lines-fill"></i> Hồ sơ cá nhân</a></li>
+                <li><a href="?tab=address" class="@(currentTab == "address" ? "active" : "")"><i class="bi bi-geo-alt-fill"></i> Sổ địa chỉ</a></li>
+            </ul>
+        </div>
+
+        <!-- Content Area -->
+        <div class="profile-content">
+            
+            <!-- Hồ Sơ Tab -->
+            <div id="tab-profile" class="tab-pane @(currentTab == "profile" ? "active" : "")">
+                <form asp-action="UpdateProfile" asp-controller="Account" method="post" enctype="multipart/form-data">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                        <h2 style="margin: 0; font-size: 1.5rem;">Hồ sơ cá nhân</h2>
+                        <button type="submit" class="btn-primary" style="padding: 0.6rem 1.2rem; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                            <i class="bi bi-pencil-square"></i> Cập nhật hồ sơ
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Họ và tên</label>
+                            <input type="text" name="FullName" value="@Model.FullName" class="form-control" style="font-weight: 500; font-size: 1.1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 100%;" />
                         </div>
-                        <form asp-action="DeleteAddress" asp-controller="Account" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa địa chỉ này?');">
-                            <input type="hidden" name="addressId" value="@address.AddressId" />
-                            <button type="submit" style="background: none; border: none; color: var(--danger-color, #dc3545); cursor: pointer; padding: 0.5rem;">
-                                <i class="bi bi-trash"></i> Xóa
-                            </button>
-                        </form>
+                        <div class="form-group">
+                            <label style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Số điện thoại</label>
+                            <input type="text" name="PhoneNumber" value="@Model.PhoneNumber" class="form-control" style="font-weight: 500; font-size: 1.1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 100%;" />
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Email</label>
+                            <input type="email" name="Email" value="@Model.Email" class="form-control" style="font-weight: 500; font-size: 1.1rem; padding: 0.5rem; border: 1px solid #eee; border-radius: 4px; width: 100%; background: #f9f9f9;" readonly title="Email không thể thay đổi" />
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Cập nhật ảnh đại diện (Tùy chọn)</label>
+                            <input type="file" name="Avatar" class="form-control" accept="image/*" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 100%;" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Địa Chỉ Tab -->
+            <div id="tab-address" class="tab-pane @(currentTab == "address" ? "active" : "")">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                    <h2 style="margin: 0; font-size: 1.5rem;">Sổ địa chỉ của bạn</h2>
+                    <button type="button" class="btn-primary" onclick="openAddressModal()" style="padding: 0.6rem 1.2rem; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-plus-lg"></i> Thêm địa chỉ mới
+                    </button>
+                </div>
+                
+                @if (Model.Addresses != null && Model.Addresses.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        @foreach (var address in Model.Addresses)
+                        {
+                            <div style="border: 1px solid #eee; padding: 1.5rem; border-radius: 8px; position: relative;">
+                                @if (address.IsDefault)
+                                {
+                                    <span style="position: absolute; top: 1.5rem; right: 1.5rem; padding: 0.3rem 0.6rem; background: var(--accent-green, #113C2B); color: white; font-size: 0.8rem; border-radius: 4px; font-weight: 600;">Mặc định</span>
+                                }
+                                
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-right: 80px;">
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">@address.RecipientName</h4>
+                                        <span style="color: #999;">|</span>
+                                        <span style="color: #555; font-weight: 500;">@address.PhoneNumber</span>
+                                    </div>
+                                    <p style="margin: 0; color: #555; line-height: 1.5;">@address.FullAddress</p>
+                                </div>
+                                
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #eee; display: flex; justify-content: flex-end;">
+                                    <form asp-action="DeleteAddress" asp-controller="Account" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa địa chỉ này?');">
+                                        <input type="hidden" name="addressId" value="@address.AddressId" />
+                                        <button type="submit" style="background: none; border: none; color: var(--danger-color, #dc3545); cursor: pointer; font-weight: 500; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 3rem 0;">
+                        <i class="bi bi-geo-alt" style="font-size: 4rem; color: #eee; margin-bottom: 1rem; display: block;"></i>
+                        <p style="color: #777; font-size: 1.1rem;">Bạn chưa có địa chỉ nào. Hãy thêm một địa chỉ để dễ dàng mua hàng.</p>
                     </div>
                 }
             </div>
-        }
-        else
-        {
-            <p style="color: var(--text-color); text-align: center; padding: 2rem 0;">Bạn chưa có địa chỉ nào.</p>
-        }
+
+        </div>
     </div>
 </section>
 
 <!-- Address Modal -->
 <div id="addressModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-    <div style="background: var(--bg-card); padding: 2rem; border-radius: 5px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Thêm địa chỉ mới</h3>
+    <div style="background: var(--bg-card); padding: 2rem; border-radius: 8px; width: 100%; max-width: 550px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin: 0 15px;">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.4rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">Thêm địa chỉ mới</h3>
         
         <form asp-action="AddAddress" asp-controller="Account" method="post">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Tỉnh/Thành phố</label>
-                <select id="provinceSelect" class="form-control" required>
-                    <option value="">Chọn Tỉnh/Thành phố</option>
-                </select>
-                <input type="hidden" id="provinceName" name="province" />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Họ và tên người nhận</label>
+                    <input type="text" name="recipientName" class="form-control" required placeholder="Nhập họ và tên..." />
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" name="phoneNumber" class="form-control" required placeholder="Nhập số điện thoại..." />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Tỉnh/Thành phố</label>
+                    <select id="provinceSelect" class="form-control" required>
+                        <option value="">Chọn Tỉnh/Thành phố</option>
+                    </select>
+                    <input type="hidden" id="provinceName" name="province" />
+                </div>
+
+                <div class="form-group">
+                    <label>Phường/Xã</label>
+                    <select id="wardSelect" class="form-control" required disabled>
+                        <option value="">Chọn Phường/Xã</option>
+                    </select>
+                    <input type="hidden" id="wardName" name="ward" />
+                </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Phường/Xã</label>
-                <select id="wardSelect" class="form-control" required disabled>
-                    <option value="">Chọn Phường/Xã</option>
-                </select>
-                <input type="hidden" id="wardName" name="ward" />
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label>Địa chỉ cụ thể (Số nhà, đường...)</label>
                 <input type="text" name="detail" class="form-control" required placeholder="Ví dụ: 123 Đường ABC..." />
             </div>
 
+            <div style="margin-bottom: 1.5rem; display: flex; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 0.5rem; padding-left: 5px; text-align: left;">
+                <input type="checkbox" id="isDefault" name="isDefault" value="true" style="width: 18px; height: 18px; cursor: pointer; margin: 0; display: inline-block;" />
+                <label for="isDefault" style="margin: 0; cursor: pointer; user-select: none; display: inline-block; font-weight: normal;">Đặt làm địa chỉ mặc định</label>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                <button type="button" onclick="closeAddressModal()" class="btn-outline" style="padding: 0.5rem 1.5rem; border-radius: 5px; cursor: pointer; background: transparent; border: 1px solid #ccc;">Hủy</button>
-                <button type="submit" class="btn-primary" style="padding: 0.5rem 1.5rem; border-radius: 5px; cursor: pointer; border: none;">Thêm địa chỉ</button>
+                <button type="button" onclick="closeAddressModal()" class="btn-outline" style="padding: 0.6rem 1.5rem; border-radius: 5px; cursor: pointer; background: transparent; border: 1px solid #ccc; font-weight: 500;">Hủy</button>
+                <button type="submit" class="btn-primary" style="padding: 0.6rem 1.5rem; border-radius: 5px; cursor: pointer; border: none; font-weight: 500;">Thêm địa chỉ</button>
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
-
 <script>
     const addressModal = document.getElementById('addressModal');
     const provinceSelect = document.getElementById('provinceSelect');

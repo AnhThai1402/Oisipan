@@ -63,7 +63,7 @@
                             <td onclick="event.stopPropagation()">
                                 <div class="action-buttons product-action-buttons">
                                     <a asp-area="Admin" asp-controller="Banners" asp-action="Edit" asp-route-id="@item.BannerId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
-                                    <form method="post" asp-area="Admin" asp-controller="Banners" asp-action="Delete" asp-route-id="@item.BannerId" class="delete-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa banner này?');">
+                                    <form method="post" asp-area="Admin" asp-controller="Banners" asp-action="Delete" asp-route-id="@item.BannerId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@item.Title');">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
                                     </form>
@@ -86,3 +86,53 @@
         </table>
     </div>
 </section>
+
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa banner?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa banner <strong id="bannerTitle"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa banner</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingForm = null;
+
+        function showDeleteConfirm(event, bannerTitle) {
+            event.preventDefault();
+            pendingForm = event.target;
+            document.getElementById('bannerTitle').textContent = bannerTitle;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', function (event) {
+            if (event.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+    </script>
+}

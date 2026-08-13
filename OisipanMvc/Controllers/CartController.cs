@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using FrontendMvc.Extensions;
 using FrontendMvc.Models;
+using FrontendMvc.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,10 +14,12 @@ public class CartController : Controller
 {
     private const string CartSessionKey = "Cart";
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IVnPayService _vnPayService;
 
-    public CartController(IHttpClientFactory httpClientFactory)
+    public CartController(IHttpClientFactory httpClientFactory, IVnPayService vnPayService)
     {
         _httpClientFactory = httpClientFactory;
+        _vnPayService = vnPayService;
     }
 
     [HttpPost]
@@ -25,6 +28,17 @@ public class CartController : Controller
     {
         var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
         var variant = product?.ProductVariants.FirstOrDefault(v => v.ProductVariantId == productVariantId);
+        var productHasOptions = product?.ProductOptions.Any(option => option.ProductValues.Any()) == true;
+
+        if (variant is null && product is not null && !productHasOptions)
+        {
+            variant = product.ProductVariants.FirstOrDefault(v => v.VariantValues.Count == 0)
+                ?? product.ProductVariants.FirstOrDefault();
+            if (variant is not null)
+            {
+                productVariantId = variant.ProductVariantId;
+            }
+        }
         
         if (product is null || variant is null || variant.StockQuantity <= 0)
         {
@@ -101,6 +115,7 @@ public class CartController : Controller
                 item.Quantity = (byte)Math.Min(quantity, variant.StockQuantity);
                 if (quantity > variant.StockQuantity)
                 {
+                    SaveCart(cart);
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                     {
                         return Json(new 
@@ -112,6 +127,7 @@ public class CartController : Controller
                         });
                     }
                     TempData["CartError"] = $"{product.Name} chỉ còn {variant.StockQuantity} sản phẩm.";
+                    return RedirectBack(returnUrl);
                 }
             }
         }
@@ -213,9 +229,58 @@ public class CartController : Controller
             {
                 model.CustomerName = User.Identity.Name;
             }
+
+            var addressResponse = await Api.GetAsync($"api/accounts/{userId}/addresses");
+            if (addressResponse.IsSuccessStatusCode)
+            {
+                var addresses = await addressResponse.Content.ReadFromJsonAsync<List<UserAddressViewModel>>();
+                ViewBag.UserAddresses = addresses ?? new List<UserAddressViewModel>();
+                
+                var defaultAddress = addresses?.FirstOrDefault(a => a.IsDefault) ?? addresses?.FirstOrDefault();
+                if (defaultAddress != null)
+                {
+                    model.CustomerName = defaultAddress.RecipientName;
+                    model.CustomerPhone = defaultAddress.PhoneNumber;
+                    model.CustomerAddress = defaultAddress.FullAddress;
+                }
+            }
+        }
+        else 
+        {
+            ViewBag.UserAddresses = new List<UserAddressViewModel>();
         }
 
         return View(model);
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddAddressAjax([FromForm] UserAddressCreateViewModel addressModel)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return Json(new { success = false, message = errors });
+        }
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Json(new { success = false, message = "Lỗi xác thực." });
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/accounts/{userId}/addresses", addressModel);
+        if (response.IsSuccessStatusCode)
+        {
+            var newAddress = await response.Content.ReadFromJsonAsync<UserAddressViewModel>();
+            return Json(new { success = true, data = newAddress });
+        }
+        else
+        {
+            var errorMessage = await ReadApiMessage(response);
+            return Json(new { success = false, message = errorMessage ?? "Có lỗi xảy ra khi thêm địa chỉ." });
+        }
     }
 
     [HttpPost]
@@ -305,13 +370,84 @@ public class CartController : Controller
             return RedirectBack(returnUrl);
         }
 
+        var createdOrder = await response.Content.ReadFromJsonAsync<UserOrderApiResponse>(new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+        if (createdOrder is null)
+        {
+            TempData["CartError"] = "Không thể đọc thông tin đơn hàng vừa tạo. Vui lòng kiểm tra lại lịch sử đơn hàng.";
+            return RedirectToAction("Index", "Orders");
+        }
+
         if (!model.BuyNowProductVariantId.HasValue || model.BuyNowProductVariantId.Value == Guid.Empty)
         {
             HttpContext.Session.Remove(CartSessionKey);
         }
+
+        if (string.Equals(model.PaymentMethod, "VNPAY", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var paymentUrl = _vnPayService.CreatePaymentUrl(
+                    HttpContext,
+                    createdOrder.OrderId,
+                    createdOrder.FinalAmount,
+                    $"Thanh toan don hang OP-{createdOrder.OrderId:N}");
+
+                return Redirect(paymentUrl);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["CartError"] = ex.Message;
+                return RedirectToAction("Detail", "Orders", new { id = createdOrder.OrderId });
+            }
+        }
         
         TempData["CartMessage"] = "Đặt hàng thành công. Đơn hàng của bạn đã được ghi nhận.";
         return RedirectToAction("Index", "Orders");
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> VnPayReturn()
+    {
+        if (!_vnPayService.TryValidateReturn(Request.Query, out var paymentResult))
+        {
+            TempData["CartError"] = "Không thể xác thực phản hồi thanh toán từ VNPay.";
+            return RedirectToAction("Index", "Orders");
+        }
+
+        if (paymentResult.OrderId is null)
+        {
+            TempData["CartError"] = "Không tìm thấy mã đơn hàng trong phản hồi VNPay.";
+            return RedirectToAction("Index", "Orders");
+        }
+
+        if (!paymentResult.IsSuccess)
+        {
+            TempData["CartError"] = $"Thanh toán VNPay chưa thành công. Mã phản hồi: {paymentResult.ResponseCode}.";
+            return RedirectToAction("Detail", "Orders", new { id = paymentResult.OrderId.Value });
+        }
+
+        var updateResponse = await Api.PatchAsJsonAsyncWithOptions(
+            $"api/orders/{paymentResult.OrderId.Value}/status",
+            new { Status = "Đã xác nhận" });
+
+        TempData["CartMessage"] = updateResponse.IsSuccessStatusCode
+            ? "Thanh toán VNPay thành công. Đơn hàng của bạn đã được xác nhận."
+            : "Thanh toán VNPay thành công, nhưng chưa thể cập nhật trạng thái đơn hàng. Vui lòng liên hệ cửa hàng.";
+
+        return RedirectToAction(nameof(VnPaySuccess), new { id = paymentResult.OrderId.Value });
+    }
+
+    [HttpGet]
+    [Authorize]
+    public IActionResult VnPaySuccess(Guid id)
+    {
+        ViewBag.OrderId = id;
+        ViewBag.DetailUrl = Url.Action("Detail", "Orders", new { id }) ?? "/Orders";
+        return View();
     }
 
     [HttpPost]
@@ -371,12 +507,32 @@ public class CartController : Controller
             {
                 return message.GetString() ?? "Không thể tạo đơn hàng. Vui lòng thử lại.";
             }
+            
+            // Check if it's a ValidationProblemDetails
+            if (document.RootElement.TryGetProperty("errors", out var errorsElement))
+            {
+                var errorMessages = new List<string>();
+                foreach (var prop in errorsElement.EnumerateObject())
+                {
+                    if (prop.Value.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var err in prop.Value.EnumerateArray())
+                        {
+                            errorMessages.Add(err.GetString());
+                        }
+                    }
+                }
+                if (errorMessages.Any())
+                {
+                    return string.Join("; ", errorMessages);
+                }
+            }
         }
         catch (JsonException)
         {
         }
 
-        return "Không thể tạo đơn hàng. Vui lòng thử lại.";
+        return "Không thể tạo đơn hàng. Vui lòng thử lại. (Details: " + content.Substring(0, Math.Min(content.Length, 100)) + ")";
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");

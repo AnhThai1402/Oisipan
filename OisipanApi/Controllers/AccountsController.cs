@@ -50,6 +50,8 @@ public class AccountsController : ControllerBase
             .Select(a => new UserAddressResponse
             {
                 AddressId = a.AddressId,
+                RecipientName = a.RecipientName,
+                PhoneNumber = a.PhoneNumber,
                 FullAddress = a.FullAddress,
                 IsDefault = a.IsDefault
             })
@@ -79,6 +81,8 @@ public class AccountsController : ControllerBase
         var newAddress = new UserAddress
         {
             UserId = id,
+            RecipientName = request.RecipientName.Trim(),
+            PhoneNumber = request.PhoneNumber.Trim(),
             FullAddress = request.FullAddress.Trim(),
             IsDefault = request.IsDefault || isFirst
         };

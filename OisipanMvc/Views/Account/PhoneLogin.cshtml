@@ -1,0 +1,180 @@
+@{
+    ViewData["Title"] = "Đăng nhập bằng số điện thoại";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Oisipan</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Thêm bootstrap icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .auth-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-header">
+            <h3><i class="bi bi-phone"></i> Đăng nhập bằng SĐT</h3>
+            <p class="text-muted">Nhập số điện thoại của bạn để nhận mã xác thực (OTP).</p>
+        </div>
+
+        <div id="phoneSection">
+            <div class="form-group mb-3">
+                <label class="form-label">Số điện thoại</label>
+                <input id="PhoneNumber" class="form-control form-control-lg" placeholder="+84901234567" />
+                <small class="text-muted">Bao gồm mã quốc gia (VD: +84)</small>
+            </div>
+
+            <div id="recaptcha-container" class="mb-3 d-flex justify-content-center"></div>
+
+            <button id="sendOtpBtn" type="button" class="btn btn-primary btn-lg w-100">
+                Gửi mã OTP
+            </button>
+            
+            <div class="mt-4 text-center">
+                <a href="@Url.Action("Login", "Account")" class="text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Quay lại trang đăng nhập
+                </a>
+            </div>
+        </div>
+
+        <div id="otpSection" style="display:none">
+            <div class="form-group mb-3">
+                <label class="form-label">Mã OTP</label>
+                <input id="OTP" class="form-control form-control-lg text-center" placeholder="Nhập mã 6 chữ số" maxlength="6" />
+            </div>
+
+            <button id="verifyBtn" type="button" class="btn btn-success btn-lg w-100">
+                Xác thực & Đăng nhập
+            </button>
+            
+            <div class="mt-4 text-center">
+                <a href="javascript:void(0)" onclick="location.reload()" class="text-decoration-none text-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Sử dụng số điện thoại khác
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "@ViewBag.ApiKey",
+            authDomain: "@ViewBag.AuthDomain",
+            projectId: "@ViewBag.ProjectId",
+            storageBucket: "@ViewBag.StorageBucket",
+            messagingSenderId: "@ViewBag.MessagingSenderId",
+            appId: "@ViewBag.AppId"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        auth.languageCode = 'vi';
+
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier("recaptcha-container", {
+            size: "normal"
+        });
+
+        window.recaptchaVerifier.render();
+
+        document.getElementById("sendOtpBtn").addEventListener("click", async function () {
+            let phone = document.getElementById("PhoneNumber").value.trim();
+
+            if (phone === "") {
+                alert("Vui lòng nhập số điện thoại.");
+                return;
+            }
+
+            // Chuyển 09xx thành +849xx cho firebase
+            if (phone.startsWith("0")) {
+                phone = "+84" + phone.substring(1);
+            }
+
+            try {
+                this.disabled = true;
+                this.innerText = "Đang gửi OTP...";
+
+                window.confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
+
+                document.getElementById("phoneSection").style.display = "none";
+                document.getElementById("otpSection").style.display = "block";
+
+            }
+            catch (err) {
+                alert("Lỗi khi gửi OTP: " + err.message);
+                this.disabled = false;
+                this.innerText = "Gửi mã OTP";
+                window.recaptchaVerifier.reset();
+            }
+        });
+
+        document.getElementById("verifyBtn").addEventListener("click", async function () {
+            const otp = document.getElementById("OTP").value.trim();
+
+            if (otp === "") {
+                alert("Vui lòng nhập mã OTP.");
+                return;
+            }
+
+            try {
+                this.disabled = true;
+                this.innerText = "Đang xác thực...";
+
+                const result = await window.confirmationResult.confirm(otp);
+                const idToken = await result.user.getIdToken();
+
+                const response = await fetch("/Account/PhoneLoginCallback", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+
+                const json = await response.json();
+
+                if (json.success) {
+                    window.location.href = json.redirectUrl;
+                } else {
+                    alert("Đăng nhập thất bại: " + json.message);
+                    this.disabled = false;
+                    this.innerText = "Xác thực & Đăng nhập";
+                }
+            }
+            catch (err) {
+                alert("Mã OTP không hợp lệ hoặc đã hết hạn.");
+                this.disabled = false;
+                this.innerText = "Xác thực & Đăng nhập";
+            }
+        });
+    </script>
+</body>
+</html>

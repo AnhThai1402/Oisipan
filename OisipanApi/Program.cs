@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -94,6 +96,18 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+if (FirebaseApp.DefaultInstance == null)
+{
+    var credentialPath = Path.Combine(app.Environment.ContentRootPath, "firebase-adminsdk.json");
+    if (File.Exists(credentialPath))
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = GoogleCredential.FromFile(credentialPath)
+        });
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

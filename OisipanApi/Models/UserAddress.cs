@@ -11,6 +11,16 @@ public class UserAddress : BaseEntity
     public Guid UserId { get; set; }
 
     [Required]
+    [StringLength(100)]
+    [Column(TypeName = "nvarchar(100)")]
+    public string RecipientName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(15)]
+    [Column(TypeName = "varchar(15)")]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(500)]
     [Column(TypeName = "nvarchar(500)")]
     public string FullAddress { get; set; } = null!;

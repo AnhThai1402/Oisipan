@@ -4,9 +4,11 @@
     var selectableOptions = Model.ProductOptions
         .Where(option => option.ProductValues.Any())
         .ToList();
+    var defaultVariant = Model.ProductVariants.FirstOrDefault(v => !v.VariantValues.Any()) ?? Model.ProductVariants.FirstOrDefault();
+    var initialVariantId = selectableOptions.Any() ? string.Empty : defaultVariant?.ProductVariantId.ToString() ?? string.Empty;
 }
 
-<section class="product-detail-page" data-product-detail data-base-price="@Model.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">
+<section class="product-detail-page" data-product-detail data-has-options="@selectableOptions.Any().ToString().ToLowerInvariant()" data-base-price="@Model.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">
     <a class="product-detail-back" asp-controller="Home" asp-action="Menu">
         <i class="bi bi-arrow-left"></i> Quay lại menu bánh
     </a>
@@ -105,14 +107,14 @@
             {
                 <div class="product-options-empty">
                     <i class="bi bi-info-circle"></i>
-                    <span>Sản phẩm này chưa thiết lập size và nhân bánh.</span>
+                    <span>Sản phẩm này không có biến thể, bạn có thể thêm vào giỏ hàng ngay.</span>
                 </div>
             }
 
             <form method="post" asp-controller="Cart" asp-action="Add" id="productForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="productId" value="@Model.ProductId" />
-                <input type="hidden" id="productVariantId" name="productVariantId" value="" />
+                <input type="hidden" id="productVariantId" name="productVariantId" value="@initialVariantId" />
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                 <div class="product-main-actions">
                     <button type="submit" class="btn-main-add-cart">

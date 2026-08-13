@@ -143,6 +143,30 @@ public class OrdersController : Controller
         return RedirectToAction(nameof(Detail), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmReceipt(Guid id)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Challenge();
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/confirm-receipt", new { });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["ErrorMessage"] = ExtractMessage(errorContent) ?? "Không thể xác nhận nhận hàng lúc này.";
+        }
+        else
+        {
+            TempData["Message"] = "Cảm ơn bạn đã xác nhận nhận hàng!";
+        }
+
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
     private static string? ExtractMessage(string? content)
     {
         if (string.IsNullOrWhiteSpace(content))

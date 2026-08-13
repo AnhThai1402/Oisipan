@@ -1,4 +1,5 @@
 using Google.Apis.Auth;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -204,6 +205,66 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { message = "Đăng nhập Google thất bại: " + ex.Message });
+        }
+    }
+
+    [HttpPost("phone-login")]
+    public async Task<ActionResult<AuthResponse>> PhoneLogin(PhoneLoginRequest request)
+    {
+        try
+        {
+            var decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.IdToken);
+            
+            if (!decodedToken.Claims.TryGetValue("phone_number", out var phoneObj))
+            {
+                return BadRequest(new { message = "Không lấy được số điện thoại từ token." });
+            }
+            
+            string phone = phoneObj?.ToString() ?? "";
+            
+            // Format phone number to match our DB (+84901234567 -> 0901234567)
+            if (phone.StartsWith("+84"))
+            {
+                phone = "0" + phone.Substring(3);
+            }
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.PhoneNumber == phone);
+
+            if (account == null)
+            {
+                account = new Account
+                {
+                    FullName = "Người dùng mới",
+                    PhoneNumber = phone,
+                    Email = $"phone_{Guid.NewGuid():N}@local.com",
+                    Role = "User",
+                    Address = "",
+                    Status = true,
+                    AuthProvider = "Phone"
+                };
+
+                account.Password = _passwordHasher.HashPassword(account, Guid.NewGuid().ToString());
+                
+                _context.Accounts.Add(account);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                if (!account.Status)
+                {
+                    return BadRequest(new { message = "Tài khoản đã bị khóa." });
+                }
+            }
+
+            return Ok(ToAuthResponse(account));
+        }
+        catch (FirebaseAuthException)
+        {
+            return Unauthorized(new { message = "Phone token không hợp lệ." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "Đăng nhập bằng số điện thoại thất bại: " + ex.Message });
         }
     }
 

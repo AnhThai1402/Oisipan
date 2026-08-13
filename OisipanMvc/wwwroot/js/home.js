@@ -237,7 +237,11 @@ function setupCartUpdateHandlers() {
                     const data = await response.json();
                     if (data.success) {
                         updateCartDisplay(data);
-                        triggerToast('Đã cập nhật giỏ hàng', 'success');
+                        if (data.message) {
+                            triggerToast(data.message, 'warning');
+                        } else {
+                            triggerToast('Đã cập nhật giỏ hàng', 'success');
+                        }
                     }
                 } else {
                     triggerToast('Có lỗi xảy ra, vui lòng thử lại', 'error');
@@ -305,8 +309,8 @@ function updateCartDisplay(cartData) {
 
     // Remove items that no longer exist (quantity = 0)
     document.querySelectorAll('.cart-item').forEach(item => {
-        const productVariantId = parseInt(item.dataset.productVariantId);
-        if (!cartData.items.find(i => i.productVariantId === productVariantId)) {
+        const productVariantId = item.dataset.productVariantId ? item.dataset.productVariantId.toLowerCase() : '';
+        if (!cartData.items.find(i => i.productVariantId && i.productVariantId.toLowerCase() === productVariantId)) {
             item.remove();
         }
     });

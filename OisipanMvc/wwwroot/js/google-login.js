@@ -20,14 +20,15 @@ window.GoogleLoginHandler = (function () {
             cancel_on_tap_outside: true
         });
 
+        var wrapper = document.getElementById('google-signin-button-wrapper');
         var buttonDiv = document.getElementById('google-signin-button');
-        if (buttonDiv) {
+        if (buttonDiv && wrapper) {
             google.accounts.id.renderButton(buttonDiv, {
                 theme: 'outline',
                 size: 'large',
-                width: buttonDiv.offsetWidth || 300,
-                text: 'signin_with',
+                type: 'standard',
                 shape: 'rectangular',
+                text: 'signin_with',
                 logo_alignment: 'left'
             });
         }
@@ -42,11 +43,18 @@ window.GoogleLoginHandler = (function () {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ idToken: response.credential })
         })
             .then(function (res) {
-                return res.json().then(function (data) {
-                    return { ok: res.ok, data: data };
+                return res.text().then(function (text) {
+                    try {
+                        var data = JSON.parse(text);
+                        return { ok: res.ok, data: data };
+                    } catch (e) {
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Lỗi máy chủ (Vui lòng kiểm tra Console log).');
+                    }
                 });
             })
             .then(function (result) {
@@ -90,9 +98,9 @@ window.GoogleLoginHandler = (function () {
         alertDiv.className = 'alert alert-' + type + ' mt-3';
         alertDiv.textContent = message;
 
-        var container = document.querySelector('.google-signin-container');
-        if (container) {
-            container.insertAdjacentElement('afterend', alertDiv);
+        var container = document.getElementById('google-signin-button-wrapper');
+        if (container && container.parentElement) {
+            container.parentElement.insertAdjacentElement('afterend', alertDiv);
         }
     }
 

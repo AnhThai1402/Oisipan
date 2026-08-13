@@ -1,10 +1,21 @@
 using FrontendMvc.Options;
 using FrontendMvc.Services;
+using Microsoft.AspNetCore.DataProtection;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+var dataProtectionKeysPath = Path.Combine(builder.Environment.ContentRootPath, ".aspnet-data-protection");
+Directory.CreateDirectory(dataProtectionKeysPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
+    .SetApplicationName("OisipanMvc");
 
 // Add services to the container.
 var jsonOptions = new JsonSerializerOptions
@@ -33,7 +44,9 @@ builder.Services.AddHttpClient("OisipanApi", client =>
 })
 .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.Configure<VnPaySettings>(builder.Configuration.GetSection("VnPay"));
 builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services
     .AddAuthentication("OisipanCookie")
     .AddCookie("OisipanCookie", options =>

@@ -1,4 +1,4 @@
-@model FrontendMvc.Models.BannerViewModel
+﻿@model FrontendMvc.Models.BannerViewModel
 @{
     var isEdit = Model?.BannerId != Guid.Empty && Model?.BannerId != null;
     ViewData["Title"] = isEdit ? "Chỉnh sửa banner" : "Thêm banner mới";

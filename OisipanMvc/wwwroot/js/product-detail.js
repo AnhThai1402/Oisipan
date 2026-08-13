@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const detail = document.querySelector("[data-product-detail]");
     if (!detail) return;
 
+    const hasOptions = detail.dataset.hasOptions === "true";
     const basePrice = Number.parseFloat(detail.dataset.basePrice || "0");
     const mainPrice = detail.querySelector("[data-product-total-price]");
     const summaryPrice = detail.querySelector("[data-selection-total]");
@@ -51,7 +52,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let foundVariantId = "";
-        if (window.ProductVariantsData && selected.length > 0) {
+        if (!hasOptions && window.ProductVariantsData && window.ProductVariantsData.length) {
+            const defaultVariant = window.ProductVariantsData.find(v => {
+                const values = v.VariantValues || v.variantValues || [];
+                return values.length === 0;
+            }) || window.ProductVariantsData[0];
+            foundVariantId = defaultVariant.ProductVariantId || defaultVariant.productVariantId || "";
+        } else if (window.ProductVariantsData && selected.length > 0) {
             const selectedValueIds = selected.map(i => String(i.value).toLowerCase()).sort();
             
             const variant = window.ProductVariantsData.find(v => {
@@ -80,6 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("productForm");
     if (form) {
         form.addEventListener("submit", event => {
+            if (!hasOptions) return;
+
             const variantId = document.getElementById("productVariantId")?.value;
             if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
                 event.preventDefault();

@@ -63,7 +63,7 @@
                                 <div class="action-buttons">
                                     <a asp-area="Admin" asp-controller="Categories" asp-action="Detail" asp-route-id="@category.CategoryId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
                                     <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@category.CategoryId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
-                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form">
+                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@category.CategoryName');">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
                                     </form>
@@ -87,8 +87,54 @@
     </div>
 </section>
 
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa danh mục?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa danh mục <strong id="categoryName"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa danh mục</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        let pendingForm = null;
+
+        function showDeleteConfirm(event, categoryName) {
+            event.preventDefault();
+            pendingForm = event.target;
+            document.getElementById('categoryName').textContent = categoryName;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', function (event) {
+            if (event.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
         // Search functionality
         document.getElementById('categorySearch')?.addEventListener('input', function() {
             const keyword = this.value.toLowerCase();
@@ -100,5 +146,3 @@
         });
     </script>
 }
-    </div>
-</div>

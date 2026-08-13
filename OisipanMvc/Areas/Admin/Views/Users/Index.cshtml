@@ -78,7 +78,7 @@
                                     @if (!isAdmin)
                                     {
                                         <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@user.UserId" class="icon-action" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></a>
-                                        <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.UserId" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này?');">
+                                        <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.UserId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@user.FullName');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="icon-action danger" title="Xóa"><i class="fa-solid fa-trash"></i></button>
                                         </form>
@@ -93,10 +93,55 @@
     </div>
 </section>
 
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa người dùng?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa người dùng <strong id="userName"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa người dùng</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let pendingForm = null;
     const userSearch = document.getElementById('userSearch');
     const roleFilter = document.getElementById('roleFilter');
     const userRows = Array.from(document.querySelectorAll('#usersTable tbody tr[data-name]'));
+
+    function showDeleteConfirm(event, userName) {
+        event.preventDefault();
+        pendingForm = event.target;
+        document.getElementById('userName').textContent = userName;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        pendingForm = null;
+    }
+
+    function confirmDelete() {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+    }
+
+    document.getElementById('deleteModal')?.addEventListener('click', function (event) {
+        if (event.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
 
     function filterUsers() {
         const keyword = (userSearch?.value || '').trim().toLowerCase();

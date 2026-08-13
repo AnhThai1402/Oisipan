@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Oishipan.DTOs;
 using Oishipan.Models;
 
+
 namespace Oishipan.Controllers;
 
 [ApiController]
@@ -26,6 +27,7 @@ public class OrdersController : ControllerBase
         "Đang chuẩn bị",
         "Đang giao",
         "Đã giao",
+        "Hoàn thành",
         "Đã hủy"
     };
 
@@ -106,7 +108,6 @@ public class OrdersController : ControllerBase
             .ToListAsync();
 
         var orders = ordersData.Select(o => ToResponse(o)).ToList();
-
         return Ok(orders);
     }
 
@@ -123,155 +124,159 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = "Tài khoản đặt hàng không tồn tại hoặc đã bị khóa." });
         }
 
-        var variantIds = request.Items.Select(item => item.ProductVariantId).Distinct().ToList();
-        var variants = await _context.ProductVariants
-            .Include(v => v.Product)
-            .Include(v => v.ProductVariantValues)
-                .ThenInclude(pvv => pvv.ProductValue)
-                    .ThenInclude(pv => pv!.ProductOption)
-            .Where(v => variantIds.Contains(v.ProductVariantId))
-            .ToDictionaryAsync(v => v.ProductVariantId);
-
-        foreach (var item in request.Items)
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync<ActionResult<OrderResponse>>(async () =>
         {
-            if (!variants.TryGetValue(item.ProductVariantId, out var variant))
+            var variantIds = request.Items.Select(item => item.ProductVariantId).Distinct().ToList();
+            var variants = await _context.ProductVariants
+                .Include(v => v.Product)
+                .Include(v => v.ProductVariantValues)
+                    .ThenInclude(pvv => pvv.ProductValue)
+                        .ThenInclude(pv => pv!.ProductOption)
+                .Where(v => variantIds.Contains(v.ProductVariantId))
+                .ToDictionaryAsync(v => v.ProductVariantId);
+
+            foreach (var item in request.Items)
             {
-                return BadRequest(new { message = $"Biến thể sản phẩm #{item.ProductVariantId} không tồn tại." });
-            }
-
-            if (variant.StockQuantity < item.Quantity)
-            {
-                var variantDesc = string.Join(", ", variant.ProductVariantValues.Select(pvv => $"{pvv.ProductValue?.ProductOption?.OptionName}: {pvv.ProductValue?.ValueName}"));
-                return BadRequest(new { message = $"{variant.Product?.Name} ({variantDesc}) chỉ còn {variant.StockQuantity} sản phẩm." });
-            }
-        }
-
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-
-        var order = new Order
-        {
-            UserId = request.UserId,
-            CustomerName = request.CustomerName.Trim(),
-            CustomerPhone = request.CustomerPhone.Trim(),
-            CreatedAt = DateTime.Now,
-            OrderStatus = "Chờ xác nhận",
-            PaymentMethod = request.PaymentMethod.Trim(),
-            ShippingAddress = request.ShippingAddress.Trim()
-        };
-
-        foreach (var item in request.Items)
-        {
-            var variant = variants[item.ProductVariantId];
-            variant.StockQuantity -= item.Quantity;
-            if (variant.StockQuantity < 0) variant.StockQuantity = 0;
-
-            if (variant.Product != null)
-            {
-                variant.Product.StockQuantity -= item.Quantity;
-                if (variant.Product.StockQuantity < 0) variant.Product.StockQuantity = 0;
-            }
-
-            var itemPrice = (variant.Product?.Price ?? 0) + variant.Price;
-
-            var variantNameParts = variant.ProductVariantValues
-                .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
-                .Select(pvv => $"{pvv.ProductValue!.ProductOption!.OptionName}: {pvv.ProductValue.ValueName}");
-            var variantName = variantNameParts.Any() ? string.Join(" - ", variantNameParts) : null;
-
-            order.OrderDetails.Add(new OrderDetail
-            {
-                ProductVariantId = variant.ProductVariantId,
-                ProductName = variant.Product?.Name,
-                VariantName = variantName,
-                UnitPrice = itemPrice,
-                Quantity = item.Quantity,
-                Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim()
-            });
-        }
-
-        order.TotalAmount = order.OrderDetails.Sum(item => item.UnitPrice * item.Quantity);
-        order.FinalAmount = order.TotalAmount;
-
-        if (!string.IsNullOrWhiteSpace(request.VoucherCode))
-        {
-            var voucherCode = request.VoucherCode.Trim();
-            var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode);
-
-            if (voucher == null)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { message = "Mã giảm giá không tồn tại." });
-            }
-
-            if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
-            }
-
-            if (order.TotalAmount < voucher.MinOrderValue)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { message = $"Đơn hàng phải từ {voucher.MinOrderValue:N0}đ để sử dụng mã này." });
-            }
-            
-            var orderItemCount = order.OrderDetails.Sum(od => od.Quantity);
-            if (orderItemCount < voucher.MinimumItems)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { message = $"Đơn hàng phải có ít nhất {voucher.MinimumItems} sản phẩm để sử dụng mã này." });
-            }
-
-            if (voucher.TotalQuantity <= 0)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { message = "Mã giảm giá đã hết lượt sử dụng." });
-            }
-
-            decimal discount = 0;
-            if (string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase))
-            {
-                discount = order.TotalAmount * (voucher.DiscountValue / 100m);
-                if (voucher.MaxDiscount > 0 && discount > voucher.MaxDiscount)
+                if (!variants.TryGetValue(item.ProductVariantId, out var variant))
                 {
-                    discount = voucher.MaxDiscount;
+                    return BadRequest(new { message = $"Biến thể sản phẩm #{item.ProductVariantId} không tồn tại." });
+                }
+
+                if (variant.StockQuantity < item.Quantity)
+                {
+                    var variantDesc = string.Join(", ", variant.ProductVariantValues.Select(pvv => $"{pvv.ProductValue?.ProductOption?.OptionName}: {pvv.ProductValue?.ValueName}"));
+                    return BadRequest(new { message = $"{variant.Product?.Name} ({variantDesc}) chỉ còn {variant.StockQuantity} sản phẩm." });
                 }
             }
-            else
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var order = new Order
             {
-                discount = voucher.DiscountValue;
+                UserId = request.UserId,
+                CustomerName = request.CustomerName.Trim(),
+                CustomerPhone = request.CustomerPhone.Trim(),
+                CreatedAt = DateTime.Now,
+                OrderStatus = "Chờ xác nhận",
+                PaymentMethod = request.PaymentMethod.Trim(),
+                ShippingAddress = request.ShippingAddress.Trim()
+            };
+
+            foreach (var item in request.Items)
+            {
+                var variant = variants[item.ProductVariantId];
+                variant.StockQuantity -= item.Quantity;
+                if (variant.StockQuantity < 0) variant.StockQuantity = 0;
+
+                if (variant.Product != null)
+                {
+                    variant.Product.StockQuantity -= item.Quantity;
+                    if (variant.Product.StockQuantity < 0) variant.Product.StockQuantity = 0;
+                }
+
+                var itemPrice = (variant.Product?.Price ?? 0) + variant.Price;
+
+                var variantNameParts = variant.ProductVariantValues
+                    .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
+                    .Select(pvv => $"{pvv.ProductValue!.ProductOption!.OptionName}: {pvv.ProductValue.ValueName}");
+                var variantName = variantNameParts.Any() ? string.Join(" - ", variantNameParts) : null;
+
+                order.OrderDetails.Add(new OrderDetail
+                {
+                    ProductVariantId = variant.ProductVariantId,
+                    ProductName = variant.Product?.Name,
+                    VariantName = variantName,
+                    UnitPrice = itemPrice,
+                    Quantity = item.Quantity,
+                    Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim()
+                });
             }
 
-            if (discount > order.TotalAmount)
+            order.TotalAmount = order.OrderDetails.Sum(item => item.UnitPrice * item.Quantity);
+            order.FinalAmount = order.TotalAmount;
+
+            if (!string.IsNullOrWhiteSpace(request.VoucherCode))
             {
-                discount = order.TotalAmount;
+                var voucherCode = request.VoucherCode.Trim();
+                var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+                if (voucher == null)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { message = "Mã giảm giá không tồn tại." });
+                }
+
+                if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
+                }
+
+                if (order.TotalAmount < voucher.MinOrderValue)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { message = $"Đơn hàng phải từ {voucher.MinOrderValue:N0}đ để sử dụng mã này." });
+                }
+                
+                var orderItemCount = order.OrderDetails.Sum(od => od.Quantity);
+                if (orderItemCount < voucher.MinimumItems)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { message = $"Đơn hàng phải có ít nhất {voucher.MinimumItems} sản phẩm để sử dụng mã này." });
+                }
+
+                if (voucher.TotalQuantity <= 0)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { message = "Mã giảm giá đã hết lượt sử dụng." });
+                }
+
+                decimal discount = 0;
+                if (string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase))
+                {
+                    discount = order.TotalAmount * (voucher.DiscountValue / 100m);
+                    if (voucher.MaxDiscount > 0 && discount > voucher.MaxDiscount)
+                    {
+                        discount = voucher.MaxDiscount;
+                    }
+                }
+                else
+                {
+                    discount = voucher.DiscountValue;
+                }
+
+                if (discount > order.TotalAmount)
+                {
+                    discount = order.TotalAmount;
+                }
+
+                order.VoucherId = voucher.VoucherId;
+                order.DiscountAmount = discount;
+                order.FinalAmount = order.TotalAmount - discount;
+
+                voucher.TotalQuantity -= 1;
+
+                var userVoucher = await _context.UserVouchers.FirstOrDefaultAsync(uv => uv.UserId == request.UserId && uv.VoucherId == voucher.VoucherId && !uv.IsUsed);
+                if (userVoucher != null)
+                {
+                    userVoucher.IsUsed = true;
+                    userVoucher.UsedDate = DateTime.Now;
+                }
             }
 
-            order.VoucherId = voucher.VoucherId;
-            order.DiscountAmount = discount;
-            order.FinalAmount = order.TotalAmount - discount;
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-            voucher.TotalQuantity -= 1;
+            // Assign voucher to user after successful order
+            await AssignVoucherToUser(request.UserId);
 
-            var userVoucher = await _context.UserVouchers.FirstOrDefaultAsync(uv => uv.UserId == request.UserId && uv.VoucherId == voucher.VoucherId && !uv.IsUsed);
-            if (userVoucher != null)
-            {
-                userVoucher.IsUsed = true;
-                userVoucher.UsedDate = DateTime.Now;
-            }
-        }
+            var created = await BuildOrderQuery()
+                .FirstAsync(o => o.OrderId == order.OrderId);
 
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        // Assign voucher to user after successful order
-        await AssignVoucherToUser(request.UserId);
-
-        var created = await BuildOrderQuery()
-            .FirstAsync(o => o.OrderId == order.OrderId);
-
-        return CreatedAtAction(nameof(GetById), new { id = order.OrderId }, ToResponse(created));
+            return CreatedAtAction(nameof(GetById), new { id = order.OrderId }, ToResponse(created));
+        });
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -305,6 +310,26 @@ public class OrdersController : ControllerBase
         }
 
         order.OrderStatus = status;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/confirm-receipt")]
+    public async Task<IActionResult> ConfirmReceipt(Guid id)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order is null)
+        {
+            return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        }
+
+        if (order.OrderStatus != "Đang giao")
+        {
+            return BadRequest(new { message = $"Chỉ có thể xác nhận nhận hàng khi đơn hàng đang ở trạng thái 'Đang giao'. Trạng thái hiện tại: '{order.OrderStatus}'." });
+        }
+
+        order.OrderStatus = "Hoàn thành";
         await _context.SaveChangesAsync();
 
         return NoContent();

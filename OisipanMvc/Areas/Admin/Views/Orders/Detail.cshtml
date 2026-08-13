@@ -1,165 +1,92 @@
 @model FrontendMvc.Models.OrderAdminViewModel
 @{
-    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId.ToString("N")}";
+    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:N}";
+
+    var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Đã giao" };
+    var trackerLabels = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Hoàn thành" };
+    var trackerIcons = new[] { "bi-receipt", "bi-check2-circle", "bi-box2-heart", "bi-truck", "bi-house-heart" };
+    var currentIndex = Array.IndexOf(statusOrder, Model.Status);
+    if (currentIndex < 0 && (Model.Status == "Hoàn thành" || Model.Status == "Completed")) currentIndex = 4;
+    if (currentIndex < 0) currentIndex = 0;
+
+    var normalizedStatus = (Model.Status ?? string.Empty).Trim().ToLowerInvariant();
+    var isCancelled = normalizedStatus == "đã hủy" || normalizedStatus == "cancelled";
+    var isCompleted = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành" || isCancelled;
+    var canCancel = Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận";
+    var canPrintInvoice = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành";
+    var progressPercent = isCancelled ? 0 : currentIndex * 80.0 / (statusOrder.Length - 1);
+    var nextStatus = currentIndex >= 0 && currentIndex < statusOrder.Length - 1 ? statusOrder[currentIndex + 1] : null;
+    var totalQuantity = Model.OrderItems.Sum(item => item.Quantity);
 }
 
-<section class="page-breadcrumb">
-    <a asp-area="Admin" asp-controller="Orders" asp-action="Index"><i class="bi bi-house-door"></i> Đơn hàng</a>
-    <span>/</span>
-    <span>Chi tiết</span>
-</section>
-
-<section class="page-title-row">
-    <div>
-        <span class="eyebrow">Chi tiết đơn hàng</span>
-        <h1>#OP-@Model.OrderId.ToString("N")</h1>
-        <p>Đặt hàng bởi <strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách hàng" : Model.CustomerName)</strong></p>
+<div class="admin-order-detail-shell">
+<section class="page-title-row admin-order-hero">
+    <div class="admin-order-title">
+        <span class="eyebrow">Đơn hàng của bạn</span>
+        <h1>Chi tiết đơn hàng</h1>
+        <div class="admin-order-meta-line">
+            <span class="admin-order-code">#OP-@Model.OrderId.ToString("N")</span>
+            <span><i class="bi bi-calendar2-check"></i> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
     </div>
-    <div class="button-group">
+    <div class="admin-order-hero-actions">
+        <a asp-area="Admin" asp-controller="Orders" asp-action="Index" class="admin-order-back">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
     </div>
 </section>
 
 @if (TempData["Message"] is string message)
 {
-    <section class="panel" style="padding: 14px 18px;">
-        <strong>@message</strong>
+    <div class="alert alert-success" role="status">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">@message</div>
+    </div>
+}
+
+@if (isCancelled)
+{
+    <section class="panel admin-order-cancelled">
+        <span class="admin-order-state-icon"><i class="bi bi-x-lg"></i></span>
+        <div>
+            <strong>Đơn hàng đã bị hủy</strong>
+            <small>Không thể tiếp tục cập nhật trạng thái giao hàng.</small>
+        </div>
+    </section>
+}
+else
+{
+    <section class="panel admin-order-tracker" style="--progress-width: @progressPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+        <div class="tracker-rail"></div>
+        <div class="tracker-progress"></div>
+
+        @for (var i = 0; i < trackerLabels.Length; i++)
+        {
+            var stepClass = currentIndex >= i ? (currentIndex == i ? "current" : "active") : "";
+            <div class="tracker-step @stepClass">
+                <span class="tracker-icon"><i class="bi @trackerIcons[i]"></i></span>
+                <span class="tracker-label">@trackerLabels[i]</span>
+            </div>
+        }
     </section>
 }
 
-<div class="admin-grid two-columns">
-    <article class="panel">
-        <div class="panel-head">
-            <h2><i class="bi bi-box-seam"></i> Thông tin đơn hàng</h2>
-        </div>
-
-        <div class="detail-group">
-            <div class="detail-row"><span class="detail-label">Mã đơn</span><strong>#OP-@Model.OrderId.ToString("N")</strong></div>
-            <div class="detail-row"><span class="detail-label">Ngày đặt</span><strong>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
-            <div class="detail-row"><span class="detail-label">Khách hàng</span><strong>@Model.CustomerName</strong></div>
-            <div class="detail-row"><span class="detail-label">Số điện thoại</span><strong>@Model.CustomerPhone</strong></div>
-            <div class="detail-row"><span class="detail-label">Thanh toán</span><strong>@Model.PaymentMethod</strong></div>
-            <div class="detail-row"><span class="detail-label">Trạng thái</span><span class="status pending">@Model.Status</span></div>
-        </div>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2><i class="bi bi-check2-square"></i> Duyệt đơn</h2>
-        </div>
-        <div class="button-group" style="display: flex; flex-wrap: wrap; gap: 10px;">
-            @{
-                var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Đã giao" };
-                var currentIndex = Array.IndexOf(statusOrder, Model.Status);
-                var normalizedStatus = (Model.Status ?? string.Empty).Trim().ToLowerInvariant();
-                var isCompleted = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành" || normalizedStatus == "đã hủy" || normalizedStatus == "cancelled";
-                var canCancel = Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận";
-                var canPrintInvoice = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành";
-            }
-
-            @if (canPrintInvoice)
-            {
-                <a class="primary-action" asp-area="Admin" asp-controller="Orders" asp-action="Print" asp-route-id="@Model.OrderId" asp-route-print="true" asp-route-download="true" target="_blank" rel="noopener noreferrer">
-                    <i class="bi bi-receipt"></i> In / Xuất hóa đơn
-                </a>
-            }
-            
-            @if (!isCompleted)
-            {
-                // Show next status button
-                @if (currentIndex >= 0 && currentIndex < statusOrder.Length - 1)
-                {
-                    var nextStatus = statusOrder[currentIndex + 1];
-                    <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="status" value="@nextStatus" />
-                        <button type="submit" class="primary-action" style="flex: 1; min-width: 120px;">
-                            <i class="bi bi-arrow-right"></i> @nextStatus
-                        </button>
-                    </form>
-                }
-                
-                // Show cancel button only if status is "Chờ xác nhận" or "Đã xác nhận"
-                @if (canCancel)
-                {
-                    <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="status" value="Đã hủy" />
-                        <button type="submit" class="soft-action">
-                            <i class="bi bi-x-circle"></i> Hủy đơn
-                        </button>
-                    </form>
-                }
-            }
-            else
-            {
-                <div style="padding: 0.8rem 1rem; background: rgba(31, 111, 80, 0.1); border-radius: 5px; border-left: 4px solid var(--accent-green); width: 100%;">
-                    <strong style="color: var(--text-main);">@Model.Status</strong>
-                    <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-top: 0.3rem;">
-                        @if (Model.Status == "Đã giao")
-                        {
-                            <span><i class="bi bi-check-circle"></i> Đơn hàng đã giao thành công</span>
-                        }
-                        else
-                        {
-                            <span><i class="bi bi-x-circle"></i> Đơn hàng đã hủy</span>
-                        }
-                    </span>
-                </div>
-            }
-        </div>
-    </article>
-</div>
-
-<article class="panel">
+<article class="panel admin-order-card">
     <div class="panel-head">
-        <h2><i class="bi bi-receipt"></i> Tổng quan</h2>
-    </div>
-    
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        <div class="metric-card glow-gold" style="flex: 1; min-width: 200px;">
-            <span>Tạm tính</span>
-            <strong>@Model.TotalAmount.ToString("N0")đ</strong>
-            <small>@Model.OrderItems.Sum(item => item.Quantity) sản phẩm</small>
+        <div>
+            <h2><i class="bi bi-basket-fill"></i> Chi tiết sản phẩm</h2>
+            <p>@Model.OrderItems.Count sản phẩm trong đơn</p>
         </div>
-        
-        @if (Model.DiscountAmount > 0)
-        {
-            <div class="metric-card" style="flex: 1; min-width: 200px; background: rgba(220, 53, 69, 0.05); border: 1px solid rgba(220, 53, 69, 0.1);">
-                <span style="color: #dc3545;">Giảm giá @(string.IsNullOrWhiteSpace(Model.VoucherCode) ? "" : $"(Mã: {Model.VoucherCode})")</span>
-                <strong style="color: #dc3545;">-@Model.DiscountAmount.ToString("N0")đ</strong>
-                <small style="color: #dc3545;">Đã áp dụng voucher</small>
-            </div>
-            
-            <div class="metric-card glow-gold" style="flex: 1; min-width: 200px; background: var(--bg-card);">
-                <span style="color: var(--accent-green);">Thành tiền (Khách phải trả)</span>
-                <strong style="color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</strong>
-                <small style="color: var(--text-muted);">Số tiền cuối cùng</small>
-            </div>
-        }
-        else
-        {
-            <div class="metric-card glow-gold" style="flex: 1; min-width: 200px; background: var(--bg-card);">
-                <span style="color: var(--accent-green);">Khách phải trả</span>
-                <strong style="color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</strong>
-                <small style="color: var(--text-muted);">Số tiền cuối cùng</small>
-            </div>
-        }
-    </div>
-</article>
-
-<article class="panel">
-    <div class="panel-head">
-        <h2><i class="bi bi-basket-fill"></i> Chi tiết đơn hàng</h2>
     </div>
 
     <div class="table-wrapper">
-        <table class="admin-table">
+        <table class="admin-table admin-order-products">
             <thead>
                 <tr>
                     <th>Sản phẩm</th>
-                    <th style="text-align: center;">Số lượng</th>
-                    <th style="text-align: right;">Giá</th>
-                    <th style="text-align: right;">Thành tiền</th>
+                    <th>Số lượng</th>
+                    <th>Giá</th>
+                    <th>Thành tiền</th>
                 </tr>
             </thead>
             <tbody>
@@ -167,16 +94,20 @@
                 {
                     <tr>
                         <td>
-                            <strong>@item.ProductName</strong>
-                            @if (!string.IsNullOrEmpty(item.VariantName))
-                            {
-                                <br />
-                                <small style="color: var(--text-muted);">Phân loại: @item.VariantName</small>
-                            }
+                            <div class="admin-product-line">
+                                <span class="admin-product-icon"><i class="bi bi-bag-heart"></i></span>
+                                <div>
+                                    <strong>@item.ProductName</strong>
+                                    @if (!string.IsNullOrEmpty(item.VariantName))
+                                    {
+                                        <small>Phân loại: @item.VariantName</small>
+                                    }
+                                </div>
+                            </div>
                         </td>
-                        <td style="text-align: center;">@item.Quantity</td>
-                        <td style="text-align: right;">@item.UnitPrice.ToString("N0")đ</td>
-                        <td style="text-align: right; font-weight: 600;">@item.Total.ToString("N0")đ</td>
+                        <td>@item.Quantity</td>
+                        <td>@item.UnitPrice.ToString("N0")đ</td>
+                        <td><strong>@item.Total.ToString("N0")đ</strong></td>
                     </tr>
                 }
             </tbody>
@@ -184,115 +115,296 @@
     </div>
 </article>
 
+<div class="admin-order-summary-grid">
+    <article class="panel admin-order-card">
+        <div class="panel-head">
+            <div>
+                <h2><i class="bi bi-info-circle"></i> Thông tin đơn hàng</h2>
+                <p>Thông tin giao nhận và thanh toán</p>
+            </div>
+        </div>
+        <div class="admin-detail-list">
+            <div class="admin-detail-row"><span>Trạng thái</span><strong class="admin-status-pill @(isCancelled ? "cancelled" : isCompleted ? "done" : "active")">@Model.Status</strong></div>
+            <div class="admin-detail-row"><span>Khách hàng</span><strong>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách hàng" : Model.CustomerName)</strong></div>
+            <div class="admin-detail-row"><span>Phương thức thanh toán</span><strong>@Model.PaymentMethod</strong></div>
+            <div class="admin-detail-row"><span>Địa chỉ giao hàng</span><strong>@Model.ShippingAddress</strong></div>
+            <div class="admin-detail-row"><span>Số điện thoại</span><strong>@Model.CustomerPhone</strong></div>
+        </div>
+    </article>
+
+    <article class="panel admin-order-card admin-total-card">
+        <div class="panel-head">
+            <div>
+                <h2><i class="bi bi-calculator"></i> Tổng tiền</h2>
+                <p>Tạm tính và thanh toán cuối</p>
+            </div>
+        </div>
+        <div class="admin-detail-list">
+            <div class="admin-detail-row"><span>Tổng sản phẩm</span><strong>@Model.TotalAmount.ToString("N0")đ</strong></div>
+            @if (Model.DiscountAmount > 0)
+            {
+                <div class="admin-detail-row discount"><span>Giảm giá @(string.IsNullOrWhiteSpace(Model.VoucherCode) ? "" : $"({Model.VoucherCode})")</span><strong>-@Model.DiscountAmount.ToString("N0")đ</strong></div>
+            }
+            <div class="admin-detail-row grand-total"><span>Thanh toán</span><strong>@Model.FinalAmount.ToString("N0")đ</strong></div>
+        </div>
+    </article>
+</div>
+
+<article class="panel admin-order-card admin-action-panel">
+    <div class="panel-head">
+        <div>
+            <h2><i class="bi bi-check2-square"></i> Xử lý đơn hàng</h2>
+            <p>Cập nhật trạng thái, hủy đơn hoặc xuất hóa đơn cho đơn này</p>
+        </div>
+    </div>
+
+    @if (!isCompleted)
+    {
+        <div class="admin-action-grid">
+            @if (!string.IsNullOrEmpty(nextStatus))
+            {
+                <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId" class="admin-action-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="status" value="@nextStatus" />
+                    <span>
+                        <strong>Chuyển trạng thái tiếp theo</strong>
+                        <small>Đơn sẽ được cập nhật sang "@nextStatus".</small>
+                    </span>
+                    <button type="submit" class="primary-action">
+                        <i class="bi bi-arrow-right"></i> @nextStatus
+                    </button>
+                </form>
+            }
+
+            @if (canCancel)
+            {
+                <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderId" class="admin-action-form danger">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="status" value="Đã hủy" />
+                    <span>
+                        <strong>Hủy đơn hàng</strong>
+                        <small>Chỉ nên hủy khi đơn chưa chuẩn bị hoặc chưa giao.</small>
+                    </span>
+                    <button type="submit" class="soft-action danger">
+                        <i class="bi bi-x-circle"></i> Hủy đơn
+                    </button>
+                </form>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="admin-order-final-state @(isCancelled ? "cancelled" : "done")">
+            <i class="bi @(isCancelled ? "bi-x-circle" : "bi-check-circle")"></i>
+            <div>
+                <strong>@Model.Status</strong>
+                <small>@(isCancelled ? "Đơn hàng đã hủy, không thể tiếp tục xử lý." : "Đơn hàng đã hoàn tất, có thể xuất hóa đơn.")</small>
+            </div>
+        </div>
+    }
+</article>
+
 @if (Model.CancellationRequests.Any())
 {
-    <article class="panel" style="border-left: 5px solid #ffc107;">
+    <article class="panel admin-order-card cancellation-panel">
         <div class="panel-head">
-            <h2><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h2>
-        </div>
-        
-        @foreach (var cancReq in Model.CancellationRequests.OrderByDescending(r => r.CancelledAt))
-        {
-            var statusColor = cancReq.Status == "Approved" ? "rgba(31, 111, 80, 0.05)" : cancReq.Status == "Rejected" ? "rgba(220, 53, 69, 0.05)" : "rgba(255, 193, 7, 0.05)";
-            var statusBadgeColor = cancReq.Status == "Approved" ? "#1f6f50" : cancReq.Status == "Rejected" ? "#dc3545" : "#ffc107";
-            var statusText = cancReq.Status == "Approved" ? "Đã chấp nhận" : cancReq.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
-            var statusIcon = cancReq.Status == "Approved" ? "bi-check-circle-fill" : cancReq.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
-            
-            <div style="padding: 1.5rem; background: @statusColor; border-radius: 5px; margin-bottom: 1rem; border-left: 4px solid @statusBadgeColor;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    <div>
-                        <span style="display: inline-block; padding: 0.4rem 0.9rem; background: white; border-radius: 5px; font-weight: 600; color: @statusBadgeColor; font-size: 0.9rem;">
-                            <i class="bi @statusIcon"></i> @statusText
-                        </span>
-                        <span style="display: block; font-size: 0.85rem; margin-top: 0.3rem;"><i class="bi bi-clock"></i> Ngày gửi: @cancReq.CancelledAt.ToString("dd/MM/yyyy HH:mm")</span>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 1rem;">
-                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-main);">Lý do yêu cầu:</strong>
-                    <p style="margin: 0; color: var(--text-main); line-height: 1.6;">@cancReq.Reason</p>
-                </div>
-
-                @if (!string.IsNullOrEmpty(cancReq.AdminNote))
-                {
-                    <div style="padding: 0.8rem; background: white; border-radius: 5px; border-left: 3px solid @statusBadgeColor;">
-                        <strong style="display: block; margin-bottom: 0.3rem; color: @statusBadgeColor;">Ghi chú từ admin:</strong>
-                        <p style="margin: 0; color: var(--text-main);">@cancReq.AdminNote</p>
-                    </div>
-                }
-
-                @if (cancReq.Status == "Pending")
-                {
-                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="button" class="btn-approve" onclick="showResponseModal('@cancReq.OrderCancellationId', true)" style="flex: 1; min-width: 150px; background: #1f6f50; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
-                            <i class="bi bi-check-circle"></i> Phê duyệt
-                        </button>
-                        <button type="button" class="btn-reject" onclick="showResponseModal('@cancReq.OrderCancellationId', false)" style="flex: 1; min-width: 150px; background: #dc3545; color: white; border: none; padding: 0.7rem 1rem; border-radius: 5px; cursor: pointer;">
-                            <i class="bi bi-x-circle"></i> Từ chối
-                        </button>
-                    </div>
-                }
+            <div>
+                <h2><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h2>
+                <p>Lịch sử phản hồi yêu cầu hủy từ khách hàng</p>
             </div>
-        }
+        </div>
+
+        <div class="cancel-request-list">
+            @foreach (var cancReq in Model.CancellationRequests.OrderByDescending(r => r.CancelledAt))
+            {
+                var itemClass = cancReq.Status == "Approved" ? "approved" : cancReq.Status == "Rejected" ? "rejected" : "pending";
+                var statusText = cancReq.Status == "Approved" ? "Đã chấp nhận" : cancReq.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
+                var statusIcon = cancReq.Status == "Approved" ? "bi-check-circle-fill" : cancReq.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
+
+                <section class="cancel-request @itemClass">
+                    <div class="cancel-request-top">
+                        <span><i class="bi @statusIcon"></i> @statusText</span>
+                        <small>@cancReq.CancelledAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <div class="cancel-note">
+                        <strong>Lý do yêu cầu</strong>
+                        <p>@cancReq.Reason</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(cancReq.AdminNote))
+                    {
+                        <div class="cancel-note admin-note">
+                            <strong>Ghi chú từ admin</strong>
+                            <p>@cancReq.AdminNote</p>
+                        </div>
+                    }
+                    @if (cancReq.Status == "Pending")
+                    {
+                        <div class="cancel-actions">
+                            <button type="button" class="primary-action" onclick="showResponseModal('@cancReq.OrderCancellationId', true)">
+                                <i class="bi bi-check-circle"></i> Phê duyệt
+                            </button>
+                            <button type="button" class="soft-action danger" onclick="showResponseModal('@cancReq.OrderCancellationId', false)">
+                                <i class="bi bi-x-circle"></i> Từ chối
+                            </button>
+                        </div>
+                    }
+                </section>
+            }
+        </div>
     </article>
 }
 
-<!-- Response Modal -->
-<div id="response-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 5px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0; font-size: 1.2rem;" id="modal-title">Phản hồi yêu cầu hủy đơn</h3>
-            <button type="button" onclick="closeResponseModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
+<div class="modal-overlay" id="response-modal">
+    <div class="modal-dialog">
+        <div class="admin-modal-head">
+            <h3 id="modal-title">Phản hồi yêu cầu hủy đơn</h3>
+            <button type="button" class="icon-action" onclick="closeResponseModal()" aria-label="Đóng">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
 
-        <form id="response-form" method="post" asp-area="Admin" asp-controller="Orders" asp-action="RespondCancellation" onsubmit="submitResponse(event)">
+        <form id="response-form" method="post" asp-area="Admin" asp-controller="Orders" asp-action="RespondCancellation">
             @Html.AntiForgeryToken()
             <input type="hidden" name="cancellationRequestId" id="cancellation-id" value="0" />
             <input type="hidden" name="orderId" value="@Model.OrderId" />
             <input type="hidden" name="approve" id="approve-input" value="false" />
 
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);">Ghi chú (tùy chọn)</label>
-                <textarea name="adminNote" id="response-note" placeholder="Ghi chú cho khách hàng..." rows="4" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 0.9rem;" maxlength="500"></textarea>
-                <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">Tối đa 500 ký tự</small>
+            <div class="form-group">
+                <label for="response-note">Ghi chú cho khách hàng</label>
+                <textarea name="adminNote" id="response-note" class="form-input" placeholder="Nhập ghi chú phản hồi..." rows="4" maxlength="500"></textarea>
+                <small class="form-hint">Tối đa 500 ký tự.</small>
             </div>
 
-            <div style="display: flex; gap: 1rem;">
-                <button type="button" onclick="closeResponseModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
-                    Hủy bỏ
-                </button>
-                <button type="submit" id="response-submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
-                    Gửi
-                </button>
+            <div class="modal-actions">
+                <button type="button" onclick="closeResponseModal()" class="btn-cancel">Hủy</button>
+                <button type="submit" id="response-submit" class="btn-delete">Gửi phản hồi</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-    .btn-approve:hover { background: #0d4d2e !important; }
-    .btn-reject:hover { background: #bb2d3b !important; }
+    .admin-order-detail-shell { max-width: 900px; width: 100%; margin: 0 auto; display: grid; gap: 16px; }
+    .admin-order-hero { align-items: flex-start; padding: 0; margin: 0 0 2px; background: transparent; border: 0; box-shadow: none; }
+    .admin-order-title .eyebrow { display: inline-flex; margin-bottom: 6px; color: var(--admin-green-2); font-size: 0.72rem; font-weight: 900; }
+    .admin-order-title h1 { max-width: 720px; margin: 0 0 10px; color: #101914; font-size: clamp(2rem, 3vw, 3rem); line-height: 1.05; overflow-wrap: anywhere; }
+    .admin-order-title p { display: none; }
+    .admin-order-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--admin-muted); font-size: 0.88rem; }
+    .admin-order-code { display: inline-flex; max-width: min(100%, 430px); padding: 5px 9px; border: 1px solid var(--admin-line); border-radius: 5px; color: var(--admin-green-2); background: #fffdf8; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.72rem; font-weight: 800; overflow-wrap: anywhere; }
+    .admin-order-hero-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .admin-order-back { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 5px; color: #fff; background: var(--admin-green-2); font-size: 0.86rem; font-weight: 800; text-decoration: none; box-shadow: 0 14px 28px rgba(15, 73, 53, 0.16); }
+    .admin-order-back:hover { color: #fff; background: var(--admin-green); transform: translateY(-1px); }
+    .admin-order-detail-shell .panel { padding: 18px; }
+    .admin-order-card { background: rgba(255, 253, 248, 0.9); border: 1px solid var(--admin-line); box-shadow: 0 18px 42px rgba(31, 111, 80, 0.06); }
+    .admin-order-card .panel-head { align-items: flex-start; }
+    .admin-order-card .panel-head { margin-bottom: 14px; }
+    .admin-order-card .panel-head h2 { display: flex; align-items: center; gap: 8px; color: var(--admin-green-2); font-size: 1.02rem; }
+    .admin-order-card .panel-head p { margin: 4px 0 0; color: var(--admin-muted); font-size: 0.8rem; }
+    .admin-order-tracker { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; padding: 22px 28px 18px; overflow: hidden; background: rgba(255, 253, 248, 0.9); border: 1px solid var(--admin-line); box-shadow: 0 18px 42px rgba(31, 111, 80, 0.06); }
+    .admin-order-tracker .tracker-rail, .admin-order-tracker .tracker-progress { position: absolute; top: 43px; left: calc(10% + 28px); right: calc(10% + 28px); height: 3px; border-radius: 999px; background: #dde8df; }
+    .admin-order-tracker .tracker-progress { right: auto; width: var(--progress-width); background: var(--admin-green); }
+    .tracker-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+    .tracker-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 3px solid #dde8df; border-radius: 50%; color: #718277; background: #fffdf8; font-size: 1.05rem; }
+    .tracker-label { color: var(--admin-muted); font-size: 0.76rem; font-weight: 800; line-height: 1.35; }
+    .tracker-step.active .tracker-icon { border-color: var(--admin-green); color: #fff; background: var(--admin-green); }
+    .tracker-step.current .tracker-icon { border-color: var(--admin-green); color: var(--admin-green); background: #fff; box-shadow: 0 0 0 6px rgba(31, 111, 80, 0.11); }
+    .tracker-step.active .tracker-label, .tracker-step.current .tracker-label { color: var(--admin-green-2); }
+    .admin-order-cancelled { display: flex; align-items: center; justify-content: center; gap: 14px; color: var(--admin-red); }
+    .admin-order-state-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; color: #fff; background: var(--admin-red); }
+    .admin-order-cancelled strong, .admin-order-cancelled small { display: block; }
+    .admin-order-cancelled small { color: var(--admin-muted); margin-top: 3px; }
+    .admin-order-products { min-width: 640px; }
+    .admin-order-products th, .admin-order-products td { text-align: right; padding: 13px 14px; }
+    .admin-order-products th:first-child, .admin-order-products td:first-child { text-align: left; }
+    .admin-product-line { display: flex; align-items: center; gap: 12px; }
+    .admin-product-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 5px; color: var(--admin-green); background: rgba(31, 111, 80, 0.08); flex: 0 0 auto; }
+    .admin-product-line strong, .admin-product-line small { display: block; }
+    .admin-product-line small { margin-top: 3px; color: var(--admin-muted); }
+    .admin-order-summary-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr); gap: 16px; align-items: stretch; }
+    .admin-order-summary-grid > .panel { display: flex; flex-direction: column; }
+    .admin-detail-list { display: grid; gap: 0; flex: 1; }
+    .admin-detail-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--admin-line); }
+    .admin-detail-row:last-child { border-bottom: 0; }
+    .admin-detail-row span { color: var(--admin-muted); font-size: 0.82rem; }
+    .admin-detail-row strong { font-size: 0.9rem; }
+    .admin-detail-row strong { color: var(--admin-ink); overflow-wrap: anywhere; }
+    .admin-total-card .admin-detail-row { grid-template-columns: minmax(120px, 1fr) auto; }
+    .admin-total-card .admin-detail-row strong { text-align: right; white-space: nowrap; }
+    .admin-detail-row.discount strong { color: var(--admin-red); }
+    .admin-detail-row.grand-total { margin-top: 6px; padding-top: 16px; border-top: 1px solid var(--admin-line); border-bottom: 0; }
+    .admin-detail-row.grand-total strong { color: var(--admin-green); font-size: 1.25rem; }
+    .admin-status-pill { justify-self: start; display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border-radius: 5px; font-size: 0.78rem; }
+    .admin-status-pill.active { color: var(--admin-green); background: rgba(31, 111, 80, 0.1); }
+    .admin-status-pill.done { color: var(--admin-blue); background: rgba(63, 111, 181, 0.12); }
+    .admin-status-pill.cancelled { color: var(--admin-red); background: rgba(201, 75, 66, 0.12); }
+    .admin-action-grid { display: grid; gap: 12px; }
+    .admin-action-panel { order: 20; }
+    .cancellation-panel { order: 15; }
+    .admin-action-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px; border: 1px solid rgba(31, 111, 80, 0.14); border-radius: 5px; background: rgba(31, 111, 80, 0.05); }
+    .admin-action-form .primary-action,
+    .admin-action-form .soft-action { min-height: 38px; padding-inline: 13px; font-size: 0.84rem; }
+    .admin-action-form.danger { border-color: rgba(201, 75, 66, 0.22); background: rgba(201, 75, 66, 0.06); }
+    .admin-action-form strong, .admin-action-form small { display: block; }
+    .admin-action-form small { margin-top: 3px; color: var(--admin-muted); }
+    .admin-order-final-state { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 5px; background: rgba(31, 111, 80, 0.08); color: var(--admin-green); }
+    .admin-order-final-state.cancelled { background: rgba(201, 75, 66, 0.08); color: var(--admin-red); }
+    .admin-order-final-state i { font-size: 1.4rem; }
+    .admin-order-final-state strong, .admin-order-final-state small { display: block; }
+    .admin-order-final-state small { color: var(--admin-muted); margin-top: 3px; }
+    .cancel-request-list { display: grid; gap: 12px; }
+    .cancel-request { padding: 14px; border: 1px solid var(--admin-line); border-left: 4px solid var(--admin-gold); border-radius: 5px; background: #fffdf8; }
+    .cancel-request.approved { border-left-color: var(--admin-green); }
+    .cancel-request.rejected { border-left-color: var(--admin-red); }
+    .cancel-request-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .cancel-request-top span { font-weight: 800; }
+    .cancel-request-top small { color: var(--admin-muted); white-space: nowrap; }
+    .cancel-note { padding: 10px; border-radius: 5px; background: #f8f0e5; }
+    .cancel-note + .cancel-note { margin-top: 10px; }
+    .cancel-note strong, .cancel-note p { display: block; margin: 0; }
+    .cancel-note p { margin-top: 4px; color: var(--admin-ink); }
+    .cancel-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .admin-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .admin-modal-head h3 { margin: 0; color: var(--admin-green-2); font-size: 1.2rem; }
+    @@media (max-width: 900px) {
+        .admin-order-detail-shell { max-width: 100%; }
+        .admin-order-hero { align-items: stretch; flex-direction: column; }
+        .admin-order-hero-actions, .admin-order-hero-actions a { width: 100%; }
+        .admin-order-tracker { grid-template-columns: 1fr; }
+        .admin-order-tracker .tracker-rail, .admin-order-tracker .tracker-progress { display: none; }
+        .tracker-step { flex-direction: row; text-align: left; }
+        .admin-order-summary-grid { grid-template-columns: 1fr; }
+        .admin-detail-row, .admin-total-card .admin-detail-row, .admin-action-form { grid-template-columns: 1fr; }
+        .admin-total-card .admin-detail-row strong { text-align: left; white-space: normal; }
+    }
 </style>
 
 <script>
     function showResponseModal(cancellationRequestId, approve) {
+        const modal = document.getElementById('response-modal');
+        const submitButton = document.getElementById('response-submit');
         document.getElementById('cancellation-id').value = cancellationRequestId;
         document.getElementById('approve-input').value = approve ? 'true' : 'false';
         document.getElementById('modal-title').textContent = approve ? 'Chấp nhận yêu cầu hủy đơn' : 'Từ chối yêu cầu hủy đơn';
-        document.getElementById('response-submit').textContent = approve ? 'Chấp nhận' : 'Từ chối';
-        document.getElementById('response-submit').style.background = approve ? '#1f6f50' : '#dc3545';
-        document.getElementById('response-modal').style.display = 'flex';
+        submitButton.textContent = approve ? 'Chấp nhận' : 'Từ chối';
+        submitButton.classList.toggle('approve', approve);
+        modal.classList.add('active');
     }
 
     function closeResponseModal() {
-        document.getElementById('response-modal').style.display = 'none';
+        document.getElementById('response-modal').classList.remove('active');
         document.getElementById('response-form').reset();
     }
 
-    function submitResponse(event) {
-        event.preventDefault();
-        document.getElementById('response-form').submit();
-    }
+    document.getElementById('response-modal')?.addEventListener('click', function (event) {
+        if (event.target === this) {
+            closeResponseModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeResponseModal();
+        }
+    });
 </script>
+</div>

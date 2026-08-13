@@ -1,4 +1,4 @@
-@model ProductOptionManagementViewModel
+﻿@model ProductOptionManagementViewModel
 @{
     ViewData["Title"] = "Quản lý biến thể";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -124,13 +124,11 @@
                                 <button type="submit" class="icon-action" title="Lưu">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
-                                <button type="submit"
+                                <button type="button"
                                         class="icon-action danger"
                                         title="Xóa"
-                                        formaction="@Url.Action("DeleteOptionValue", "ProductVariants", new { area = "Admin" })"
-                                        name="productValueId"
-                                        value="@value.ProductValueId"
-                                        onclick="return confirm('Bạn có chắc muốn xóa lựa chọn này?');">
+                                        data-option-name="@value.ValueName"
+                                        onclick="openDeleteOptionModal('@value.ProductValueId', this.dataset.optionName);">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
@@ -155,4 +153,52 @@ else
         <strong>Hãy chọn một sản phẩm</strong>
         <span>Sau đó bạn có thể thiết lập size và nhân bánh độc lập.</span>
     </section>
+}
+
+@if (Model.SelectedProductId.HasValue)
+{
+    <div class="modal-overlay" id="deleteOptionModal">
+        <div class="modal-dialog modal-dialog-danger">
+            <div class="modal-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h2 class="modal-title">Xóa lựa chọn?</h2>
+            <p class="modal-message">Bạn có chắc chắn muốn xóa lựa chọn <strong id="optionValueName"></strong>? Hành động này không thể hoàn tác.</p>
+            <form method="post"
+                  asp-area="Admin"
+                  asp-controller="ProductVariants"
+                  asp-action="DeleteOptionValue"
+                  class="modal-actions">
+                <input type="hidden" name="productId" value="@Model.SelectedProductId" />
+                <input type="hidden" name="productValueId" id="deleteOptionValueId" value="" />
+                <button type="button" class="btn-cancel" onclick="closeDeleteOptionModal()">Hủy</button>
+                <button type="submit" class="btn-delete">Xóa lựa chọn</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openDeleteOptionModal(productValueId, optionName) {
+            document.getElementById('deleteOptionValueId').value = productValueId;
+            document.getElementById('optionValueName').textContent = optionName;
+            document.getElementById('deleteOptionModal').classList.add('active');
+        }
+
+        function closeDeleteOptionModal() {
+            document.getElementById('deleteOptionModal').classList.remove('active');
+            document.getElementById('deleteOptionValueId').value = '';
+        }
+
+        document.getElementById('deleteOptionModal')?.addEventListener('click', function (event) {
+            if (event.target === this) {
+                closeDeleteOptionModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeDeleteOptionModal();
+            }
+        });
+    </script>
 }

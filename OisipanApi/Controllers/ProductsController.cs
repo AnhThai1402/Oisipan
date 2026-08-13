@@ -77,6 +77,7 @@ public class ProductsController : ControllerBase
             .Include(p => p.ProductOptions)
                 .ThenInclude(po => po.ProductValues)
             .Include(p => p.ProductVariants)
+                .ThenInclude(pv => pv.ProductVariantValues)
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
         if (product is null)
@@ -91,14 +92,29 @@ public class ProductsController : ControllerBase
 
     private async Task EnsureVariantsExistAsync(Product product)
     {
-        if (product.ProductOptions == null || !product.ProductOptions.Any()) return;
-
         var validOptions = product.ProductOptions
             .Where(o => o.ProductValues != null && o.ProductValues.Any())
             .Select(o => o.ProductValues.ToList())
             .ToList();
 
-        if (!validOptions.Any()) return;
+        if (!validOptions.Any())
+        {
+            if (!product.ProductVariants.Any())
+            {
+                var defaultVariant = new ProductVariant
+                {
+                    ProductId = product.ProductId,
+                    Price = 0m,
+                    StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
+                    Status = true
+                };
+                _context.ProductVariants.Add(defaultVariant);
+                product.ProductVariants.Add(defaultVariant);
+                await _context.SaveChangesAsync();
+            }
+
+            return;
+        }
 
         var combinations = new List<List<ProductValue>>();
         void Generate(int depth, List<ProductValue> current)
