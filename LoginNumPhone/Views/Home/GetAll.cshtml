@@ -1,0 +1,28 @@
+﻿@model IEnumerable<LoginNumPhone.Models.Account>
+
+<h2>Danh sách tài khoản</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Email</th>
+            <th>Password</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.UserId</td>
+                <td>@item.Email</td>
+                <td>@item.Password</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a asp-controller="Home"
+       asp-action="Logout"
+       class="btn btn-danger">
+    Đăng xuất
+</a>

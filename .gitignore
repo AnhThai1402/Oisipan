@@ -1,0 +1,6 @@
+﻿.vs/
+bin/
+obj/
+LoginNumPhone/firebase-adminsdk.json
+*.user
+*.suo

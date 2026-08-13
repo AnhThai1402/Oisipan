@@ -1,0 +1,11 @@
+﻿@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">
+        @ViewBag.Error
+    </div>
+}
+<form asp-action="Login" asp-controller="Home" method="post">
+    <input type="email" name="email" />
+    <input type="password" name="pass" />
+    <button type="submit">Đăng nhập</button>
+</form>
