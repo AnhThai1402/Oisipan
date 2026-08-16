@@ -142,8 +142,15 @@ public class ProductOptionsController : ControllerBase
             return NotFound(new { message = "Khong tim thay tuy chon san pham." });
         }
 
-        _context.ProductOptions.Remove(option);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.ProductOptions.Remove(option);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new { message = "Tùy chọn này (hoặc giá trị của nó) đang được dùng bởi các Phân loại hàng. Vui lòng xóa các Phân loại hàng liên quan trước." });
+        }
 
         return NoContent();
     }

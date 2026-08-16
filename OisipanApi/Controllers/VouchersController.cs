@@ -211,4 +211,41 @@ public class VouchersController : ControllerBase
     {
         return !string.Equals(status?.Trim(), "inactive", StringComparison.OrdinalIgnoreCase);
     }
+
+    [HttpPost("assign")]
+    public async Task<IActionResult> AssignVoucher([FromBody] AssignVoucherRequest request)
+    {
+        var voucherCode = request.Code?.Trim();
+        var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+        if (voucher == null)
+            return BadRequest(new { message = "Mã giảm giá không tồn tại." });
+
+        if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+            return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc chưa có hiệu lực." });
+
+        if (voucher.TotalQuantity <= 0)
+            return BadRequest(new { message = "Mã giảm giá đã hết lượt sử dụng." });
+
+        var existing = await _context.UserVouchers.FirstOrDefaultAsync(uv => uv.UserId == request.UserId && uv.VoucherId == voucher.VoucherId);
+        if (existing != null)
+            return BadRequest(new { message = "Bạn đã lưu mã giảm giá này rồi." });
+
+        _context.UserVouchers.Add(new UserVoucher
+        {
+            UserId = request.UserId,
+            VoucherId = voucher.VoucherId,
+            IsUsed = false,
+            AssignedDate = DateTime.Now
+        });
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Lưu mã giảm giá thành công." });
+    }
+}
+
+public class AssignVoucherRequest
+{
+    public Guid UserId { get; set; }
+    public string Code { get; set; } = string.Empty;
 }

@@ -1,4 +1,4 @@
-﻿@model FrontendMvc.Models.BannerViewModel
+@model FrontendMvc.Models.BannerViewModel
 @{
     var isEdit = Model?.BannerId != Guid.Empty && Model?.BannerId != null;
     ViewData["Title"] = isEdit ? "Chỉnh sửa banner" : "Thêm banner mới";
@@ -39,11 +39,8 @@
 }
 
 <form asp-area="Admin" asp-controller="Banners" asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data" class="product-form-container">
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="BannerId" />
-        <input type="hidden" asp-for="ImageUrl" />
-    }
+    <input type="hidden" asp-for="BannerId" />
+    <input type="hidden" asp-for="ImageUrl" />
     <div class="admin-grid two-columns">
         <!-- Left Column -->
         <article class="panel">

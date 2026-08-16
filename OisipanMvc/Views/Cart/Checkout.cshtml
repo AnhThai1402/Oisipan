@@ -468,15 +468,18 @@
 
         <!-- Voucher Section -->
         <div class="checkout-section">
-            <div class="voucher-section">
+            <div class="voucher-section" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
                     <i class="bi bi-ticket-perforated" style="color: var(--accent-red);"></i> Voucher Oishipan
                 </div>
-                <div class="voucher-input-group">
-                    <input type="text" id="VoucherCode" name="VoucherCode" class="voucher-input" placeholder="Nhập mã voucher" value="@Model.VoucherCode" />
-                    <button type="button" id="apply-page-voucher-btn" class="change-btn">Áp Dụng</button>
-                    <span id="page-voucher-message" style="display:none; font-size: 0.85rem; font-weight: 500;"></span>
+                <div class="voucher-action" style="display: flex; align-items: center;">
+                    <input type="hidden" id="VoucherCode" name="VoucherCode" value="@Model.VoucherCode" />
+                    <span id="selected-voucher-display" style="margin-right: 1rem; font-weight: 500; color: var(--accent-red); display: none;"></span>
+                    <button type="button" id="open-voucher-modal-btn" class="change-btn" style="white-space: nowrap;">Chọn Voucher</button>
                 </div>
+            </div>
+            <div style="width: 100%; text-align: right; margin-top: 5px;">
+                <span id="page-voucher-message" style="display:none; font-size: 0.85rem; font-weight: 500;"></span>
             </div>
         </div>
 
@@ -516,6 +519,59 @@
         </div>
     </form>
 </div>
+
+<!-- Voucher Selection Modal -->
+<div class="address-modal-overlay" id="voucher-modal-overlay">
+    <div class="address-modal" style="width: 500px; max-width: 90%; background: #fff; padding: 2rem; border-radius: 12px; position: relative;">
+        <button type="button" class="close-cart" id="close-voucher-modal-btn" style="position:absolute; top: 1rem; right: 1rem;"><i class="bi bi-x-lg"></i></button>
+        <h3 style="margin-bottom: 1.5rem; color: var(--accent-green);">Chọn Voucher Oishipan</h3>
+        
+        <div style="max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+            @if (ViewBag.UserVouchers != null && ViewBag.UserVouchers.Count > 0)
+            {
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    @foreach (var v in ViewBag.UserVouchers)
+                    {
+                        var isUsable = v.IsUsed == false && (v.ExpiryDate >= DateTime.Now) && (v.MinOrderValue <= totalAmount);
+                        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; @(isUsable ? "" : "opacity: 0.6;")">
+                            <div>
+                                <h4 style="margin: 0 0 5px 0; color: var(--accent-red);">@v.VoucherCode</h4>
+                                <div style="font-size: 0.9rem; color: #333;">
+                                    Giảm @(v.DiscountType == "Percentage" ? $"{v.DiscountValue}%" : $"{v.DiscountValue:N0}đ")
+                                </div>
+                                @if (v.MinOrderValue > 0)
+                                {
+                                    <div style="font-size: 0.8rem; color: #666;">Đơn tối thiểu: @v.MinOrderValue.ToString("N0")đ</div>
+                                }
+                                @if (v.ExpiryDate.Year < 9999)
+                                {
+                                    <div style="font-size: 0.8rem; color: #666;">HSD: @v.ExpiryDate.ToString("dd/MM/yyyy")</div>
+                                }
+                            </div>
+                            <div>
+                                @if (isUsable)
+                                {
+                                    <button type="button" class="place-order-btn select-voucher-btn" data-code="@v.VoucherCode" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Áp dụng</button>
+                                }
+                                else
+                                {
+                                    <button type="button" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: #ccc; color: #fff; border: none; border-radius: 4px; cursor: not-allowed;" disabled>Chưa đủ ĐK</button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 2rem 0; color: #888;">
+                    Bạn chưa có voucher nào trong ví.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
 
 <!-- Address Selection Modal -->
 <div class="address-modal-overlay" id="address-modal">
@@ -583,7 +639,7 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        (function() {
             // Payment and Submit Logic
             const payBtns = document.querySelectorAll('.pay-option-btn');
             const submitBtn = document.getElementById('submit-checkout-btn');
@@ -606,7 +662,7 @@
 
                     if (!name || !phone || !addr) {
                         document.getElementById('address-modal').classList.add('open');
-                        triggerToast('Vui lòng chọn hoặc thêm địa chỉ nhận hàng.', 'warning');
+                        if (typeof triggerToast === 'function') triggerToast('Vui lòng chọn hoặc thêm địa chỉ nhận hàng.', 'warning');
                         return;
                     }
 
@@ -615,52 +671,102 @@
             }
 
             // Voucher logic
-            const applyVoucherBtn = document.getElementById('apply-page-voucher-btn');
-            if (applyVoucherBtn) {
-                applyVoucherBtn.addEventListener('click', async function() {
-                    const code = document.getElementById('VoucherCode').value.trim();
-                    const msgEl = document.getElementById('page-voucher-message');
-                    const baseTotal = parseFloat(document.getElementById('base-amount').value);
-                    const discountRow = document.getElementById('discount-row');
-                    const discountAmountEl = document.getElementById('discount-amount');
-                    const finalTotalEl = document.getElementById('final-total');
-
-                    if (!code) {
-                        msgEl.style.display = 'block';
-                        msgEl.style.color = 'var(--accent-red)';
-                        msgEl.textContent = 'Vui lòng nhập mã';
-                        return;
-                    }
-
-                    try {
-                        const res = await fetch('/Cart/ValidateVoucher', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ Code: code, OrderTotal: baseTotal })
-                        });
-                        const data = await res.json();
-
-                        msgEl.style.display = 'block';
-                        if (data.isValid) {
-                            msgEl.style.color = 'var(--accent-green)';
-                            msgEl.textContent = 'Áp dụng thành công!';
-                            
-                            discountRow.style.display = 'flex';
-                            discountAmountEl.textContent = '-' + data.discountAmount.toLocaleString('vi-VN') + 'đ';
-                            finalTotalEl.textContent = data.finalTotal.toLocaleString('vi-VN') + 'đ';
-                        } else {
-                            msgEl.style.color = 'var(--accent-red)';
-                            msgEl.textContent = data.message || 'Mã không hợp lệ';
-                            
-                            discountRow.style.display = 'none';
-                            finalTotalEl.textContent = baseTotal.toLocaleString('vi-VN') + 'đ';
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
+            const openVoucherModalBtn = document.getElementById('open-voucher-modal-btn');
+            const closeVoucherModalBtn = document.getElementById('close-voucher-modal-btn');
+            const voucherModal = document.getElementById('voucher-modal-overlay');
+            
+            if (openVoucherModalBtn && voucherModal) {
+                openVoucherModalBtn.addEventListener('click', () => {
+                    voucherModal.classList.add('open');
                 });
             }
-        });
+            if (closeVoucherModalBtn && voucherModal) {
+                closeVoucherModalBtn.addEventListener('click', () => {
+                    voucherModal.classList.remove('open');
+                });
+            }
+            
+            const initialVoucher = document.getElementById('VoucherCode') ? document.getElementById('VoucherCode').value : null;
+            if (initialVoucher) {
+                applyVoucherCode(initialVoucher, true);
+            }
+
+            document.querySelectorAll('.select-voucher-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const code = this.dataset.code;
+                    await applyVoucherCode(code, false);
+                    if (voucherModal) voucherModal.classList.remove('open');
+                });
+            });
+
+            async function applyVoucherCode(code, isInitial) {
+                const msgEl = document.getElementById('page-voucher-message');
+                const baseTotal = parseFloat(document.getElementById('base-amount').value);
+                const discountRow = document.getElementById('discount-row');
+                const discountAmountEl = document.getElementById('discount-amount');
+                const finalTotalEl = document.getElementById('final-total');
+                const selectedVoucherDisplay = document.getElementById('selected-voucher-display');
+                const openModalBtn = document.getElementById('open-voucher-modal-btn');
+
+                try {
+                    const res = await fetch('/Cart/ValidateVoucher', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ Code: code, OrderTotal: baseTotal, TotalItems: @(((List<FrontendMvc.Models.CartItemViewModel>)ViewBag.CheckoutItems).Sum(x => x.Quantity)) })
+                    });
+                    const data = await res.json();
+
+                    if (!isInitial && msgEl) {
+                        msgEl.style.display = 'inline-block';
+                    }
+                    if (data.isValid) {
+                        if (!isInitial && msgEl) {
+                            msgEl.style.color = 'var(--accent-green)';
+                            msgEl.textContent = 'Áp dụng thành công!';
+                        }
+                        const vCodeEl = document.getElementById('VoucherCode');
+                        if(vCodeEl) vCodeEl.value = code;
+                        
+                        let discount = data.discountAmount || 0;
+                        const finalTotal = baseTotal - discount;
+
+                        if (selectedVoucherDisplay) {
+                            selectedVoucherDisplay.style.display = 'inline';
+                            selectedVoucherDisplay.textContent = 'Mã: ' + code + ' (-' + discount.toLocaleString('vi-VN') + 'đ)';
+                        }
+                        if (openModalBtn) {
+                            openModalBtn.textContent = 'Đổi Voucher';
+                        }
+                        
+                        if(discountRow) discountRow.style.display = 'flex';
+                        if(discountAmountEl) discountAmountEl.textContent = '-' + discount.toLocaleString('vi-VN') + 'đ';
+                        if(finalTotalEl) finalTotalEl.textContent = finalTotal.toLocaleString('vi-VN') + 'đ';
+                        
+                        if (!isInitial && typeof triggerToast === 'function') triggerToast('Áp dụng voucher thành công!', 'success');
+                    } else {
+                        if (!isInitial && msgEl) {
+                            msgEl.style.color = 'var(--accent-red)';
+                            msgEl.textContent = data.message || 'Mã không hợp lệ';
+                        }
+                        const vCodeEl = document.getElementById('VoucherCode');
+                        if(vCodeEl) vCodeEl.value = '';
+                        
+                        if (selectedVoucherDisplay) {
+                            selectedVoucherDisplay.style.display = 'none';
+                        }
+                        if (openModalBtn) {
+                            openModalBtn.textContent = 'Chọn Voucher';
+                        }
+                        if(discountRow) discountRow.style.display = 'none';
+                        if(finalTotalEl) finalTotalEl.textContent = baseTotal.toLocaleString('vi-VN') + 'đ';
+                        
+                        if (!isInitial && typeof triggerToast === 'function') triggerToast(data.message || 'Voucher không hợp lệ', 'error');
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        })();
         
         // Quantity update handling
         document.querySelectorAll('.checkout-qty-btn').forEach(btn => {

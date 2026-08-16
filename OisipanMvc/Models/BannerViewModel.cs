@@ -26,5 +26,5 @@ public class BannerViewModel
     public bool IsActive { get; set; } = true;
 
     [Display(Name = "Thứ tự hiển thị")]
-    public short DisplayOrder { get; set; } = 0;
+    public int DisplayOrder { get; set; } = 0;
 }

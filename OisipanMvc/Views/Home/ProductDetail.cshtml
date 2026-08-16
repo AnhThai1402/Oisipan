@@ -46,7 +46,7 @@
                 <div>
                     <i class="bi bi-box-seam"></i>
                     <span>Tồn kho</span>
-                    <strong>@Model.StockQuantity sản phẩm</strong>
+                    <strong id="product-stock-display" data-initial-stock="@Model.StockQuantity">@Model.StockQuantity sản phẩm</strong>
                 </div>
                 <div>
                     <i class="bi bi-patch-check"></i>
@@ -130,7 +130,7 @@
 </section>
 
 <script>
-    window.ProductVariantsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProductVariants.Select(v => new { v.ProductVariantId, v.VariantValues })));
+    window.ProductVariantsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProductVariants.Select(v => new { v.ProductVariantId, v.VariantValues, v.StockQuantity })));
 </script>
 
 @section Scripts {

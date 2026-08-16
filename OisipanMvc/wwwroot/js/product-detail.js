@@ -52,12 +52,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let foundVariantId = "";
+        let variantStock = null;
         if (!hasOptions && window.ProductVariantsData && window.ProductVariantsData.length) {
             const defaultVariant = window.ProductVariantsData.find(v => {
                 const values = v.VariantValues || v.variantValues || [];
                 return values.length === 0;
             }) || window.ProductVariantsData[0];
             foundVariantId = defaultVariant.ProductVariantId || defaultVariant.productVariantId || "";
+            variantStock = defaultVariant.StockQuantity !== undefined ? defaultVariant.StockQuantity : defaultVariant.stockQuantity;
         } else if (window.ProductVariantsData && selected.length > 0) {
             const selectedValueIds = selected.map(i => String(i.value).toLowerCase()).sort();
             
@@ -74,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (variant) {
                 foundVariantId = variant.ProductVariantId || variant.productVariantId;
+                variantStock = variant.StockQuantity !== undefined ? variant.StockQuantity : variant.stockQuantity;
             } else {
                 console.warn("Could not find variant for:", selectedValueIds, window.ProductVariantsData);
             }
@@ -81,6 +84,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const variantInput = document.getElementById("productVariantId");
         if (variantInput) {
             variantInput.value = foundVariantId;
+        }
+
+        const stockDisplay = document.getElementById("product-stock-display");
+        if (stockDisplay) {
+            if (variantStock !== null && variantStock !== undefined) {
+                stockDisplay.textContent = variantStock + " sản phẩm";
+            } else {
+                const initialStock = stockDisplay.dataset.initialStock;
+                if (initialStock !== undefined) {
+                    stockDisplay.textContent = initialStock + " sản phẩm";
+                }
+            }
         }
     }
 

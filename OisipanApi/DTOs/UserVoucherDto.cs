@@ -19,6 +19,9 @@ namespace Oishipan.DTOs
         [Display(Name = "Yêu cầu tối thiểu")]
         public byte MinimumItems { get; set; }
         
+        [Display(Name = "Yêu cầu giá trị")]
+        public decimal MinOrderValue { get; set; }
+        
         [Display(Name = "Hết hạn")]
         public DateTime ExpiryDate { get; set; }
         

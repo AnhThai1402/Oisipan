@@ -22,5 +22,5 @@ public class Banner : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
-    public short DisplayOrder { get; set; } = 0;
+    public int DisplayOrder { get; set; } = 0;
 }

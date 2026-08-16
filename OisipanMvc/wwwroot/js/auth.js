@@ -108,6 +108,7 @@ function initializeFormSubmission() {
             }
 
             const formData = new FormData(form);
+            let isRedirecting = false;
             try {
                 const response = await fetch(form.action, {
                     method: 'POST',
@@ -118,6 +119,7 @@ function initializeFormSubmission() {
                 });
 
                 if (response.redirected) {
+                    isRedirecting = true;
                     // Success! Follow the redirect
                     window.location.href = response.url;
                     return;
@@ -140,7 +142,7 @@ function initializeFormSubmission() {
             } catch (err) {
                 console.error('Lỗi khi gửi form:', err);
             } finally {
-                if (submitBtn) {
+                if (submitBtn && !isRedirecting) {
                     submitBtn.style.opacity = '1';
                     submitBtn.style.pointerEvents = 'auto';
                     submitBtn.textContent = originalText;

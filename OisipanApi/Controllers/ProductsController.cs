@@ -246,6 +246,16 @@ public class ProductsController : ControllerBase
         };
 
         _context.Products.Add(product);
+        
+        var defaultVariant = new ProductVariant
+        {
+            Product = product,
+            Price = 0,
+            StockQuantity = request.StockQuantity > 0 ? request.StockQuantity : (short)0,
+            Status = true
+        };
+        _context.ProductVariants.Add(defaultVariant);
+
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = product.ProductId }, ToResponse(product));
@@ -278,6 +288,25 @@ public class ProductsController : ControllerBase
         product.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         product.Status = request.Status?.ToLower() == "active";
         product.MinimumStock = request.MinimumStock;
+
+        var validOptions = await _context.ProductOptions
+            .Include(o => o.ProductValues)
+            .Where(o => o.ProductId == id && o.ProductValues.Any())
+            .ToListAsync();
+
+        if (!validOptions.Any())
+        {
+            var defaultVariant = await _context.ProductVariants
+                .Include(v => v.ProductVariantValues)
+                .FirstOrDefaultAsync(v => v.ProductId == id && !v.ProductVariantValues.Any());
+                
+            if (defaultVariant != null)
+            {
+                defaultVariant.StockQuantity = request.StockQuantity;
+                defaultVariant.Status = product.Status;
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         return NoContent();

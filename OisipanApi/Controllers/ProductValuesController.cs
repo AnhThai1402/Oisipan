@@ -131,8 +131,15 @@ public class ProductValuesController : ControllerBase
             return NotFound(new { message = "Khong tim thay gia tri tuy chon." });
         }
 
-        _context.ProductValues.Remove(value);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.ProductValues.Remove(value);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new { message = "Giá trị này đang được dùng bởi các Phân loại hàng (Biến thể). Vui lòng xóa các Phân loại hàng liên quan trước." });
+        }
 
         return NoContent();
     }

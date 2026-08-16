@@ -16,6 +16,12 @@ namespace FrontendMvc.Models
 
         public string DiscountType { get; set; } = "Fixed";
         
+        [Display(Name = "Yêu cầu số lượng")]
+        public byte MinimumItems { get; set; }
+
+        [Display(Name = "Yêu cầu giá trị")]
+        public decimal MinOrderValue { get; set; }
+        
         [Display(Name = "Hết hạn")]
         public DateTime ExpiryDate { get; set; }
         

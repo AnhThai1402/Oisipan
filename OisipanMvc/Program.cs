@@ -41,6 +41,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpClient("OisipanApi", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5188");
+    client.Timeout = TimeSpan.FromSeconds(15);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));

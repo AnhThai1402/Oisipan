@@ -112,6 +112,9 @@ public class CartController : Controller
             }
             else
             {
+                var variantName = string.Join(" - ", variant.VariantValues.Select(vv => $"{vv.OptionName}: {vv.ValueName}"));
+                var displayName = string.IsNullOrEmpty(variantName) ? product.Name : $"{product.Name} ({variantName})";
+
                 item.Quantity = (byte)Math.Min(quantity, variant.StockQuantity);
                 if (quantity > variant.StockQuantity)
                 {
@@ -121,12 +124,12 @@ public class CartController : Controller
                         return Json(new 
                         { 
                             success = true, 
-                            message = $"{product.Name} chỉ còn {variant.StockQuantity} sản phẩm.",
+                            message = $"{displayName} chỉ còn {variant.StockQuantity} sản phẩm.",
                             cartTotal = cart.Items.Sum(x => x.LineTotal),
                             items = cart.Items.Select(x => new { x.ProductVariantId, x.Quantity, lineTotal = x.LineTotal }).ToList()
                         });
                     }
-                    TempData["CartError"] = $"{product.Name} chỉ còn {variant.StockQuantity} sản phẩm.";
+                    TempData["CartError"] = $"{displayName} chỉ còn {variant.StockQuantity} sản phẩm.";
                     return RedirectBack(returnUrl);
                 }
             }
@@ -244,10 +247,23 @@ public class CartController : Controller
                     model.CustomerAddress = defaultAddress.FullAddress;
                 }
             }
+
+            // Fetch User Vouchers
+            var vouchersResponse = await Api.GetAsync($"api/orders/user/{userId}/vouchers");
+            if (vouchersResponse.IsSuccessStatusCode)
+            {
+                var userVouchers = await vouchersResponse.Content.ReadFromJsonAsync<List<UserVoucherDto>>();
+                ViewBag.UserVouchers = userVouchers ?? new List<UserVoucherDto>();
+            }
+            else
+            {
+                ViewBag.UserVouchers = new List<UserVoucherDto>();
+            }
         }
         else 
         {
             ViewBag.UserAddresses = new List<UserAddressViewModel>();
+            ViewBag.UserVouchers = new List<UserVoucherDto>();
         }
 
         return View(model);
