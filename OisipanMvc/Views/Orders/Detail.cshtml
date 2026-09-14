@@ -1,343 +1,412 @@
 @model FrontendMvc.Models.OrderAdminViewModel
 @{
-    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:0000}";
+    ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:N}";
+
+    var statuses = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Hoàn thành" };
+    var currentIndex = Array.IndexOf(statuses, Model.Status);
+    if (Model.Status == "Đã giao") currentIndex = 4;
+    if (currentIndex < 0) currentIndex = 0;
+
+    var isCancelled = Model.Status == "Đã hủy";
+    var progressPercent = isCancelled ? 0 : currentIndex * 80.0 / (statuses.Length - 1);
+    var statusClass = Model.Status == "Chờ xác nhận" ? "pending" : Model.Status == "Đã hủy" ? "cancelled" : "approved";
 }
 
-<section class="section-padding" style="max-width: 900px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div>
-            <h2 style="font-size: 1.8rem; margin: 0 0 0.5rem 0;">Chi tiết đơn hàng #OP-@Model.OrderId.ToString("0000")</h2>
-            <p style="color: var(--text-muted);">Đặt hàng vào @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</p>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-            <a asp-controller="Orders" asp-action="Index" class="btn-primary" style="padding: 0.7rem 1.5rem;">
-                <i class="bi bi-arrow-left"></i> Quay lại
+<section class="order-detail-page">
+    <div class="order-detail-shell">
+        <header class="order-detail-hero">
+            <div>
+                <span class="order-eyebrow">Đơn hàng của bạn</span>
+                <h1>Chi tiết đơn hàng</h1>
+                <div class="order-meta-line">
+                    <span class="order-code">#OP-@Model.OrderId.ToString("N")</span>
+                    <span><i class="bi bi-calendar2-check"></i> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            </div>
+            <a asp-controller="Orders" asp-action="Index" class="order-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Quay lại</span>
             </a>
-        </div>
-    </div>
+        </header>
 
-    @if (TempData["Message"] is string successMessage)
-    {
-        <div class="order-alert success" role="alert">
-            <i class="bi bi-check-circle-fill"></i> @successMessage
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] is string errorMessage)
-    {
-        <div class="order-alert error" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
-        </div>
-    }
-
-    <div class="admin-grid two-columns">
-        <article class="panel">
-            <div class="panel-head">
-                <h3><i class="bi bi-info-circle"></i> Thông tin đơn hàng</h3>
+        @if (TempData["Message"] is string successMessage)
+        {
+            <div class="order-alert success" role="alert">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>@successMessage</span>
             </div>
-            <div class="detail-group">
-                <div class="detail-row">
-                    <span class="detail-label">Trạng thái</span>
-                    <span class="status pending">@Model.Status</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Phương thức thanh toán</span>
-                    <strong>@Model.PaymentMethod</strong>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Địa chỉ giao hàng</span>
-                    <strong>@Model.ShippingAddress</strong>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Số điện thoại</span>
-                    <strong>@Model.CustomerPhone</strong>
+        }
+
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="order-alert error" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        @if (isCancelled)
+        {
+            <div class="order-tracker cancelled">
+                <div class="tracker-cancelled-state">
+                    <span class="tracker-icon"><i class="bi bi-x-lg"></i></span>
+                    <div>
+                        <strong>Đơn hàng đã bị hủy</strong>
+                        <small>Yêu cầu này không còn tiếp tục giao.</small>
+                    </div>
                 </div>
             </div>
-        </article>
+        }
+        else
+        {
+            <div class="order-tracker" style="--progress-width: @progressPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                <div class="tracker-rail"></div>
+                <div class="tracker-progress"></div>
 
-        <article class="panel">
-            <div class="panel-head">
-                <h3><i class="bi bi-calculator"></i> Tổng tiền</h3>
-            </div>
-            <div class="detail-group">
-                <div class="detail-row">
-                    <span class="detail-label">Tổng sản phẩm</span>
-                    <strong>@Model.TotalAmount.ToString("N0")đ</strong>
-                </div>
-                @if (Model.DiscountAmount > 0)
+                @for (var i = 0; i < statuses.Length; i++)
                 {
-                    <div class="detail-row" style="color: var(--accent-green);">
-                        <span class="detail-label">Giảm giá</span>
-                        <strong>-@Model.DiscountAmount.ToString("N0")đ</strong>
+                    var icons = new[] { "bi-receipt", "bi-check2-circle", "bi-box2-heart", "bi-truck", "bi-house-heart" };
+                    var stepClass = currentIndex >= i ? (currentIndex == i ? "current" : "active") : "";
+                    <div class="tracker-step @stepClass">
+                        <span class="tracker-icon"><i class="bi @icons[i]"></i></span>
+                        <span class="tracker-label">@statuses[i]</span>
                     </div>
                 }
-                <div class="detail-row" style="border-top: 1px solid var(--border-color); padding-top: 0.8rem; margin-top: 0.8rem; font-size: 1.2rem;">
-                    <span class="detail-label">Thanh toán</span>
-                    <strong style="color: var(--accent-green); font-size: 1.3rem;">@Model.FinalAmount.ToString("N0")đ</strong>
+            </div>
+        }
+
+        @if (Model.Status == "Đang giao")
+        {
+            <div class="receipt-callout">
+                <div>
+                    <h2><i class="bi bi-box2-heart"></i> Đơn hàng đang đến!</h2>
+                    <p>Vui lòng xác nhận sau khi bạn đã nhận được hàng.</p>
+                </div>
+                <form method="post" asp-controller="Orders" asp-action="ConfirmReceipt" asp-route-id="@Model.OrderId">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-primary receipt-button">
+                        <i class="bi bi-check-circle"></i>
+                        Đã nhận hàng
+                    </button>
+                </form>
+            </div>
+        }
+
+        <article class="order-card product-card-detail">
+            <div class="order-card-head">
+                <span class="card-icon"><i class="bi bi-basket-fill"></i></span>
+                <div>
+                    <h2>Chi tiết sản phẩm</h2>
+                    <p>@Model.OrderItems.Count sản phẩm trong đơn</p>
                 </div>
             </div>
-        </article>
-    </div>
-
-    <!-- Cancellation Request Section -->
-    @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy")
-    {
-        <article class="panel cancellation-panel" style="margin-top: 2rem; border-left: 5px solid #dc3545;">
-            <div class="panel-head">
-                <h3><i class="bi bi-exclamation-triangle-fill"></i> Yêu cầu hủy đơn hàng</h3>
+            <div class="order-products-wrap">
+                <table class="order-products-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Số lượng</th>
+                            <th>Giá</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <span class="product-thumb"><i class="bi bi-bag-heart"></i></span>
+                                        <div>
+                                            <strong>@item.ProductName</strong>
+                                            @if (!string.IsNullOrEmpty(item.ProductName))
+                                            {
+                                                <small>Phân loại: @item.ProductName</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@item.Quantity</td>
+                                <td>@item.UnitPrice.ToString("N0")đ</td>
+                                <td><strong>@item.Total.ToString("N0")đ</strong></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-            <div style="padding: 1.5rem; background: rgba(220, 53, 69, 0.03);">
+        </article>
+
+        <div class="order-summary-grid">
+            <article class="order-card">
+                <div class="order-card-head">
+                    <span class="card-icon"><i class="bi bi-info-circle"></i></span>
+                    <div>
+                        <h2>Thông tin đơn hàng</h2>
+                        <p>Thông tin giao nhận và thanh toán</p>
+                    </div>
+                </div>
+                <div class="detail-list">
+                    <div class="detail-row">
+                        <span>Trạng thái</span>
+                        <strong class="order-status-pill @statusClass">@Model.Status</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Phương thức thanh toán</span>
+                        <strong>@Model.PaymentMethod</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Địa chỉ giao hàng</span>
+                        <strong>@Model.ShippingAddress</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Số điện thoại</span>
+                        <strong>@Model.CustomerPhone</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="order-card total-card">
+                <div class="order-card-head">
+                    <span class="card-icon"><i class="bi bi-calculator"></i></span>
+                    <div>
+                        <h2>Tổng tiền</h2>
+                        <p>Tạm tính và thanh toán cuối</p>
+                    </div>
+                </div>
+                <div class="detail-list">
+                    <div class="detail-row">
+                        <span>Tổng sản phẩm</span>
+                        <strong>@Model.TotalAmount.ToString("N0")đ</strong>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="detail-row discount-row">
+                            <span>Giảm giá</span>
+                            <strong>-@Model.DiscountAmount.ToString("N0")đ</strong>
+                        </div>
+                    }
+                    <div class="detail-row grand-total-row">
+                        <span>Thanh toán</span>
+                        <strong>@Model.FinalAmount.ToString("N0")đ</strong>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        @if (Model.Status == "Đang giao")
+        {
+            <article class="order-card action-panel" style="border: 2px solid var(--accent-green); margin-bottom: 2rem;">
+                <div class="order-card-head">
+                    <span class="card-icon" style="background-color: var(--accent-green); color: white;"><i class="bi bi-box-seam-fill"></i></span>
+                    <div>
+                        <h2 style="color: var(--accent-green);">Xác nhận nhận hàng</h2>
+                        <p>Vui lòng xác nhận sau khi bạn đã nhận đủ hàng và hài lòng với sản phẩm.</p>
+                    </div>
+                </div>
+                <form method="post" action="/Orders/ConfirmReceipt/@Model.OrderId" onsubmit="return confirm('Bạn xác nhận đã nhận được hàng và đơn hàng còn nguyên vẹn chứ? Hành động này không thể hoàn tác.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" style="background-color: var(--accent-green); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; margin-top: 10px; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Đã nhận hàng
+                    </button>
+                </form>
+            </article>
+        }
+
+        @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy")
+        {
+            <article class="order-card cancellation-panel">
+                <div class="order-card-head">
+                    <span class="card-icon danger"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                    <div>
+                        <h2>Yêu cầu hủy đơn hàng</h2>
+                        <p>Gửi yêu cầu nếu đơn hàng cần thay đổi.</p>
+                    </div>
+                </div>
+
                 @if (Model.CancellationRequests.Any())
                 {
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="margin: 0 0 1rem 0; font-size: 1rem;">Lịch sử yêu cầu</h4>
+                    <div class="cancel-history">
+                        <h3>Lịch sử yêu cầu</h3>
                         @foreach (var req in Model.CancellationRequests.OrderByDescending(r => r.CancelledAt))
                         {
-                            var statusColor = req.Status == "Approved" ? "rgba(31, 111, 80, 0.1)" : req.Status == "Rejected" ? "rgba(220, 53, 69, 0.1)" : "rgba(255, 193, 7, 0.1)";
+                            var itemClass = req.Status == "Approved" ? "approved" : req.Status == "Rejected" ? "rejected" : "pending";
                             var statusIcon = req.Status == "Approved" ? "bi-check-circle-fill" : req.Status == "Rejected" ? "bi-x-circle-fill" : "bi-hourglass-split";
                             var statusBadge = req.Status == "Approved" ? "Đã chấp nhận" : req.Status == "Rejected" ? "Bị từ chối" : "Chờ xử lý";
-                            
-                            <div style="padding: 1rem; background: @statusColor; border-radius: 5px; margin-bottom: 1rem; border-left: 4px solid @(req.Status == "Approved" ? "#1f6f50" : req.Status == "Rejected" ? "#dc3545" : "#ffc107");">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <div style="flex: 1;">
-                                        <div style="margin-bottom: 0.5rem;">
-                                            <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 5px; font-size: 0.85rem; font-weight: 600;">
-                                                <i class="bi @statusIcon"></i> @statusBadge
-                                            </span>
-                                        </div>
-                                        <small style="display: block; margin-top: 0.3rem; color: var(--text-muted); font-size: 0.85rem;"><i class="bi bi-clock"></i> Cập nhật lúc: @req.CancelledAt.ToString("dd/MM/yyyy HH:mm")</small>
-                                        <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 5px;">
-                                            <strong style="display: block; margin-bottom: 0.3rem;">Lý do:</strong>
-                                            <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.Reason</p>
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(req.AdminNote))
-                                        {
-                                            <div style="margin-top: 0.8rem; padding: 0.8rem; background: white; border-radius: 5px; border-left: 3px solid @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">
-                                                <strong style="display: block; margin-bottom: 0.3rem; color: @(req.Status == "Approved" ? "#1f6f50" : "#dc3545");">Ghi chú từ admin:</strong>
-                                                <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">@req.AdminNote</p>
-                                            </div>
-                                        }
-                                    </div>
+                            <div class="cancel-request @itemClass">
+                                <div class="cancel-request-top">
+                                    <span><i class="bi @statusIcon"></i> @statusBadge</span>
+                                    <small>@req.CancelledAt.ToString("dd/MM/yyyy HH:mm")</small>
                                 </div>
+                                <div class="cancel-note">
+                                    <strong>Lý do</strong>
+                                    <p>@req.Reason</p>
+                                </div>
+                                @if (!string.IsNullOrEmpty(req.AdminNote))
+                                {
+                                    <div class="cancel-note admin-note">
+                                        <strong>Ghi chú từ admin</strong>
+                                        <p>@req.AdminNote</p>
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
                 }
-                
+
                 @if (!Model.CancellationRequests.Any(r => r.Status == "Pending") && (Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận" || Model.Status == "Đang giao"))
                 {
-                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
-                            <i class="bi bi-info-circle"></i> Bạn có thể yêu cầu hủy đơn hàng ở trạng thái: 
-                            <strong>Chờ xác nhận</strong>, <strong>Đã xác nhận</strong> hoặc <strong>Đang giao</strong>
-                        </p>
+                    <div class="order-info-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Bạn có thể yêu cầu hủy khi đơn ở trạng thái chờ xác nhận, đã xác nhận hoặc đang giao.</span>
                     </div>
-                    <button type="button" onclick="openCancellationModal()" class="btn-cancel" style="width: 100%; padding: 0.8rem;">
-                        <i class="bi bi-x-circle"></i> Gửi yêu cầu hủy đơn
+                    <button type="button" onclick="openCancellationModal()" class="cancel-action">
+                        <i class="bi bi-x-circle"></i>
+                        Gửi yêu cầu hủy đơn
                     </button>
                 }
                 else if (!Model.CancellationRequests.Any(r => r.Status == "Pending"))
                 {
-                    <div style="padding: 0.8rem; background: rgba(220, 53, 69, 0.1); border-radius: 5px; border-left: 4px solid #dc3545;">
-                        <i class="bi bi-lock"></i> <strong>Không thể hủy đơn hàng</strong>
-                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
-                            Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận", "Đã xác nhận" hoặc "Đang giao". Trạng thái hiện tại: <strong>@Model.Status</strong>
-                        </p>
+                    <div class="order-info-note danger">
+                        <i class="bi bi-lock"></i>
+                        <span>Không thể hủy đơn ở trạng thái hiện tại: <strong>@Model.Status</strong></span>
                     </div>
                 }
                 else
                 {
-                    <div style="padding: 0.8rem; background: rgba(255, 193, 7, 0.1); border-radius: 5px; border-left: 4px solid #ffc107;">
-                        <i class="bi bi-hourglass-split"></i> <strong>Bạn đã gửi yêu cầu hủy đơn</strong>
-                        <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
-                            Vui lòng chờ phản hồi từ admin. Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.
-                        </p>
+                    <div class="order-info-note warning">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span>Bạn đã gửi yêu cầu hủy đơn. Vui lòng chờ phản hồi từ admin.</span>
                     </div>
                 }
-            </div>
-        </article>
-    }
-
-    <!-- Payment Section -->
-    @if (Model.PaymentMethod == "Bank" && Model.Status != "Đã hủy")
-    {
-        <article class="panel" style="margin-top: 2rem; border: 2px solid var(--accent-green);">
-            <div class="panel-head">
-                <h3><i class="bi bi-bank"></i> Thanh toán chuyển khoản</h3>
-            </div>
-            <div style="padding: 1.5rem; background: rgba(31, 111, 80, 0.05);">
-                <div style="margin-bottom: 1.5rem;">
-                    <small style="color: var(--text-muted); font-weight: 500;">Chuyển khoản đến</small>
-                    <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Oishipan Bakery</p>
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <small style="color: var(--text-muted); font-weight: 500;">Số tài khoản</small>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
-                        <p style="margin: 0; font-family: monospace; font-size: 1.1rem; font-weight: 600; flex: 1;">1234567890</p>
-                        <button type="button" class="icon-btn" onclick="copyToClipboard('1234567890')" title="Sao chép">
-                            <i class="bi bi-clipboard"></i>
-                        </button>
-                    </div>
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <small style="color: var(--text-muted); font-weight: 500;">Ngân hàng</small>
-                    <p style="margin: 0.5rem 0;">Vietcombank</p>
-                </div>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <small style="color: var(--text-muted); font-weight: 500;">Nội dung chuyển khoản</small>
-                    <p style="margin: 0.5rem 0; font-family: monospace; font-weight: 600; word-break: break-all;">OP@Model.OrderId.ToString("0000")</p>
-                </div>
-                <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 5px; text-align: center;">
-                    <small style="color: var(--text-muted);">Tổng thanh toán</small>
-                    <p style="margin: 0.5rem 0; font-size: 1.3rem; font-weight: 700; color: var(--accent-green);">@Model.FinalAmount.ToString("N0")đ</p>
-                </div>
-            </div>
-        </article>
-    }
-
-    <!-- Products Section -->
-    <article class="panel" style="margin-top: 2rem;">
-        <div class="panel-head">
-            <h3><i class="bi bi-basket-fill"></i> Chi tiết sản phẩm</h3>
-        </div>
-        <div class="table-wrapper">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Sản phẩm</th>
-                        <th style="text-align: center;">Số lượng</th>
-                        <th style="text-align: right;">Giá</th>
-                        <th style="text-align: right;">Thành tiền</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.OrderItems)
-                    {
-                        <tr>
-                            <td>
-                                <strong>@item.ProductName</strong>
-                                @if (!string.IsNullOrEmpty(item.VariantName))
-                                {
-                                    <br />
-                                    <small style="color: var(--text-muted);">Phân loại: @item.VariantName</small>
-                                }
-                            </td>
-                            <td style="text-align: center;">@item.Quantity</td>
-                            <td style="text-align: right;">@item.UnitPrice.ToString("N0")đ</td>
-                            <td style="text-align: right; font-weight: 600;">@item.Total.ToString("N0")đ</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </article>
+            </article>
+        }
+    </div>
 </section>
 
-<!-- Cancellation Modal -->
 <div class="modal-overlay" id="cancellation-modal-overlay">
-    <div class="custom-modal" style="max-width: 500px;">
-        <button class="modal-close-btn" type="button" onclick="closeCancellationModal()"><i class="bi bi-x-lg"></i></button>
+    <div class="custom-modal order-cancel-modal">
+        <button class="modal-close-btn" type="button" onclick="closeCancellationModal()" aria-label="Đóng">
+            <i class="bi bi-x-lg"></i>
+        </button>
         <h3 class="modal-title">Gửi yêu cầu hủy đơn</h3>
         <form id="cancellation-form" method="post" asp-controller="Orders" asp-action="RequestCancellation" asp-route-id="@Model.OrderId">
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label for="cancellation-reason">Lý do hủy đơn</label>
                 <textarea id="cancellation-reason" name="reason" class="form-control" placeholder="Vui lòng cho biết lý do hủy đơn hàng..." rows="5" required minlength="10" maxlength="500"></textarea>
-                <small style="color: var(--text-muted);">Tối thiểu 10 ký tự, tối đa 500 ký tự</small>
+                <small>Tối thiểu 10 ký tự, tối đa 500 ký tự</small>
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" onclick="closeCancellationModal()" class="soft-action" style="flex: 1;">Hủy</button>
-                <button type="submit" class="primary-action" style="flex: 1;">Gửi yêu cầu</button>
+            <div class="modal-actions">
+                <button type="button" onclick="closeCancellationModal()" class="soft-action">Hủy</button>
+                <button type="submit" class="primary-action">Gửi yêu cầu</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-    .detail-group {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 0.8rem;
-    }
-
-    .detail-label {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-    }
-
-    .order-alert {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        padding: 0.9rem 1rem;
-        border-radius: 8px;
-        margin-bottom: 1.2rem;
-        font-weight: 600;
-    }
-
-    .order-alert.success {
-        background: rgba(31, 111, 80, 0.1);
-        color: var(--accent-green);
-        border: 1px solid rgba(31, 111, 80, 0.2);
-    }
-
-    .order-alert.error {
-        background: rgba(220, 53, 69, 0.1);
-        color: #b42318;
-        border: 1px solid rgba(220, 53, 69, 0.2);
-    }
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .modal-overlay.open {
-        display: flex;
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .custom-modal {
-        background: white;
-        border-radius: 5px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        position: relative;
-        max-width: 90%;
-    }
-
-    .modal-close-btn {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: var(--text-muted);
-    }
-
-    .modal-title {
-        margin: 0 0 1.5rem 0;
-        font-size: 1.3rem;
+    .order-detail-page { padding: 9rem 8% 6rem; background: linear-gradient(180deg, #fbfaf4 0%, var(--bg-page) 100%); }
+    .order-detail-shell { max-width: 1080px; margin: 0 auto; }
+    .order-detail-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .order-eyebrow { display: inline-flex; margin-bottom: 0.7rem; color: var(--accent-green); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .order-detail-hero h1 { max-width: 720px; margin: 0 0 0.9rem; color: var(--text-dark); font-family: var(--font-sans); font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.08; }
+    .order-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; color: var(--text-muted); font-size: 0.95rem; }
+    .order-code { display: inline-flex; max-width: min(100%, 560px); padding: 0.42rem 0.65rem; overflow-wrap: anywhere; border: 1px solid rgba(17, 60, 43, 0.12); border-radius: 5px; color: var(--accent-green); background: rgba(255, 255, 255, 0.72); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.86rem; font-weight: 800; }
+    .order-back-link { display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; min-height: 46px; padding: 0.75rem 1.1rem; border-radius: 5px; color: var(--bg-white); background: var(--accent-green); font-weight: 800; text-decoration: none; box-shadow: 0 14px 28px rgba(17, 60, 43, 0.16); transition: var(--transition-smooth); white-space: nowrap; }
+    .order-back-link:hover { color: var(--bg-white); background: var(--accent-green-hover); transform: translateY(-2px); }
+    .order-alert { display: flex; align-items: center; gap: 0.65rem; padding: 0.95rem 1rem; border-radius: 5px; margin-bottom: 1rem; font-weight: 700; }
+    .order-alert.success { background: rgba(17, 60, 43, 0.09); color: var(--accent-green); border: 1px solid rgba(17, 60, 43, 0.15); }
+    .order-alert.error { background: rgba(217, 56, 58, 0.1); color: #b42318; border: 1px solid rgba(217, 56, 58, 0.18); }
+    .order-tracker { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: 1.7rem 1.8rem 1.45rem; border: 1px solid rgba(17, 60, 43, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.84); box-shadow: 0 18px 45px rgba(17, 60, 43, 0.08); overflow: hidden; }
+    .tracker-rail, .tracker-progress { position: absolute; top: 3.05rem; left: calc(10% + 1.8rem); right: calc(10% + 1.8rem); height: 4px; border-radius: 999px; background: #dde8df; }
+    .tracker-progress { right: auto; width: var(--progress-width); background: var(--accent-green); }
+    .tracker-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.7rem; text-align: center; }
+    .tracker-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 3px solid #dde8df; border-radius: 50%; color: #718277; background: #fff; font-size: 1.25rem; }
+    .tracker-label { color: var(--text-muted); font-size: 0.88rem; font-weight: 800; line-height: 1.35; }
+    .tracker-step.active .tracker-icon { border-color: var(--accent-green); color: #fff; background: var(--accent-green); }
+    .tracker-step.current .tracker-icon { border-color: var(--accent-green); color: var(--accent-green); background: #fff; box-shadow: 0 0 0 7px rgba(17, 60, 43, 0.11); }
+    .tracker-step.active .tracker-label, .tracker-step.current .tracker-label { color: var(--accent-green); }
+    .order-tracker.cancelled { display: block; }
+    .tracker-cancelled-state { display: flex; align-items: center; justify-content: center; gap: 1rem; color: #b42318; text-align: left; }
+    .tracker-cancelled-state .tracker-icon { border-color: #b42318; color: #fff; background: #b42318; }
+    .tracker-cancelled-state strong, .tracker-cancelled-state small { display: block; }
+    .tracker-cancelled-state small { margin-top: 0.2rem; color: var(--text-muted); }
+    .receipt-callout { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; padding: 1.2rem; border: 1px dashed rgba(17, 60, 43, 0.45); border-radius: 8px; background: rgba(17, 60, 43, 0.06); }
+    .receipt-callout h2 { margin: 0 0 0.35rem; color: var(--accent-green); font-size: 1.25rem; }
+    .receipt-callout p { margin: 0; color: var(--text-muted); }
+    .receipt-button { min-height: 46px; padding: 0.8rem 1.4rem; white-space: nowrap; }
+    .order-card { border: 1px solid rgba(17, 60, 43, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 18px 42px rgba(17, 60, 43, 0.07); overflow: hidden; }
+    .order-card + .order-card { margin-top: 1.25rem; }
+    .product-card-detail { margin-top: 1.25rem; }
+    .order-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.25rem; margin-bottom: 1.25rem; align-items: stretch; }
+    .order-summary-grid > .order-card { display: flex; flex-direction: column; height: 100%; margin-top: 0; }
+    .order-card-head { display: flex; align-items: flex-start; gap: 0.85rem; padding: 1.2rem 1.25rem; border-bottom: 1px solid rgba(17, 60, 43, 0.09); }
+    .card-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 5px; color: var(--accent-green); background: rgba(17, 60, 43, 0.08); flex: 0 0 auto; }
+    .card-icon.danger { color: #b42318; background: rgba(217, 56, 58, 0.1); }
+    .order-card-head h2 { margin: 0; color: var(--text-dark); font-size: 1.12rem; line-height: 1.25; }
+    .order-card-head p { margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.86rem; }
+    .detail-list { display: grid; gap: 0.05rem; padding: 0.55rem 1.25rem 1.2rem; }
+    .order-summary-grid .detail-list { flex: 1; align-content: start; }
+    .detail-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 1rem; align-items: start; padding: 0.85rem 0; border-bottom: 1px solid rgba(17, 60, 43, 0.08); }
+    .detail-row:last-child { border-bottom: 0; }
+    .detail-row span { color: var(--text-muted); font-size: 0.9rem; }
+    .detail-row strong { color: var(--text-dark); text-align: left; overflow-wrap: anywhere; }
+    .total-card .detail-row { grid-template-columns: minmax(130px, 1fr) auto; }
+    .total-card .detail-row strong { text-align: right; white-space: nowrap; }
+    .order-status-pill { justify-self: start; display: inline-flex; align-items: center; padding: 0.42rem 0.65rem; border-radius: 5px; font-size: 0.78rem; }
+    .order-status-pill.approved { color: var(--accent-green); background: rgba(17, 60, 43, 0.09); }
+    .order-status-pill.pending { color: #9a5d00; background: rgba(236, 163, 67, 0.18); }
+    .order-status-pill.cancelled { color: #b42318; background: rgba(217, 56, 58, 0.12); }
+    .discount-row strong, .grand-total-row strong { color: var(--accent-green); }
+    .grand-total-row { margin-top: 0.35rem; padding-top: 1rem; border-top: 1px solid rgba(17, 60, 43, 0.14); border-bottom: 0; }
+    .grand-total-row strong { font-size: 1.45rem; }
+    .cancellation-panel { margin-top: 1.25rem; }
+    .cancel-history { padding: 1rem 1.25rem 0; }
+    .cancel-history h3 { margin: 0 0 0.8rem; color: var(--text-dark); font-size: 1rem; }
+    .cancel-request { padding: 1rem; border: 1px solid rgba(17, 60, 43, 0.09); border-left: 4px solid #e3a33d; border-radius: 5px; background: #fff; }
+    .cancel-request + .cancel-request { margin-top: 0.8rem; }
+    .cancel-request.approved { border-left-color: var(--accent-green); }
+    .cancel-request.rejected { border-left-color: #b42318; }
+    .cancel-request-top { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.85rem; }
+    .cancel-request-top span { font-weight: 800; }
+    .cancel-request-top small { color: var(--text-muted); white-space: nowrap; }
+    .cancel-note { padding: 0.8rem; border-radius: 5px; background: var(--bg-card); }
+    .cancel-note + .cancel-note { margin-top: 0.7rem; }
+    .cancel-note strong, .cancel-note p { display: block; margin: 0; }
+    .cancel-note p { margin-top: 0.3rem; color: var(--text-muted); }
+    .order-info-note { display: flex; align-items: flex-start; gap: 0.65rem; margin: 1rem 1.25rem; padding: 0.9rem; border-radius: 5px; color: var(--accent-green); background: rgba(17, 60, 43, 0.07); }
+    .order-info-note.danger { color: #b42318; background: rgba(217, 56, 58, 0.09); }
+    .order-info-note.warning { color: #9a5d00; background: rgba(236, 163, 67, 0.15); }
+    .cancel-action { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: calc(100% - 2.5rem); min-height: 46px; margin: 0 1.25rem 1.25rem; border: 1px solid rgba(217, 56, 58, 0.28); border-radius: 5px; color: #b42318; background: rgba(217, 56, 58, 0.09); font-weight: 800; cursor: pointer; }
+    .cancel-action:hover { color: #fff; background: #b42318; }
+    .order-products-wrap { overflow-x: auto; }
+    .order-products-table { width: 100%; min-width: 680px; border-collapse: collapse; }
+    .order-products-table th, .order-products-table td { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(17, 60, 43, 0.09); text-align: right; vertical-align: middle; }
+    .order-products-table th:first-child, .order-products-table td:first-child { text-align: left; }
+    .order-products-table th { color: var(--text-muted); background: rgba(17, 60, 43, 0.04); font-size: 0.76rem; font-weight: 900; text-transform: uppercase; }
+    .order-products-table tbody tr:last-child td { border-bottom: 0; }
+    .product-cell { display: flex; align-items: center; gap: 0.85rem; }
+    .product-thumb { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 5px; color: var(--accent-green); background: rgba(17, 60, 43, 0.08); flex: 0 0 auto; }
+    .product-cell strong, .product-cell small { display: block; }
+    .product-cell small { margin-top: 0.2rem; color: var(--text-muted); }
+    #cancellation-modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(17, 60, 43, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); opacity: 0; pointer-events: none; z-index: 1500; }
+    #cancellation-modal-overlay.open { display: flex; opacity: 1; pointer-events: auto; }
+    .order-cancel-modal { width: min(500px, 100%); border-radius: 8px; padding: 2rem; }
+    .order-cancel-modal .form-group small { color: var(--text-muted); }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 1.5rem; }
+    @@media (max-width: 860px) {
+        .order-detail-page { padding: 7.5rem 5% 4rem; }
+        .order-detail-hero, .receipt-callout { flex-direction: column; align-items: stretch; }
+        .order-back-link, .receipt-button { width: 100%; }
+        .order-tracker { grid-template-columns: 1fr; gap: 0.85rem; padding: 1.2rem; }
+        .tracker-rail, .tracker-progress { display: none; }
+        .tracker-step { flex-direction: row; text-align: left; }
+        .tracker-icon { width: 42px; height: 42px; }
+        .order-summary-grid { grid-template-columns: 1fr; }
+        .detail-row, .total-card .detail-row { grid-template-columns: 1fr; gap: 0.35rem; }
+        .detail-row strong, .total-card .detail-row strong { text-align: left; white-space: normal; }
+        .order-status-pill { justify-self: start; }
     }
 </style>
 
@@ -352,19 +421,5 @@
         const overlay = document.getElementById('cancellation-modal-overlay');
         overlay.classList.remove('open');
         document.getElementById('cancellation-form').reset();
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Đã sao chép vào clipboard');
-        }).catch(() => {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            alert('Đã sao chép vào clipboard');
-        });
     }
 </script>

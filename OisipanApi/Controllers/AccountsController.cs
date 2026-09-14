@@ -50,8 +50,11 @@ public class AccountsController : ControllerBase
             .Select(a => new UserAddressResponse
             {
                 AddressId = a.AddressId,
+                RecipientName = a.RecipientName,
+                PhoneNumber = a.PhoneNumber,
                 FullAddress = a.FullAddress,
-                IsDefault = a.IsDefault
+                IsDefault = a.IsDefault,
+                DistanceToStore = a.DistanceToStore
             })
             .ToListAsync();
 
@@ -59,7 +62,7 @@ public class AccountsController : ControllerBase
     }
 
     [HttpPost("{id}/addresses")]
-    public async Task<IActionResult> CreateAddress(Guid id, [FromBody] UserAddressCreateRequest request)
+    public async Task<IActionResult> CreateAddress(Guid id, [FromBody] UserAddressCreateRequest request, [FromServices] Oishipan.Services.IShippingService shippingService)
     {
         var accountExists = await _context.Accounts.AnyAsync(a => a.UserId == id);
         if (!accountExists) return NotFound("Không tìm thấy tài khoản.");
@@ -76,11 +79,21 @@ public class AccountsController : ControllerBase
             }
         }
 
+        // Calculate distance
+        var distance = await shippingService.CalculateDistanceAsync(request.FullAddress.Trim());
+        if (distance > 10)
+        {
+            return BadRequest(new { message = $"Địa chỉ này cách cửa hàng {distance:0.0}km. Chúng tôi chỉ giao hàng trong vòng 10km." });
+        }
+
         var newAddress = new UserAddress
         {
             UserId = id,
+            RecipientName = request.RecipientName.Trim(),
+            PhoneNumber = request.PhoneNumber.Trim(),
             FullAddress = request.FullAddress.Trim(),
-            IsDefault = request.IsDefault || isFirst
+            IsDefault = request.IsDefault || isFirst,
+            DistanceToStore = distance < 0 ? 0 : distance
         };
 
         _context.UserAddresses.Add(newAddress);

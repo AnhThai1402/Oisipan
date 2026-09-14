@@ -11,6 +11,28 @@
     </div>
 
     <div class="vouchers-container" style="max-width: 1100px; margin: 0 auto; padding: 0 1rem;">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+                <i class="bi bi-check-circle-fill" style="margin-right: 8px;"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" style="padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                <i class="bi bi-exclamation-triangle-fill" style="margin-right: 8px;"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="manual-save-voucher" style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px;">
+            <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;"><i class="bi bi-search"></i> Tìm & Lưu Mã Giảm Giá</h4>
+            <form asp-controller="Vouchers" asp-action="SaveVoucher" method="post" style="display: flex; gap: 10px;">
+                <input type="text" name="code" placeholder="Nhập mã giảm giá..." required style="flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 1rem; text-transform: uppercase;" />
+                <button type="submit" class="btn-primary" style="padding: 10px 25px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
+                    Lưu mã
+                </button>
+            </form>
+        </div>
         @if (!Model.Any())
         {
             <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">

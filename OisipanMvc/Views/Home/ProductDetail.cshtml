@@ -1,9 +1,6 @@
 @model ProductCatalogViewModel
 @{
     ViewData["Title"] = Model.Name;
-    var selectableOptions = Model.ProductOptions
-        .Where(option => option.ProductValues.Any())
-        .ToList();
 }
 
 <section class="product-detail-page" data-product-detail data-base-price="@Model.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">
@@ -33,18 +30,12 @@
 
             <h1>@Model.Name</h1>
             <div class="product-detail-price" data-product-total-price>@Model.Price.ToString("N0")đ</div>
-            <small class="product-detail-price-note">Giá sẽ thay đổi theo size và nhân bánh đã chọn.</small>
-            <p class="product-detail-description">
-                @(string.IsNullOrWhiteSpace(Model.Description)
-                    ? "Bánh tươi được làm mới mỗi ngày từ những nguyên liệu tuyển chọn tại Oishipan."
-                    : Model.Description)
-            </p>
 
             <div class="product-detail-meta">
                 <div>
                     <i class="bi bi-box-seam"></i>
                     <span>Tồn kho</span>
-                    <strong>@Model.StockQuantity sản phẩm</strong>
+                    <strong id="product-stock-display" data-initial-stock="@Model.StockQuantity">@Model.StockQuantity sản phẩm</strong>
                 </div>
                 <div>
                     <i class="bi bi-patch-check"></i>
@@ -53,67 +44,20 @@
                 </div>
             </div>
 
-            @if (selectableOptions.Any())
-            {
-                <div class="product-detail-options">
-                    <h2>Lựa chọn cho bánh</h2>
-                    @foreach (var option in selectableOptions)
-                    {
-                        <fieldset class="product-option-selector" data-option-group>
-                            <legend>Chọn @option.OptionName.ToLowerInvariant()</legend>
-                            <div class="product-option-buttons">
-                                @for (var index = 0; index < option.ProductValues.Count; index++)
-                                {
-                                    var value = option.ProductValues[index];
-                                    var inputId = $"option-{option.ProductOptionId}-{value.ProductValueId}";
-                                    <label class="product-option-button" for="@inputId">
-                                        <input type="radio"
-                                               id="@inputId"
-                                               name="option-@option.ProductOptionId"
-                                               value="@value.ProductValueId"
-                                               autocomplete="off"
-                                               data-option-name="@option.OptionName"
-                                               data-value-name="@value.ValueName"
-                                               data-additional-price="@value.AdditionalPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                                        <span>
-                                            <strong>@value.ValueName</strong>
-                                            <small>
-                                                @(value.AdditionalPrice > 0
-                                                    ? $"+{value.AdditionalPrice:N0}đ"
-                                                    : "Không cộng giá")
-                                            </small>
-                                        </span>
-                                    </label>
-                                }
-                            </div>
-                        </fieldset>
-                    }
-
-                    <div class="product-selection-summary">
-                        <div>
-                            <span>Lựa chọn của bạn</span>
-                            <strong data-selection-text>Chưa chọn đầy đủ</strong>
-                        </div>
-                        <div>
-                            <span>Tổng giá</span>
-                            <strong data-selection-total>@Model.Price.ToString("N0")đ</strong>
-                        </div>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="product-options-empty">
-                    <i class="bi bi-info-circle"></i>
-                    <span>Sản phẩm này chưa thiết lập size và nhân bánh.</span>
-                </div>
-            }
-
             <form method="post" asp-controller="Cart" asp-action="Add" id="productForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="productId" value="@Model.ProductId" />
-                <input type="hidden" id="productVariantId" name="productVariantId" value="" />
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                
+                <div class="product-quantity-selector" style="margin: 1rem 0 1.5rem; display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-weight: 600; color: var(--text-color);">Số lượng:</span>
+                    <div style="display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 5px; overflow: hidden; background: var(--bg-white); width: 120px;">
+                        <button type="button" class="quantity-btn minus" onclick="var q=document.getElementById('quantity'); if(q.value>1)q.value--;" style="flex: 1; padding: 0.5rem 0; border: none; background: none; cursor: pointer; font-size: 1.25rem; color: var(--text-color); display: flex; align-items: center; justify-content: center;">-</button>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1" max="@Model.StockQuantity" style="width: 50px; text-align: center; border: none; outline: none; font-size: 1rem; padding: 0.5rem 0; -moz-appearance: textfield; font-weight: 600;" />
+                        <button type="button" class="quantity-btn plus" onclick="var q=document.getElementById('quantity'); if(parseInt(q.value)<parseInt(q.max))q.value++;" style="flex: 1; padding: 0.5rem 0; border: none; background: none; cursor: pointer; font-size: 1.25rem; color: var(--text-color); display: flex; align-items: center; justify-content: center;">+</button>
+                    </div>
+                </div>
+
                 <div class="product-main-actions">
                     <button type="submit" class="btn-main-add-cart">
                         <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
@@ -125,12 +69,13 @@
             </form>
         </div>
     </div>
+
+    <div class="product-detail-bottom-section" style="max-width: 1200px; margin: 4rem auto 0 auto; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+        <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem; color: var(--accent-green); font-family: var(--font-sans);">Mô tả sản phẩm</h3>
+        <p class="product-detail-description" style="margin-top: 0; color: var(--text-muted); font-size: 1rem; line-height: 1.8;">
+            @(string.IsNullOrWhiteSpace(Model.Description)
+                ? "Bánh tươi được làm mới mỗi ngày từ những nguyên liệu tuyển chọn tại Oishipan."
+                : Model.Description)
+        </p>
+    </div>
 </section>
-
-<script>
-    window.ProductVariantsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProductVariants.Select(v => new { v.ProductVariantId, v.VariantValues })));
-</script>
-
-@section Scripts {
-    <script src="~/js/product-detail.js" asp-append-version="true"></script>
-}

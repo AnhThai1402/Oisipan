@@ -12,9 +12,9 @@ namespace Oishipan.Models
         [ForeignKey("OrderId")]
         public virtual Order? Order { get; set; }
 
-        public Guid ProductVariantId { get; set; }
-        [ForeignKey("ProductVariantId")]
-        public virtual ProductVariant? ProductVariant { get; set; }
+        public Guid ProductId { get; set; }
+        [ForeignKey("ProductId")]
+        public virtual Product? Product { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
@@ -25,9 +25,7 @@ namespace Oishipan.Models
         [Column(TypeName = "nvarchar(255)")]
         public string? ProductName { get; set; }
 
-        [StringLength(255)]
-        [Column(TypeName = "nvarchar(255)")]
-        public string? VariantName { get; set; }
+
 
         [StringLength(500)]
         [Column(TypeName = "nvarchar(500)")]

@@ -1,0 +1,111 @@
+@{
+    ViewData["Title"] = "Thanh toán thành công";
+    var orderId = ViewBag.OrderId is Guid value ? value : Guid.Empty;
+    var detailUrl = ViewBag.DetailUrl as string ?? Url.Action("Index", "Orders") ?? "/Orders";
+}
+
+<section class="vnpay-success-page">
+    <div class="vnpay-success-card">
+        <div class="success-mark">
+            <i class="bi bi-check2"></i>
+        </div>
+        <span class="success-eyebrow">VNPay Sandbox</span>
+        <h1>Thanh toán thành công</h1>
+        <p>Đơn hàng <strong>#OP-@orderId.ToString("N")</strong> đã được ghi nhận và xác nhận thanh toán.</p>
+
+        <div class="success-actions">
+            <a class="primary-action" href="@detailUrl">Xem chi tiết đơn hàng</a>
+            <span>Tự chuyển sau <strong id="success-countdown">3</strong>s</span>
+        </div>
+    </div>
+</section>
+
+<style>
+    .vnpay-success-page {
+        min-height: 70vh;
+        display: grid;
+        place-items: center;
+        padding: 8rem 1rem 5rem;
+        background: linear-gradient(180deg, #fbfaf4 0%, var(--bg-page) 100%);
+    }
+
+    .vnpay-success-card {
+        width: min(560px, 100%);
+        padding: 2.5rem;
+        border: 1px solid rgba(17, 60, 43, 0.12);
+        border-radius: 8px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 20px 48px rgba(17, 60, 43, 0.1);
+    }
+
+    .success-mark {
+        width: 72px;
+        height: 72px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--accent-green);
+        font-size: 2.2rem;
+    }
+
+    .success-eyebrow {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--accent-green);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .vnpay-success-card h1 {
+        margin: 0 0 0.8rem;
+        color: var(--text-dark);
+        font-size: clamp(2rem, 4vw, 2.8rem);
+    }
+
+    .vnpay-success-card p {
+        margin: 0;
+        color: var(--text-muted);
+        line-height: 1.7;
+    }
+
+    .success-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.8rem;
+    }
+
+    .success-actions .primary-action {
+        text-decoration: none;
+    }
+
+    .success-actions span {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+</style>
+
+<script>
+    (() => {
+        let remaining = 3;
+        const countdown = document.getElementById('success-countdown');
+        const detailUrl = '@detailUrl';
+
+        const timer = setInterval(() => {
+            remaining -= 1;
+            if (countdown) countdown.textContent = remaining.toString();
+            if (remaining <= 0) {
+                clearInterval(timer);
+                window.location.href = detailUrl;
+            }
+        }, 1000);
+    })();
+</script>

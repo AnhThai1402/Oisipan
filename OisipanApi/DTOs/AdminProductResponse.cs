@@ -18,22 +18,4 @@ public class AdminProductResponse
     public string Status { get; set; } = "active";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
-    public List<AdminProductOptionResponse> ProductOptions { get; set; } = new();
-}
-
-public class AdminProductOptionResponse
-{
-    public Guid ProductOptionId { get; set; }
-    public Guid ProductId { get; set; }
-    public string? ProductName { get; set; }
-    public string OptionName { get; set; } = string.Empty;
-    public List<AdminProductValueResponse> ProductValues { get; set; } = new();
-}
-
-public class AdminProductValueResponse
-{
-    public Guid ProductValueId { get; set; }
-    public Guid ProductOptionId { get; set; }
-    public string ValueName { get; set; } = string.Empty;
-    public decimal AdditionalPrice { get; set; }
 }

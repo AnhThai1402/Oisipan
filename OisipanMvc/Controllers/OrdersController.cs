@@ -130,7 +130,7 @@ public class OrdersController : Controller
         }
 
         // Send cancellation request to API
-        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { reason = trimmedReason });
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/cancellation-request", new { Reason = trimmedReason });
 
         if (!response.IsSuccessStatusCode)
         {
@@ -140,6 +140,30 @@ public class OrdersController : Controller
         }
 
         TempData["Message"] = "Yêu cầu hủy đơn hàng đã được gửi. Vui lòng chờ phản hồi từ admin.";
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmReceipt(Guid id)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Challenge();
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/confirm-receipt", new { });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["ErrorMessage"] = ExtractMessage(errorContent) ?? "Không thể xác nhận nhận hàng lúc này.";
+        }
+        else
+        {
+            TempData["Message"] = "Cảm ơn bạn đã xác nhận nhận hàng!";
+        }
+
         return RedirectToAction(nameof(Detail), new { id });
     }
 
@@ -184,10 +208,8 @@ public class OrdersController : Controller
             OrderItems = apiOrder.Items.Select(item => new OrderItemAdminViewModel
             {
                 OrderDetailId = item.OrderDetailId,
-                ProductVariantId = item.ProductVariantId,
                 ProductId = item.ProductId,
                 ProductName = item.ProductName ?? "—",
-                VariantName = item.VariantName,
                 UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 OrderItemId = item.OrderDetailId

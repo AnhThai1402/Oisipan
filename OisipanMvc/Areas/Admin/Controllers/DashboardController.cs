@@ -59,7 +59,7 @@ public class DailyRevenueDto
 public class OrderTodayDto
 {
     public Guid OrderId { get; set; }
-    public string OrderCode => $"OP-{OrderId:0000}";
+    public string OrderCode => $"OP-{OrderId.ToString("N")}";
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }

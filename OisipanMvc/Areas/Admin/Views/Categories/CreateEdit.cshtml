@@ -21,59 +21,111 @@
     </a>
 </section>
 
-<form method="post" enctype="multipart/form-data" class="category-form">
-    <article class="panel news-form-panel category-form-panel">
-        <div class="form-group">
-            <label for="categoryName">Tên danh mục <span class="required">*</span></label>
-            <input type="text" id="categoryName" name="CategoryName" class="form-input form-lg" 
-                   value="@Model?.CategoryName" placeholder="Ví dụ: Bánh ngọt Nhật" required />
-            <small class="form-hint">Tên danh mục hiển thị trên website</small>
-        </div>
+<form method="post" enctype="multipart/form-data" class="product-form-container">
+    <input asp-for="CategoryId" type="hidden" />
+    <input asp-for="Image" type="hidden" />
 
-        <div class="form-group">
-            <label asp-for="ImageFile">Hình ảnh danh mục</label>
-            <input asp-for="ImageFile"
-                   class="form-input news-file-input"
-                   type="file"
-                   accept="image/jpeg,image/png,image/webp,image/gif" />
-            <input asp-for="Image" type="hidden" />
-            <small class="form-hint">Hỗ trợ JPG, PNG, WEBP hoặc GIF; dung lượng tối đa 4MB.</small>
-            <span asp-validation-for="ImageFile" class="field-validation-error"></span>
-            @if (!string.IsNullOrWhiteSpace(Model?.Image))
-            {
-                <img src="@Model.Image" alt="@Model.CategoryName" class="category-admin-preview" />
-            }
-        </div>
-
-        @if (Model?.ProductCount > 0)
-        {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle-fill"></i>
-                <span>Danh mục này có <strong>@Model.ProductCount sản phẩm</strong></span>
+    <div class="admin-grid two-columns">
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Thông tin cơ bản</h2>
             </div>
-        }
 
-        <div class="form-actions">
-            <a asp-area="Admin" asp-controller="Categories" asp-action="Index" class="soft-action">
-                <i class="bi bi-x-circle"></i> Hủy
-            </a>
-            <button type="submit" class="primary-action">
-                <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
-                @(isEdit ? "Cập nhật danh mục" : "Tạo danh mục")
-            </button>
-        </div>
-    </article>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="form-group">
+                <label for="categoryName">Tên danh mục <span class="required">*</span></label>
+                <input type="text"
+                       id="categoryName"
+                       name="CategoryName"
+                       class="form-input"
+                       value="@Model?.CategoryName"
+                       placeholder="Ví dụ: Bánh ngọt Nhật"
+                       required />
+                <small class="form-hint">Tên danh mục hiển thị trên website.</small>
+                <span asp-validation-for="CategoryName" class="field-validation-error"></span>
+            </div>
+
+            @if (Model?.ProductCount > 0)
+            {
+                <div class="metric-card glow-green admin-form-metric">
+                    <span>Sản phẩm đang dùng danh mục này</span>
+                    <strong>@Model.ProductCount</strong>
+                    <small>Không nên xóa nếu danh mục vẫn còn sản phẩm.</small>
+                </div>
+            }
+        </article>
+
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Hình ảnh</h2>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ImageFile">Hình ảnh danh mục</label>
+                <div class="file-upload-area">
+                    <input asp-for="ImageFile"
+                           id="categoryImage"
+                           type="file"
+                           accept="image/jpeg,image/png,image/webp,image/gif" />
+                    <label for="categoryImage" class="file-upload-label">
+                        <div class="upload-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <div class="upload-text">
+                            <strong>Chọn hình ảnh hoặc kéo thả</strong>
+                            <small>Hỗ trợ JPG, PNG, WEBP hoặc GIF, tối đa 4MB</small>
+                        </div>
+                    </label>
+                    @if (!string.IsNullOrWhiteSpace(Model?.Image))
+                    {
+                        <div class="image-preview">
+                            <img src="@Model.Image" alt="@Model.CategoryName" />
+                            <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="ImageFile" class="field-validation-error"></span>
+            </div>
+        </article>
+    </div>
+
+    <div class="form-actions">
+        <a asp-area="Admin" asp-controller="Categories" asp-action="Index" class="soft-action">
+            <i class="bi bi-x-circle"></i> Hủy
+        </a>
+        <button type="submit" class="primary-action">
+            <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle")"></i>
+            @(isEdit ? "Cập nhật danh mục" : "Tạo danh mục")
+        </button>
+    </div>
 </form>
 
 @section Scripts {
     <script>
-        // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const categoryName = document.getElementById('categoryName').value.trim();
-            if (!categoryName) {
-                e.preventDefault();
-                alert('Vui lòng nhập tên danh mục');
-            }
+        document.getElementById('categoryImage')?.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (readerEvent) {
+                const uploadArea = document.querySelector('.file-upload-area');
+                uploadArea.querySelector('.image-preview')?.remove();
+
+                const preview = document.createElement('div');
+                preview.className = 'image-preview';
+                preview.innerHTML = `
+                    <img src="${readerEvent.target.result}" alt="Preview" />
+                    <button type="button" class="remove-image" title="Xóa"><i class="bi bi-x-circle-fill"></i></button>
+                `;
+                uploadArea.appendChild(preview);
+
+                preview.querySelector('.remove-image').addEventListener('click', function () {
+                    document.getElementById('categoryImage').value = '';
+                    preview.remove();
+                });
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 }

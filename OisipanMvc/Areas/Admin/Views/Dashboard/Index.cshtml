@@ -1,3 +1,5 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
 @model FrontendMvc.Areas.Admin.Controllers.DashboardStatsDto
 @{
     ViewData["Title"] = "Bảng điều khiển";
@@ -12,7 +14,7 @@
 <script>
     window.dashboardStats = @Html.Raw(dashboardJson);
     // API base URL used by client-side JS (matches OisipanApi default)
-    window.apiBaseUrl = '@(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188"))';
+    window.apiBaseUrl = '@(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Configuration["ApiBaseUrl"] ?? "http://localhost:5188"))';
 </script>
 
 <section class="admin-hero">

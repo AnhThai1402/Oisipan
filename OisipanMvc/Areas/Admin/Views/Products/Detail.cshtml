@@ -13,7 +13,7 @@
     <div>
         <span class="eyebrow">Chi tiết sản phẩm</span>
         <h1>@Model?.ProductName</h1>
-        <p>Mã sản phẩm: <strong>#@Model?.ProductId.ToString("0000")</strong></p>
+        <p>Mã sản phẩm: <strong>#@Model?.ProductId.ToString("N")</strong></p>
     </div>
     <div class="button-group">
         <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model?.ProductId" class="primary-action">
