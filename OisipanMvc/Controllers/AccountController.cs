@@ -57,6 +57,7 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Login()
     {
+        SetGoogleClientId();
         return View(new LoginViewModel());
     }
 
@@ -64,6 +65,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
+        SetGoogleClientId();
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -330,6 +333,11 @@ public class AccountController : Controller
     }
 
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
+
+    private void SetGoogleClientId()
+    {
+        ViewBag.GoogleClientId = _configuration["GoogleAuth:ClientId"];
+    }
 
     private async Task SignIn(AuthResponse account, bool rememberMe)
     {
