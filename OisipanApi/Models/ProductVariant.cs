@@ -23,4 +23,8 @@ public class ProductVariant : BaseEntity
     [StringLength(50)]
     [Column(TypeName = "varchar(50)")]
     public string? Sku { get; set; }
+
+    [StringLength(900)]
+    [Column(TypeName = "varchar(900)")]
+    public string? CombinationKey { get; set; }
 }

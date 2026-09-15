@@ -12,7 +12,8 @@
         selectedVariantIds: new Set(),
         variantSearch: "",
         variantStatusFilter: "all",
-        pendingRequests: 0
+        pendingRequests: 0,
+        isGenerating: false
     };
 
     const flashEl = document.getElementById("variant-flash");
@@ -102,7 +103,11 @@
             }
 
             if (!response.ok) {
-                throw new Error(readErrorMessage(data) || "Có lỗi xảy ra.");
+                const fallbackMessage = response.status >= 500
+                    ? "Không thể xử lý yêu cầu lúc này. Vui lòng thử lại sau."
+                    : "Không thể thực hiện thao tác. Vui lòng kiểm tra dữ liệu.";
+                const errorMessage = readErrorMessage(data) || (text && text.length < 200 ? text : null);
+                throw new Error(resolveErrorMessage(errorMessage, fallbackMessage));
             }
 
             return data;
@@ -112,6 +117,7 @@
     function readErrorMessage(data) {
         if (!data) return null;
         if (data.message) return data.message;
+        if (data.detail) return data.detail;
         if (data.errors) {
             const messages = [];
             Object.keys(data.errors).forEach((key) => {
@@ -120,9 +126,30 @@
                     arr.forEach((item) => messages.push(item));
                 }
             });
-            return messages.join(" ");
+            if (messages.length) {
+                return messages.join(" ");
+            }
         }
+        if (data.title) return data.title;
         return null;
+    }
+
+    function resolveErrorMessage(message, fallbackMessage) {
+        if (!message) {
+            return fallbackMessage;
+        }
+
+        const normalized = message.trim().toLowerCase();
+        if (
+            normalized === "an error occurred." ||
+            normalized === "an error occurred" ||
+            normalized === "an error has occurred." ||
+            normalized.includes("an error occurred while processing your request")
+        ) {
+            return fallbackMessage;
+        }
+
+        return message;
     }
 
     function getSelectedOption() {
@@ -372,7 +399,10 @@
                 showFlash("Xóa tùy chọn thành công.", "success");
                 await loadData();
             } catch (error) {
-                showFlash(error.message, "error");
+                showFlash(resolveErrorMessage(
+                    error?.message,
+                    "Không thể xóa tùy chọn này vì đang được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+                ), "error");
             }
         }
     });
@@ -548,7 +578,12 @@
     });
 
     generateBtn.addEventListener("click", async () => {
+        if (state.isGenerating) {
+            return;
+        }
+
         clearFlash();
+        state.isGenerating = true;
         try {
             const data = await apiRequest(`/Admin/Products/${productId}/Variants/Generate`, "POST");
             state.variants = data?.variants || [];
@@ -559,6 +594,8 @@
             showFlash("Đã generate variants thành công.", "success");
         } catch (error) {
             showFlash(error.message, "error");
+        } finally {
+            state.isGenerating = false;
         }
     });
 

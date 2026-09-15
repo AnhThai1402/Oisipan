@@ -70,7 +70,8 @@ public class ProductVariantsController : ControllerBase
             Price = request.Price,
             StockQuantity = request.StockQuantity,
             Status = request.IsActive,
-            Sku = request.Sku
+            Sku = request.Sku,
+            CombinationKey = BuildCombinationKey(request.ProductValueIds)
         };
 
         if (request.ProductValueIds != null)
@@ -82,7 +83,19 @@ public class ProductVariantsController : ControllerBase
         }
 
         _context.ProductVariants.Add(variant);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            return Conflict(new
+            {
+                message = "Tổ hợp giá trị biến thể này đã tồn tại trong sản phẩm."
+            });
+        }
+
         await UpdateProductQuantity(request.ProductId);
         
         var savedVariant = await _context.ProductVariants
@@ -119,6 +132,7 @@ public class ProductVariantsController : ControllerBase
         variant.StockQuantity = request.StockQuantity;
         variant.Status = request.IsActive;
         variant.Sku = request.Sku;
+        variant.CombinationKey = BuildCombinationKey(request.ProductValueIds);
 
         // Update ProductVariantValues
         _context.ProductVariantValues.RemoveRange(variant.ProductVariantValues);
@@ -131,7 +145,17 @@ public class ProductVariantsController : ControllerBase
             }
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            return Conflict(new
+            {
+                message = "Tổ hợp giá trị biến thể này đã tồn tại trong sản phẩm."
+            });
+        }
 
         await UpdateProductQuantity(previousProductId);
         if (previousProductId != request.ProductId)
@@ -197,6 +221,25 @@ public class ProductVariantsController : ControllerBase
             .Where(variant => variant.ProductId == productId)
             .SumAsync(variant => int.Parse(variant.StockQuantity.ToString()));
         await _context.SaveChangesAsync();
+    }
+
+    private static string BuildCombinationKey(IEnumerable<Guid>? productValueIds)
+    {
+        if (productValueIds == null)
+        {
+            return string.Empty;
+        }
+
+        return string.Join("|", productValueIds
+            .Distinct()
+            .OrderBy(id => id)
+            .Select(id => id.ToString("N")));
+    }
+
+    private static bool IsCombinationKeyConflict(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("IX_ProductVariants_ProductId_CombinationKey", StringComparison.OrdinalIgnoreCase);
     }
 
     private static ProductVariantResponse ToResponse(ProductVariant variant)

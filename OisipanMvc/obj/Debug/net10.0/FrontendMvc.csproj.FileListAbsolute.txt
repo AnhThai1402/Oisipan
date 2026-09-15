@@ -613,4 +613,12 @@ F:\DATN\artifacts\ux-polish-build\FrontendMvc.deps.json
 F:\DATN\artifacts\ux-polish-build\FrontendMvc.runtimeconfig.json
 F:\DATN\artifacts\ux-polish-build\FrontendMvc.dll
 F:\DATN\artifacts\ux-polish-build\FrontendMvc.pdb
-F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\9mxattypk0-{0}-pv9rx8g50f-pv9rx8g50f.gz
+F:\DATN\artifacts\variant-notification-build-mvc\appsettings.Development.json
+F:\DATN\artifacts\variant-notification-build-mvc\appsettings.json
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.staticwebassets.runtime.json
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.staticwebassets.endpoints.json
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.deps.json
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.runtimeconfig.json
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.dll
+F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.pdb
+F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\9mxattypk0-{0}-k2t3eu4lnd-k2t3eu4lnd.gz

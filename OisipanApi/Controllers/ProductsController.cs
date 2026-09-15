@@ -87,7 +87,14 @@ public class ProductsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy sản phẩm." });
         }
 
-        await EnsureVariantsExistAsync(product);
+        try
+        {
+            await EnsureVariantsExistAsync(product);
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            _context.ChangeTracker.Clear();
+        }
 
         var refreshedProduct = await _context.Products
             .Include(p => p.Category)
@@ -140,7 +147,14 @@ public class ProductsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy sản phẩm." });
         }
 
-        await EnsureVariantsExistAsync(product);
+        try
+        {
+            await EnsureVariantsExistAsync(product);
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            _context.ChangeTracker.Clear();
+        }
 
         var refreshedProduct = await _context.Products
             .Include(p => p.ProductOptions)
@@ -307,37 +321,59 @@ public class ProductsController : ControllerBase
 
         Generate(0, new List<ProductValue>());
 
+        var existingKeys = new HashSet<string>(
+            product.ProductVariants.Select(variant =>
+                !string.IsNullOrWhiteSpace(variant.CombinationKey)
+                    ? variant.CombinationKey!
+                    : BuildCombinationKey(variant.ProductVariantValues.Select(item => item.ProductValueId))),
+            StringComparer.Ordinal);
+
         bool added = false;
         foreach (var combo in combinations)
         {
-            var comboIds = combo.Select(c => c.ProductValueId).OrderBy(id => id).ToList();
-
-            bool exists = product.ProductVariants.Any(pv => 
-                pv.ProductVariantValues != null &&
-                pv.ProductVariantValues.Count == comboIds.Count &&
-                pv.ProductVariantValues.Select(pvv => pvv.ProductValueId).OrderBy(id => id).SequenceEqual(comboIds)
-            );
-
-            if (!exists)
+            var combinationKey = BuildCombinationKey(combo.Select(c => c.ProductValueId));
+            if (existingKeys.Contains(combinationKey))
             {
-                var variant = new ProductVariant
-                {
-                    ProductId = product.ProductId,
-                    Price = combo.Sum(c => c.AdditionalPrice),
-                    StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
-                    Status = true,
-                    ProductVariantValues = combo.Select(c => new ProductVariantValue { ProductValueId = c.ProductValueId }).ToList()
-                };
-                _context.ProductVariants.Add(variant);
-                product.ProductVariants.Add(variant);
-                added = true;
+                continue;
             }
+
+            var variant = new ProductVariant
+            {
+                ProductId = product.ProductId,
+                Price = combo.Sum(c => c.AdditionalPrice),
+                StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
+                Status = true,
+                CombinationKey = combinationKey,
+                ProductVariantValues = combo.Select(c => new ProductVariantValue { ProductValueId = c.ProductValueId }).ToList()
+            };
+            _context.ProductVariants.Add(variant);
+            existingKeys.Add(combinationKey);
+            added = true;
         }
 
         if (added)
         {
             await _context.SaveChangesAsync();
         }
+    }
+
+    private static string BuildCombinationKey(IEnumerable<Guid>? productValueIds)
+    {
+        if (productValueIds == null)
+        {
+            return string.Empty;
+        }
+
+        return string.Join("|", productValueIds
+            .Distinct()
+            .OrderBy(id => id)
+            .Select(id => id.ToString("N")));
+    }
+
+    private static bool IsCombinationKeyConflict(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("IX_ProductVariants_ProductId_CombinationKey", StringComparison.OrdinalIgnoreCase);
     }
 
     [HttpGet("admin/products")]

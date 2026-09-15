@@ -65,6 +65,11 @@ namespace Oishipan.Models
                 .IsUnique()
                 .HasFilter("[Sku] IS NOT NULL");
 
+            modelBuilder.Entity<ProductVariant>()
+                .HasIndex(variant => new { variant.ProductId, variant.CombinationKey })
+                .IsUnique()
+                .HasFilter("[CombinationKey] IS NOT NULL");
+
             // UserVoucher relationships
             modelBuilder.Entity<UserVoucher>()
                 .HasOne(uv => uv.Account)

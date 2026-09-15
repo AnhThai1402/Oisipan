@@ -142,8 +142,34 @@ public class ProductOptionsController : ControllerBase
             return NotFound(new { message = "Khong tim thay tuy chon san pham." });
         }
 
+        var productValueIds = option.ProductValues.Select(pv => pv.ProductValueId).ToList();
+        if (productValueIds.Count > 0)
+        {
+            var isInUse = await _context.ProductVariantValues
+                .AnyAsync(pvv => productValueIds.Contains(pvv.ProductValueId));
+
+            if (isInUse)
+            {
+                return BadRequest(new
+                {
+                    message = "Không thể xóa tùy chọn này vì đã được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+                });
+            }
+        }
+
         _context.ProductOptions.Remove(option);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa tùy chọn vì dữ liệu đang được sử dụng ở nơi khác. Vui lòng kiểm tra các biến thể liên quan."
+            });
+        }
 
         return NoContent();
     }

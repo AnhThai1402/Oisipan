@@ -131,8 +131,28 @@ public class ProductValuesController : ControllerBase
             return NotFound(new { message = "Khong tim thay gia tri tuy chon." });
         }
 
+        var isInUse = await _context.ProductVariantValues.AnyAsync(pvv => pvv.ProductValueId == id);
+        if (isInUse)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa giá trị này vì đã được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+            });
+        }
+
         _context.ProductValues.Remove(value);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa giá trị vì dữ liệu đang được sử dụng ở nơi khác. Vui lòng kiểm tra các biến thể liên quan."
+            });
+        }
 
         return NoContent();
     }
