@@ -480,6 +480,3 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-LoginNumPhone/firebase-adminsdk.json
-
-OisipanApi/firebase-adminsdk.local.json

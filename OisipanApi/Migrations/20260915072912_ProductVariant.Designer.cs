@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oishipan.Models;
 
@@ -11,9 +12,11 @@ using Oishipan.Models;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(OishipanContext))]
-    partial class OishipanContextModelSnapshot : ModelSnapshot
+    [Migration("20260915072912_ProductVariant")]
+    partial class ProductVariant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,11 +33,6 @@ namespace BackendApi.Migrations
 
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AuthProvider")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
@@ -53,16 +51,14 @@ namespace BackendApi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("GoogleId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Password")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasColumnType("varchar(max)");
 
                     b.Property<string>("PhoneNumber")
+                        .IsRequired()
                         .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
+                        .HasColumnType("varchar(15)");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -80,13 +76,8 @@ namespace BackendApi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("GoogleId")
-                        .IsUnique()
-                        .HasFilter("[GoogleId] IS NOT NULL");
-
                     b.HasIndex("PhoneNumber")
-                        .IsUnique()
-                        .HasFilter("[PhoneNumber] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Accounts");
                 });
@@ -238,14 +229,8 @@ namespace BackendApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal>("ShippingFee")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
-
-                    b.Property<decimal>("SurchargeFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -332,12 +317,12 @@ namespace BackendApi.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("ProductName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid>("ProductVariantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("Quantity")
                         .HasColumnType("tinyint");
@@ -351,11 +336,15 @@ namespace BackendApi.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("VariantName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.HasKey("OrderDetailId");
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductVariantId");
 
                     b.ToTable("OrderDetails");
                 });
@@ -599,9 +588,6 @@ namespace BackendApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("DistanceToStore")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("FullAddress")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -609,16 +595,6 @@ namespace BackendApi.Migrations
 
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("varchar(15)");
-
-                    b.Property<string>("RecipientName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
@@ -794,15 +770,15 @@ namespace BackendApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Oishipan.Models.Product", "Product")
+                    b.HasOne("Oishipan.Models.ProductVariant", "ProductVariant")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Order");
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
                 });
 
             modelBuilder.Entity("Oishipan.Models.Payment", b =>
@@ -825,6 +801,58 @@ namespace BackendApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductOption", b =>
+                {
+                    b.HasOne("Oishipan.Models.Product", "Product")
+                        .WithMany("ProductOptions")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductValue", b =>
+                {
+                    b.HasOne("Oishipan.Models.ProductOption", "ProductOption")
+                        .WithMany("ProductValues")
+                        .HasForeignKey("ProductOptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductOption");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+                {
+                    b.HasOne("Oishipan.Models.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductVariantValue", b =>
+                {
+                    b.HasOne("Oishipan.Models.ProductValue", "ProductValue")
+                        .WithMany()
+                        .HasForeignKey("ProductValueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Oishipan.Models.ProductVariant", "ProductVariant")
+                        .WithMany("ProductVariantValues")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductValue");
+
+                    b.Navigation("ProductVariant");
                 });
 
             modelBuilder.Entity("Oishipan.Models.UserAddress", b =>
@@ -874,6 +902,23 @@ namespace BackendApi.Migrations
                     b.Navigation("OrderDetails");
 
                     b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.Product", b =>
+                {
+                    b.Navigation("ProductOptions");
+
+                    b.Navigation("ProductVariants");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductOption", b =>
+                {
+                    b.Navigation("ProductValues");
+                });
+
+            modelBuilder.Entity("Oishipan.Models.ProductVariant", b =>
+                {
+                    b.Navigation("ProductVariantValues");
                 });
 #pragma warning restore 612, 618
         }

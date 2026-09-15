@@ -1,0 +1,267 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Oishipan.DTOs;
+using Oishipan.Models;
+
+namespace Oishipan.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ProductVariantsController : ControllerBase
+{
+    private readonly OishipanContext _context;
+
+    public ProductVariantsController(OishipanContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ProductVariantResponse>>> GetAll([FromQuery] Guid? productId)
+    {
+        var query = _context.ProductVariants
+            .Include(variant => variant.Product)
+            .Include(v => v.ProductVariantValues)
+                .ThenInclude(pvv => pvv.ProductValue)
+                    .ThenInclude(pv => pv!.ProductOption)
+            .AsQueryable();
+
+        if (productId.HasValue)
+        {
+            query = query.Where(variant => variant.ProductId == productId.Value);
+        }
+
+        var variantsData = await query
+            .OrderBy(variant => variant.Product == null ? string.Empty : variant.Product.Name)
+            .ToListAsync();
+
+        var variants = variantsData.Select(variant => ToResponse(variant)).ToList();
+
+        return Ok(variants);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductVariantResponse>> GetById(Guid id)
+    {
+        var variant = await _context.ProductVariants
+            .Include(item => item.Product)
+            .Include(v => v.ProductVariantValues)
+                .ThenInclude(pvv => pvv.ProductValue)
+                    .ThenInclude(pv => pv!.ProductOption)
+            .FirstOrDefaultAsync(item => item.ProductVariantId == id);
+
+        return variant is null
+            ? NotFound(new { message = "Không tìm thấy biến thể sản phẩm." })
+            : Ok(ToResponse(variant));
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ProductVariantResponse>> Create(ProductVariantManageRequest request)
+    {
+        await ValidateRequest(request);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var variant = new ProductVariant
+        {
+            ProductId = request.ProductId,
+            Price = request.Price,
+            StockQuantity = request.StockQuantity,
+            Status = request.IsActive,
+            Sku = request.Sku,
+            CombinationKey = BuildCombinationKey(request.ProductValueIds)
+        };
+
+        if (request.ProductValueIds != null)
+        {
+            foreach (var valueId in request.ProductValueIds)
+            {
+                variant.ProductVariantValues.Add(new ProductVariantValue { ProductValueId = valueId });
+            }
+        }
+
+        _context.ProductVariants.Add(variant);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            return Conflict(new
+            {
+                message = "Tổ hợp giá trị biến thể này đã tồn tại trong sản phẩm."
+            });
+        }
+
+        await UpdateProductQuantity(request.ProductId);
+        
+        var savedVariant = await _context.ProductVariants
+            .Include(item => item.Product)
+            .Include(v => v.ProductVariantValues)
+                .ThenInclude(pvv => pvv.ProductValue)
+                    .ThenInclude(pv => pv!.ProductOption)
+            .FirstAsync(item => item.ProductVariantId == variant.ProductVariantId);
+
+        return CreatedAtAction(nameof(GetById), new { id = variant.ProductVariantId }, ToResponse(savedVariant));
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductVariantManageRequest request)
+    {
+        var variant = await _context.ProductVariants
+            .Include(v => v.ProductVariantValues)
+            .FirstOrDefaultAsync(v => v.ProductVariantId == id);
+            
+        if (variant is null)
+        {
+            return NotFound(new { message = "Không tìm thấy biến thể sản phẩm." });
+        }
+
+        await ValidateRequest(request, id);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var previousProductId = variant.ProductId;
+        variant.ProductId = request.ProductId;
+        variant.Price = request.Price;
+        variant.StockQuantity = request.StockQuantity;
+        variant.Status = request.IsActive;
+        variant.Sku = request.Sku;
+        variant.CombinationKey = BuildCombinationKey(request.ProductValueIds);
+
+        // Update ProductVariantValues
+        _context.ProductVariantValues.RemoveRange(variant.ProductVariantValues);
+        variant.ProductVariantValues.Clear();
+        if (request.ProductValueIds != null)
+        {
+            foreach (var valueId in request.ProductValueIds)
+            {
+                variant.ProductVariantValues.Add(new ProductVariantValue { ProductValueId = valueId });
+            }
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsCombinationKeyConflict(ex))
+        {
+            return Conflict(new
+            {
+                message = "Tổ hợp giá trị biến thể này đã tồn tại trong sản phẩm."
+            });
+        }
+
+        await UpdateProductQuantity(previousProductId);
+        if (previousProductId != request.ProductId)
+        {
+            await UpdateProductQuantity(request.ProductId);
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var variant = await _context.ProductVariants.FindAsync(id);
+        if (variant is null)
+        {
+            return NotFound(new { message = "Không tìm thấy biến thể sản phẩm." });
+        }
+
+        var productId = variant.ProductId;
+        _context.ProductVariants.Remove(variant);
+        await _context.SaveChangesAsync();
+        await UpdateProductQuantity(productId);
+
+        return NoContent();
+    }
+
+    private async Task ValidateRequest(ProductVariantManageRequest request, Guid? currentId = null)
+    {
+        if (!await _context.Products.AnyAsync(product => product.ProductId == request.ProductId))
+        {
+            ModelState.AddModelError(nameof(request.ProductId), "Sản phẩm không tồn tại.");
+        }
+
+        var requestValues = request.ProductValueIds?.OrderBy(x => x).ToList() ?? new List<Guid>();
+        var otherVariants = await _context.ProductVariants
+            .Include(v => v.ProductVariantValues)
+            .Where(v => v.ProductVariantId != currentId && v.ProductId == request.ProductId)
+            .ToListAsync();
+            
+        foreach (var other in otherVariants)
+        {
+            var otherValues = other.ProductVariantValues.Select(pvv => pvv.ProductValueId).OrderBy(x => x).ToList();
+            if (requestValues.SequenceEqual(otherValues))
+            {
+                ModelState.AddModelError(
+                    nameof(request.ProductValueIds),
+                    "Tổ hợp giá trị biến thể này đã tồn tại trong sản phẩm.");
+                break;
+            }
+        }
+    }
+
+    private async Task UpdateProductQuantity(Guid productId)
+    {
+        var product = await _context.Products.FindAsync(productId);
+        if (product is null)
+        {
+            return;
+        }
+
+        product.StockQuantity = (short)await _context.ProductVariants
+            .Where(variant => variant.ProductId == productId)
+            .SumAsync(variant => int.Parse(variant.StockQuantity.ToString()));
+        await _context.SaveChangesAsync();
+    }
+
+    private static string BuildCombinationKey(IEnumerable<Guid>? productValueIds)
+    {
+        if (productValueIds == null)
+        {
+            return string.Empty;
+        }
+
+        return string.Join("|", productValueIds
+            .Distinct()
+            .OrderBy(id => id)
+            .Select(id => id.ToString("N")));
+    }
+
+    private static bool IsCombinationKeyConflict(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("IX_ProductVariants_ProductId_CombinationKey", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static ProductVariantResponse ToResponse(ProductVariant variant)
+    {
+        return new ProductVariantResponse
+        {
+            ProductVariantId = variant.ProductVariantId,
+            ProductId = variant.ProductId,
+            ProductName = variant.Product?.Name,
+            Price = variant.Price,
+            StockQuantity = variant.StockQuantity,
+            Sku = variant.Sku,
+            IsActive = variant.Status,
+            VariantValues = variant.ProductVariantValues
+                .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
+                .Select(pvv => new ProductVariantValueResponse
+                {
+                    ProductOptionId = pvv.ProductValue!.ProductOptionId,
+                    OptionName = pvv.ProductValue.ProductOption!.OptionName,
+                    ProductValueId = pvv.ProductValueId,
+                    ValueName = pvv.ProductValue.ValueName
+                }).ToList()
+        };
+    }
+}

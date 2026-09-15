@@ -209,13 +209,13 @@ public class CartController : Controller
                 var userDoc = await userResponse.Content.ReadFromJsonAsync<JsonDocument>();
                 if (userDoc != null)
                 {
-                    model.CustomerName = userDoc.RootElement.GetProperty("fullName").GetString() ?? User.Identity.Name;
+                    model.CustomerName = userDoc.RootElement.GetProperty("fullName").GetString() ?? User.Identity?.Name;
                     model.CustomerPhone = userDoc.RootElement.GetProperty("phoneNumber").GetString() ?? "";
                 }
             }
             else
             {
-                model.CustomerName = User.Identity.Name;
+                model.CustomerName = User.Identity?.Name;
             }
 
             var addressResponse = await Api.GetAsync($"api/accounts/{userId}/addresses");

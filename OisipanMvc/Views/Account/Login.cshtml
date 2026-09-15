@@ -90,6 +90,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="google-signin-container">
+            @if (!string.IsNullOrWhiteSpace(ViewBag.GoogleClientId as string))
+            {
+                <div id="google-signin-button"></div>
+            }
+            else
+            {
+                <div class="google-login-unavailable" role="status">
+                    Đăng nhập bằng Google hiện chưa được cấu hình.
+                </div>
+            }
+        </div>
+
+        <div id="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <p class="auth-switch">
+            Chưa có tài khoản?
+            <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a>
+        </p>
     </div>
 
     <script src="~/js/auth.js" asp-append-version="true"></script>
