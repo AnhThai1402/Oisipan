@@ -12,8 +12,8 @@ using Oishipan.Models;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(OishipanContext))]
-    [Migration("20260914231526_AddPendingChanges")]
-    partial class AddPendingChanges
+    [Migration("20260915113550_RestoreVariants4")]
+    partial class RestoreVariants4
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,6 +34,11 @@ namespace BackendApi.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AuthProvider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
@@ -51,14 +56,16 @@ namespace BackendApi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasMaxLength(15)
-                        .HasColumnType("varchar(15)");
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -76,8 +83,13 @@ namespace BackendApi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("GoogleId")
+                        .IsUnique()
+                        .HasFilter("[GoogleId] IS NOT NULL");
+
                     b.HasIndex("PhoneNumber")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[PhoneNumber] IS NOT NULL");
 
                     b.ToTable("Accounts");
                 });
@@ -229,8 +241,14 @@ namespace BackendApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<decimal>("ShippingFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
+
+                    b.Property<decimal>("SurchargeFee")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -317,12 +335,12 @@ namespace BackendApi.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ProductName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
-
-                    b.Property<Guid>("ProductVariantId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("Quantity")
                         .HasColumnType("tinyint");
@@ -336,15 +354,11 @@ namespace BackendApi.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("VariantName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.HasKey("OrderDetailId");
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("ProductVariantId");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderDetails");
                 });
@@ -463,8 +477,7 @@ namespace BackendApi.Migrations
 
                     b.HasKey("ProductOptionId");
 
-                    b.HasIndex("ProductId", "OptionName")
-                        .IsUnique();
+                    b.HasIndex("ProductId");
 
                     b.ToTable("ProductOptions");
                 });
@@ -497,8 +510,7 @@ namespace BackendApi.Migrations
 
                     b.HasKey("ProductValueId");
 
-                    b.HasIndex("ProductOptionId", "ValueName")
-                        .IsUnique();
+                    b.HasIndex("ProductOptionId");
 
                     b.ToTable("ProductValues");
                 });
@@ -508,6 +520,10 @@ namespace BackendApi.Migrations
                     b.Property<Guid>("ProductVariantId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CombinationKey")
+                        .HasMaxLength(900)
+                        .HasColumnType("varchar(900)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -533,11 +549,9 @@ namespace BackendApi.Migrations
 
                     b.HasKey("ProductVariantId");
 
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("Sku")
+                    b.HasIndex("ProductId", "CombinationKey")
                         .IsUnique()
-                        .HasFilter("[Sku] IS NOT NULL");
+                        .HasFilter("[CombinationKey] IS NOT NULL");
 
                     b.ToTable("ProductVariants");
                 });
@@ -567,8 +581,7 @@ namespace BackendApi.Migrations
 
                     b.HasIndex("ProductValueId");
 
-                    b.HasIndex("ProductVariantId", "ProductValueId")
-                        .IsUnique();
+                    b.HasIndex("ProductVariantId");
 
                     b.ToTable("ProductVariantValues");
                 });
@@ -582,6 +595,9 @@ namespace BackendApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("DistanceToStore")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("FullAddress")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -589,6 +605,16 @@ namespace BackendApi.Migrations
 
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
@@ -764,15 +790,15 @@ namespace BackendApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Oishipan.Models.ProductVariant", "ProductVariant")
+                    b.HasOne("Oishipan.Models.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("ProductVariantId")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Order");
 
-                    b.Navigation("ProductVariant");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Oishipan.Models.Payment", b =>
@@ -835,7 +861,7 @@ namespace BackendApi.Migrations
                     b.HasOne("Oishipan.Models.ProductValue", "ProductValue")
                         .WithMany()
                         .HasForeignKey("ProductValueId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Oishipan.Models.ProductVariant", "ProductVariant")

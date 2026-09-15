@@ -1,6 +1,9 @@
 @model ProductCatalogViewModel
 @{
     ViewData["Title"] = Model.Name;
+    var selectableOptions = Model.ProductOptions?
+        .Where(option => option.ProductValues.Any())
+        .ToList() ?? new List<ProductOptionCatalogViewModel>();
 }
 
 <section class="product-detail-page" data-product-detail data-has-options="@selectableOptions.Any().ToString().ToLowerInvariant()" data-base-price="@Model.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">

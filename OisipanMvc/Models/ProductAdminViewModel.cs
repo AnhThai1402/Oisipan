@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace FrontendMvc.Models;
@@ -7,9 +7,9 @@ public class ProductAdminViewModel
 {
     public Guid ProductId { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm.")]
-    [StringLength(200, ErrorMessage = "Tên sản phẩm không được vượt quá 200 ký tự.")]
-    [Display(Name = "Tên sản phẩm")]
+    [Required(ErrorMessage = "Vui lÃ²ng nháº­p tÃªn sáº£n pháº©m.")]
+    [StringLength(200, ErrorMessage = "TÃªn sáº£n pháº©m khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 200 kÃ½ tá»±.")]
+    [Display(Name = "TÃªn sáº£n pháº©m")]
     public string Name { get; set; } = string.Empty;
 
     // Alias for views
@@ -19,11 +19,11 @@ public class ProductAdminViewModel
         set => Name = value;
     }
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "Giá sản phẩm phải lớn hơn 0.")]
-    [Display(Name = "Giá")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "GiÃ¡ sáº£n pháº©m pháº£i lá»›n hÆ¡n 0.")]
+    [Display(Name = "GiÃ¡")]
     public decimal Price { get; set; }
 
-    [Display(Name = "Ảnh")]
+    [Display(Name = "áº¢nh")]
     public string? Image { get; set; }
 
     // Alias for views
@@ -33,11 +33,11 @@ public class ProductAdminViewModel
         set => Image = value;
     }
 
-    [Display(Name = "Ảnh tải lên")]
+    [Display(Name = "áº¢nh táº£i lÃªn")]
     public IFormFile? ImageFile { get; set; }
 
-    [Range(0, short.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
-    [Display(Name = "Tồn kho")]
+    [Range(0, short.MaxValue, ErrorMessage = "Tá»“n kho khÃ´ng Ä‘Æ°á»£c Ã¢m.")]
+    [Display(Name = "Tá»“n kho")]
     public short StockQuantity { get; set; }
 
     // Alias for views
@@ -47,15 +47,15 @@ public class ProductAdminViewModel
         set => StockQuantity = (short)value;
     }
 
-    [Display(Name = "Tồn kho tối thiểu")]
+    [Display(Name = "Tá»“n kho tá»‘i thiá»ƒu")]
     public byte? MinimumStock { get; set; }
 
-    [Display(Name = "Danh mục")]
+    [Display(Name = "Danh má»¥c")]
     public Guid CategoryId { get; set; }
 
     public string? CategoryName { get; set; }
 
-    [Display(Name = "Mô tả")]
+    [Display(Name = "MÃ´ táº£")]
     public string? Description { get; set; }
 
     [StringLength(50)]
@@ -70,15 +70,15 @@ public class ProductAdminViewModel
     {
         get
         {
-            if (StockQuantity == 0) return "Hết hàng";
-            if (MinimumStock.HasValue && StockQuantity <= MinimumStock) return "Sắp hết hàng";
-            return "Đủ hàng";
+            if (StockQuantity == 0) return "Háº¿t hÃ ng";
+            if (MinimumStock.HasValue && StockQuantity <= MinimumStock) return "Sáº¯p háº¿t hÃ ng";
+            return "Äá»§ hÃ ng";
         }
     }
 
     public List<SelectListItem> Categories { get; set; } = new();
 
-    [Display(Name = "Biến thể sản phẩm")]
+    [Display(Name = "Biáº¿n thá»ƒ sáº£n pháº©m")]
     public List<ProductVariantAdminViewModel> Variants { get; set; } = new();
 
     public List<ProductOptionAdminViewModel> ProductOptions { get; set; } = new();
@@ -100,10 +100,10 @@ public class ProductVariantAdminViewModel
         set => ProductVariantId = value;
     }
 
-    [Display(Name = "Tên tùy chọn")]
+    [Display(Name = "TÃªn tÃ¹y chá»n")]
     public string OptionName { get; set; } = string.Empty;
 
-    [Display(Name = "Giá trị")]
+    [Display(Name = "GiÃ¡ trá»‹")]
     public string Value { get; set; } = string.Empty;
 
     public Guid ProductId { get; set; }

@@ -3,9 +3,10 @@ namespace FrontendMvc.Models;
 public class StorefrontViewModel
 {
     public List<ProductCatalogViewModel> Products { get; set; } = new();
-    public List<BannerViewModel> Banners { get; set; } = new();
     public List<CategoryAdminViewModel> Categories { get; set; } = new();
     public Guid? SelectedCategoryId { get; set; }
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
 }
 
 public class ProductCatalogViewModel
