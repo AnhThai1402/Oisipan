@@ -78,5 +78,86 @@ public class ProductAdminViewModel
 
     public List<SelectListItem> Categories { get; set; } = new();
 
-    public List<string>? RemovedImageUrls { get; set; } = new();
+    [Display(Name = "Biến thể sản phẩm")]
+    public List<ProductVariantAdminViewModel> Variants { get; set; } = new();
+
+    public List<ProductOptionAdminViewModel> ProductOptions { get; set; } = new();
+
+    public List<ProductVariantAdminViewModel> ProductVariants
+    {
+        get => Variants;
+        set => Variants = value ?? new();
+    }
+}
+
+public class ProductVariantAdminViewModel
+{
+    public Guid ProductVariantId { get; set; }
+
+    public Guid Id
+    {
+        get => ProductVariantId;
+        set => ProductVariantId = value;
+    }
+
+    [Display(Name = "Tên tùy chọn")]
+    public string OptionName { get; set; } = string.Empty;
+
+    [Display(Name = "Giá trị")]
+    public string Value { get; set; } = string.Empty;
+
+    public Guid ProductId { get; set; }
+
+    public string? ProductName { get; set; }
+
+    public string? Sku { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [Range(0, short.MaxValue)]
+    public short StockQuantity { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public List<SelectListItem> Products { get; set; } = new();
+
+    public List<ProductVariantValueAdminViewModel> VariantValues { get; set; } = new();
+}
+
+public class ProductVariantValueAdminViewModel
+{
+    public Guid ProductOptionId { get; set; }
+    public string OptionName { get; set; } = string.Empty;
+    public Guid ProductValueId { get; set; }
+    public string ValueName { get; set; } = string.Empty;
+}
+
+public class ProductOptionAdminViewModel
+{
+    public Guid ProductOptionId { get; set; }
+    public Guid ProductId { get; set; }
+    public string OptionName { get; set; } = string.Empty;
+    public List<ProductValueAdminViewModel> ProductValues { get; set; } = new();
+}
+
+public class ProductValueAdminViewModel
+{
+    public Guid ProductValueId { get; set; }
+    public Guid ProductOptionId { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string ValueName { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal AdditionalPrice { get; set; }
+}
+
+public class ProductOptionManagementViewModel
+{
+    public Guid? SelectedProductId { get; set; }
+    public string? SelectedProductName { get; set; }
+    public List<SelectListItem> Products { get; set; } = new();
+    public List<ProductOptionAdminViewModel> Options { get; set; } = new();
 }
