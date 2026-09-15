@@ -34,6 +34,11 @@
     const valueAdditionalPriceInput = document.getElementById("value-additional-price");
     const valueCancelBtn = document.getElementById("value-cancel");
 
+    // Chip-based option/value editor (used on ProductVariants/Index instead of the master-detail tables above)
+    const chipList = document.getElementById("option-chip-list");
+    const optionAddBtn = document.getElementById("option-add-btn");
+    const isChipMode = !!chipList;
+
     const generateBtn = document.getElementById("generate-btn");
     const selectAllVariantsCheckbox = document.getElementById("variant-select-all");
     const bulkStatusActiveBtn = document.getElementById("bulk-status-active");
@@ -313,9 +318,96 @@
         valueCancelBtn.style.display = "none";
     }
 
+    function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[ch]));
+    }
+
+    function renderOptionCards() {
+        if (!chipList) return;
+        if (!state.options.length) {
+            chipList.innerHTML = '<div class="text-muted" style="padding:0.5rem 0;">Chưa có tùy chọn nào. Bấm "Thêm tùy chọn" để bắt đầu.</div>';
+            return;
+        }
+
+        chipList.innerHTML = state.options.map((option) => {
+            const chips = (option.productValues || []).map((value) => `
+                <span class="chip" data-value-id="${value.productValueId}" data-option-id="${option.productOptionId}">
+                    <span class="chip-label js-value-edit-trigger" title="Giá cộng thêm: ${formatCurrency(value.additionalPrice)}">${escapeHtml(value.valueName)}</span>
+                    <button type="button" class="chip-remove js-value-delete" title="Xóa giá trị"><i class="bi bi-x-lg"></i></button>
+                </span>
+            `).join("");
+
+            return `
+                <div class="option-card" data-option-id="${option.productOptionId}">
+                    <div class="option-card-head">
+                        <input class="form-input option-card-name" data-option-id="${option.productOptionId}" value="${escapeHtml(option.optionName)}" maxlength="100" />
+                        <button type="button" class="icon-action danger js-option-delete" data-option-id="${option.productOptionId}" title="Xóa tùy chọn"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="chip-row" data-option-id="${option.productOptionId}">
+                        ${chips}
+                        <button type="button" class="chip-add-btn js-value-add-trigger" data-option-id="${option.productOptionId}"><i class="bi bi-plus-lg"></i> Thêm giá trị</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    function startNewOptionCard() {
+        const existing = chipList.querySelector(".option-card.is-new");
+        if (existing) {
+            existing.querySelector(".option-card-name")?.focus();
+            return;
+        }
+
+        const card = document.createElement("div");
+        card.className = "option-card is-new";
+        card.innerHTML = `
+            <div class="option-card-head">
+                <input class="form-input option-card-name" placeholder="Tên tùy chọn (vd: Kích thước, Màu sắc)" maxlength="100" />
+                <button type="button" class="icon-action js-option-new-cancel" title="Hủy"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="chip-row"><span class="text-muted" style="font-size:0.85rem;">Lưu tên để bắt đầu thêm giá trị.</span></div>
+        `;
+        chipList.prepend(card);
+        card.querySelector(".option-card-name").focus();
+    }
+
+    function startValueEdit(chipEl, value) {
+        chipEl.classList.add("chip-editing");
+        chipEl.innerHTML = `
+            <input class="form-input chip-edit-name" value="${escapeHtml(value.valueName)}" maxlength="100" style="width:90px;" />
+            <input class="form-input chip-edit-price" type="number" min="0" step="1000" value="${value.additionalPrice ?? 0}" style="width:90px;" />
+            <button type="button" class="chip-remove js-value-save" title="Lưu"><i class="bi bi-check-lg"></i></button>
+            <button type="button" class="chip-remove js-value-cancel" title="Hủy"><i class="bi bi-x-lg"></i></button>
+        `;
+        chipEl.querySelector(".chip-edit-name").focus();
+    }
+
+    function startValueAdd(optionId, chipRow, addBtn) {
+        if (chipRow.querySelector(".chip.chip-editing.is-new")) return;
+
+        // Additional price is intentionally omitted here (defaults to 0); edit the chip afterward to set a price.
+        const chip = document.createElement("span");
+        chip.className = "chip chip-editing is-new";
+        chip.dataset.optionId = optionId;
+        chip.innerHTML = `
+            <input class="form-input chip-edit-name" placeholder="Tên giá trị" maxlength="100" style="width:110px;" />
+            <button type="button" class="chip-remove js-value-save" title="Lưu"><i class="bi bi-check-lg"></i></button>
+            <button type="button" class="chip-remove js-value-cancel" title="Hủy"><i class="bi bi-x-lg"></i></button>
+        `;
+        chipRow.insertBefore(chip, addBtn);
+        chip.querySelector(".chip-edit-name").focus();
+    }
+
     async function loadData(keepSelection) {
-        optionTbody.innerHTML = '<tr><td colspan="3" class="text-muted">Đang tải...</td></tr>';
-        valueTbody.innerHTML = '<tr><td colspan="3" class="text-muted">Đang tải...</td></tr>';
+        if (optionTbody) optionTbody.innerHTML = '<tr><td colspan="3" class="text-muted">Đang tải...</td></tr>';
+        if (valueTbody) valueTbody.innerHTML = '<tr><td colspan="3" class="text-muted">Đang tải...</td></tr>';
         variantTbody.innerHTML = '<tr><td colspan="7" class="text-muted">Đang tải...</td></tr>';
 
         const data = await apiRequest(`/Admin/Products/${productId}/Variants/Data`, "GET");
@@ -333,155 +425,322 @@
             state.selectedOptionId = state.options[0]?.productOptionId || null;
         }
 
-        renderOptions();
-        renderValues();
-        renderVariants();
-        syncSelectAllState();
-        resetValueForm();
-    }
-
-    optionForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        clearFlash();
-
-        const optionName = optionNameInput.value.trim();
-        if (!optionName) {
-            showFlash("Vui lòng nhập tên tùy chọn.", "error");
-            return;
-        }
-
-        try {
-            if (optionIdInput.value) {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Options/${optionIdInput.value}`, "PUT", { optionName });
-                showFlash("Cập nhật tùy chọn thành công.", "success");
-            } else {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Options`, "POST", { optionName });
-                showFlash("Thêm tùy chọn thành công.", "success");
-            }
-            const selectedOptionId = optionIdInput.value || state.selectedOptionId;
-            resetOptionForm();
-            await loadData({ selectedOptionId });
-        } catch (error) {
-            showFlash(error.message, "error");
-        }
-    });
-
-    optionCancelBtn.addEventListener("click", () => {
-        resetOptionForm();
-    });
-
-    optionTbody.addEventListener("click", async (event) => {
-        const editButton = event.target.closest(".js-option-edit");
-        const deleteButton = event.target.closest(".js-option-delete");
-        const row = event.target.closest("tr[data-option-id]");
-
-        if (row && !editButton && !deleteButton) {
-            state.selectedOptionId = row.dataset.optionId;
+        if (isChipMode) {
+            renderOptionCards();
+        } else {
             renderOptions();
             renderValues();
             resetValueForm();
-            return;
         }
 
-        if (editButton) {
-            const option = state.options.find((item) => item.productOptionId === editButton.dataset.optionId);
-            if (!option) return;
-            optionIdInput.value = option.productOptionId;
-            optionNameInput.value = option.optionName;
-            optionCancelBtn.style.display = "inline-flex";
-            return;
-        }
+        renderVariants();
+        syncSelectAllState();
+    }
 
-        if (deleteButton) {
-            if (!window.confirm("Bạn có chắc muốn xóa tùy chọn này?")) return;
-            try {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Options/${deleteButton.dataset.optionId}`, "DELETE");
-                showFlash("Xóa tùy chọn thành công.", "success");
-                await loadData();
-            } catch (error) {
-                showFlash(resolveErrorMessage(
-                    error?.message,
-                    "Không thể xóa tùy chọn này vì đang được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
-                ), "error");
-            }
-        }
-    });
+    if (optionForm) {
+        optionForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            clearFlash();
 
-    valueForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        clearFlash();
-
-        const selected = getSelectedOption();
-        if (!selected) {
-            showFlash("Vui lòng chọn tùy chọn trước khi thêm giá trị.", "error");
-            return;
-        }
-
-        const valueName = valueNameInput.value.trim();
-        const additionalPrice = Number(valueAdditionalPriceInput.value || 0);
-        if (!valueName) {
-            showFlash("Vui lòng nhập tên giá trị.", "error");
-            return;
-        }
-
-        try {
-            if (valueIdInput.value) {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Values/${valueIdInput.value}`, "PUT", {
-                    productOptionId: valueOptionIdInput.value,
-                    valueName,
-                    additionalPrice
-                });
-                showFlash("Cập nhật giá trị thành công.", "success");
-            } else {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Options/${selected.productOptionId}/Values`, "POST", {
-                    valueName,
-                    additionalPrice
-                });
-                showFlash("Thêm giá trị thành công.", "success");
+            const optionName = optionNameInput.value.trim();
+            if (!optionName) {
+                showFlash("Vui lòng nhập tên tùy chọn.", "error");
+                return;
             }
 
-            const selectedOptionId = selected.productOptionId;
-            resetValueForm();
-            await loadData({ selectedOptionId });
-        } catch (error) {
-            showFlash(error.message, "error");
-        }
-    });
-
-    valueCancelBtn.addEventListener("click", () => {
-        resetValueForm();
-    });
-
-    valueTbody.addEventListener("click", async (event) => {
-        const editButton = event.target.closest(".js-value-edit");
-        const deleteButton = event.target.closest(".js-value-delete");
-        if (!editButton && !deleteButton) return;
-
-        const selected = getSelectedOption();
-        if (!selected) return;
-
-        if (editButton) {
-            const value = (selected.productValues || []).find((item) => item.productValueId === editButton.dataset.valueId);
-            if (!value) return;
-            valueIdInput.value = value.productValueId;
-            valueOptionIdInput.value = editButton.dataset.optionId;
-            valueNameInput.value = value.valueName;
-            valueAdditionalPriceInput.value = value.additionalPrice ?? 0;
-            valueCancelBtn.style.display = "inline-flex";
-            return;
-        }
-
-        if (deleteButton) {
-            if (!window.confirm("Bạn có chắc muốn xóa giá trị này?")) return;
             try {
-                await apiRequest(`/Admin/Products/${productId}/Variants/Values/${deleteButton.dataset.valueId}`, "DELETE");
-                showFlash("Xóa giá trị thành công.", "success");
-                await loadData({ selectedOptionId: selected.productOptionId });
+                if (optionIdInput.value) {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options/${optionIdInput.value}`, "PUT", { optionName });
+                    showFlash("Cập nhật tùy chọn thành công.", "success");
+                } else {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options`, "POST", { optionName });
+                    showFlash("Thêm tùy chọn thành công.", "success");
+                }
+                const selectedOptionId = optionIdInput.value || state.selectedOptionId;
+                resetOptionForm();
+                await loadData({ selectedOptionId });
             } catch (error) {
                 showFlash(error.message, "error");
             }
-        }
-    });
+        });
+
+        optionCancelBtn.addEventListener("click", () => {
+            resetOptionForm();
+        });
+
+        optionTbody.addEventListener("click", async (event) => {
+            const editButton = event.target.closest(".js-option-edit");
+            const deleteButton = event.target.closest(".js-option-delete");
+            const row = event.target.closest("tr[data-option-id]");
+
+            if (row && !editButton && !deleteButton) {
+                state.selectedOptionId = row.dataset.optionId;
+                renderOptions();
+                renderValues();
+                resetValueForm();
+                return;
+            }
+
+            if (editButton) {
+                const option = state.options.find((item) => item.productOptionId === editButton.dataset.optionId);
+                if (!option) return;
+                optionIdInput.value = option.productOptionId;
+                optionNameInput.value = option.optionName;
+                optionCancelBtn.style.display = "inline-flex";
+                return;
+            }
+
+            if (deleteButton) {
+                if (!window.confirm("Bạn có chắc muốn xóa tùy chọn này?")) return;
+                try {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options/${deleteButton.dataset.optionId}`, "DELETE");
+                    showFlash("Xóa tùy chọn thành công.", "success");
+                    await loadData();
+                } catch (error) {
+                    showFlash(resolveErrorMessage(
+                        error?.message,
+                        "Không thể xóa tùy chọn này vì đang được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+                    ), "error");
+                }
+            }
+        });
+    }
+
+    if (valueForm) {
+        valueForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            clearFlash();
+
+            const selected = getSelectedOption();
+            if (!selected) {
+                showFlash("Vui lòng chọn tùy chọn trước khi thêm giá trị.", "error");
+                return;
+            }
+
+            const valueName = valueNameInput.value.trim();
+            const additionalPrice = Number(valueAdditionalPriceInput.value || 0);
+            if (!valueName) {
+                showFlash("Vui lòng nhập tên giá trị.", "error");
+                return;
+            }
+
+            try {
+                if (valueIdInput.value) {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Values/${valueIdInput.value}`, "PUT", {
+                        productOptionId: valueOptionIdInput.value,
+                        valueName,
+                        additionalPrice
+                    });
+                    showFlash("Cập nhật giá trị thành công.", "success");
+                } else {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options/${selected.productOptionId}/Values`, "POST", {
+                        valueName,
+                        additionalPrice
+                    });
+                    showFlash("Thêm giá trị thành công.", "success");
+                }
+
+                const selectedOptionId = selected.productOptionId;
+                resetValueForm();
+                await loadData({ selectedOptionId });
+            } catch (error) {
+                showFlash(error.message, "error");
+            }
+        });
+
+        valueCancelBtn.addEventListener("click", () => {
+            resetValueForm();
+        });
+
+        valueTbody.addEventListener("click", async (event) => {
+            const editButton = event.target.closest(".js-value-edit");
+            const deleteButton = event.target.closest(".js-value-delete");
+            if (!editButton && !deleteButton) return;
+
+            const selected = getSelectedOption();
+            if (!selected) return;
+
+            if (editButton) {
+                const value = (selected.productValues || []).find((item) => item.productValueId === editButton.dataset.valueId);
+                if (!value) return;
+                valueIdInput.value = value.productValueId;
+                valueOptionIdInput.value = editButton.dataset.optionId;
+                valueNameInput.value = value.valueName;
+                valueAdditionalPriceInput.value = value.additionalPrice ?? 0;
+                valueCancelBtn.style.display = "inline-flex";
+                return;
+            }
+
+            if (deleteButton) {
+                if (!window.confirm("Bạn có chắc muốn xóa giá trị này?")) return;
+                try {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Values/${deleteButton.dataset.valueId}`, "DELETE");
+                    showFlash("Xóa giá trị thành công.", "success");
+                    await loadData({ selectedOptionId: selected.productOptionId });
+                } catch (error) {
+                    showFlash(error.message, "error");
+                }
+            }
+        });
+    }
+
+    if (isChipMode) {
+        optionAddBtn?.addEventListener("click", () => startNewOptionCard());
+
+        chipList.addEventListener("click", async (event) => {
+            const deleteOptionBtn = event.target.closest(".js-option-delete");
+            const cancelNewOptionBtn = event.target.closest(".js-option-new-cancel");
+            const addValueBtn = event.target.closest(".js-value-add-trigger");
+            const editValueTrigger = event.target.closest(".js-value-edit-trigger");
+            const deleteValueBtn = event.target.closest(".js-value-delete");
+            const saveValueBtn = event.target.closest(".js-value-save");
+            const cancelValueBtn = event.target.closest(".js-value-cancel");
+
+            if (cancelNewOptionBtn) {
+                cancelNewOptionBtn.closest(".option-card")?.remove();
+                return;
+            }
+
+            if (deleteOptionBtn) {
+                if (!window.confirm("Bạn có chắc muốn xóa tùy chọn này?")) return;
+                clearFlash();
+                try {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options/${deleteOptionBtn.dataset.optionId}`, "DELETE");
+                    showFlash("Xóa tùy chọn thành công.", "success");
+                    await loadData();
+                } catch (error) {
+                    showFlash(resolveErrorMessage(
+                        error?.message,
+                        "Không thể xóa tùy chọn này vì đang được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+                    ), "error");
+                }
+                return;
+            }
+
+            if (addValueBtn) {
+                const chipRow = addValueBtn.closest(".chip-row");
+                startValueAdd(addValueBtn.dataset.optionId, chipRow, addValueBtn);
+                return;
+            }
+
+            if (editValueTrigger) {
+                const chip = editValueTrigger.closest(".chip");
+                const option = state.options.find((item) => item.productOptionId === chip.dataset.optionId);
+                const value = option?.productValues?.find((item) => item.productValueId === chip.dataset.valueId);
+                if (value) startValueEdit(chip, value);
+                return;
+            }
+
+            if (deleteValueBtn) {
+                if (!window.confirm("Bạn có chắc muốn xóa giá trị này?")) return;
+                clearFlash();
+                const chip = deleteValueBtn.closest(".chip");
+                try {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Values/${chip.dataset.valueId}`, "DELETE");
+                    showFlash("Xóa giá trị thành công.", "success");
+                    await loadData();
+                } catch (error) {
+                    showFlash(error.message, "error");
+                }
+                return;
+            }
+
+            if (cancelValueBtn) {
+                const chip = cancelValueBtn.closest(".chip");
+                if (chip.classList.contains("is-new")) {
+                    chip.remove();
+                } else {
+                    renderOptionCards();
+                }
+                return;
+            }
+
+            if (saveValueBtn) {
+                const chip = saveValueBtn.closest(".chip");
+                const nameInput = chip.querySelector(".chip-edit-name");
+                const priceInput = chip.querySelector(".chip-edit-price");
+                const valueName = nameInput.value.trim();
+                const additionalPrice = priceInput ? Number(priceInput.value || 0) : 0;
+
+                if (!valueName) {
+                    showFlash("Vui lòng nhập tên giá trị.", "error");
+                    return;
+                }
+
+                clearFlash();
+                try {
+                    if (chip.classList.contains("is-new")) {
+                        await apiRequest(`/Admin/Products/${productId}/Variants/Options/${chip.dataset.optionId}/Values`, "POST", { valueName, additionalPrice });
+                        showFlash("Thêm giá trị thành công.", "success");
+                    } else {
+                        await apiRequest(`/Admin/Products/${productId}/Variants/Values/${chip.dataset.valueId}`, "PUT", {
+                            productOptionId: chip.dataset.optionId,
+                            valueName,
+                            additionalPrice
+                        });
+                        showFlash("Cập nhật giá trị thành công.", "success");
+                    }
+                    await loadData();
+                } catch (error) {
+                    showFlash(error.message, "error");
+                }
+            }
+        });
+
+        chipList.addEventListener("focusout", async (event) => {
+            const nameInput = event.target.closest(".option-card-name");
+            if (!nameInput) return;
+
+            const card = nameInput.closest(".option-card");
+            const optionName = nameInput.value.trim();
+
+            if (card.classList.contains("is-new")) {
+                if (!optionName) {
+                    card.remove();
+                    return;
+                }
+                clearFlash();
+                try {
+                    await apiRequest(`/Admin/Products/${productId}/Variants/Options`, "POST", { optionName });
+                    showFlash("Thêm tùy chọn thành công.", "success");
+                    await loadData();
+                } catch (error) {
+                    showFlash(error.message, "error");
+                }
+                return;
+            }
+
+            const optionId = nameInput.dataset.optionId;
+            const option = state.options.find((item) => item.productOptionId === optionId);
+            if (!option) return;
+
+            if (!optionName || optionName === option.optionName) {
+                nameInput.value = option.optionName;
+                return;
+            }
+
+            clearFlash();
+            try {
+                await apiRequest(`/Admin/Products/${productId}/Variants/Options/${optionId}`, "PUT", { optionName });
+                showFlash("Cập nhật tùy chọn thành công.", "success");
+                option.optionName = optionName;
+            } catch (error) {
+                showFlash(error.message, "error");
+                nameInput.value = option.optionName;
+            }
+        });
+
+        chipList.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            if (event.target.matches(".option-card-name")) {
+                event.preventDefault();
+                event.target.blur();
+            } else if (event.target.matches(".chip-edit-name") || event.target.matches(".chip-edit-price")) {
+                event.preventDefault();
+                event.target.closest(".chip")?.querySelector(".js-value-save")?.click();
+            }
+        });
+    }
 
     if (selectAllVariantsCheckbox) {
         selectAllVariantsCheckbox.addEventListener("change", (event) => {

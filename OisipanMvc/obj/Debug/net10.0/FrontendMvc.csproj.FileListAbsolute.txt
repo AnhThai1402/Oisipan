@@ -493,7 +493,6 @@ F:\DATN\OisipanMvc\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 F:\DATN\OisipanMvc\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 F:\DATN\OisipanMvc\obj\Debug\net10.0\scopedcss\bundle\FrontendMvc.styles.css
 F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\2i8g8sg97b-{0}-aprfqljbkr-aprfqljbkr.gz
-F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-2k5hypf9je-2k5hypf9je.gz
 F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\1utnfzj6jq-{0}-hyfd9mb2cc-hyfd9mb2cc.gz
 F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\c1m4n2ucp5-{0}-fkfpqug6wy-fkfpqug6wy.gz
 F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\o4qxt9d2ir-{0}-dmdtcvupq4-dmdtcvupq4.gz
@@ -621,4 +620,5 @@ F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.deps.json
 F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.runtimeconfig.json
 F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.dll
 F:\DATN\artifacts\variant-notification-build-mvc\FrontendMvc.pdb
-F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\9mxattypk0-{0}-k2t3eu4lnd-k2t3eu4lnd.gz
+F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\7q5cj91kd3-{0}-f33h1kyjg7-f33h1kyjg7.gz
+F:\DATN\OisipanMvc\obj\Debug\net10.0\compressed\9mxattypk0-{0}-vquz5x8owz-vquz5x8owz.gz

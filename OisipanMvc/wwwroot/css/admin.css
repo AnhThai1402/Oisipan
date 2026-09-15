@@ -233,6 +233,70 @@ p { color: var(--admin-muted); line-height: 1.65; }
 .task-list label { padding: 14px; border-radius: 5px; background: #f8f0e5; color: var(--admin-green-2); display: flex; gap: 10px; align-items: center; }
 
 .toolbar-panel { border-radius: 5px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+
+.product-search { position: relative; }
+.search-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--admin-line);
+    border-radius: 5px;
+    box-shadow: 0 12px 30px rgba(18, 59, 45, 0.12);
+    z-index: 20;
+}
+.search-dropdown.is-open { display: block; }
+.search-dropdown-item { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; color: var(--admin-ink); }
+.search-dropdown-item:hover { background: #f8f0e5; }
+.search-dropdown-empty { padding: 10px 14px; font-size: 0.9rem; color: var(--admin-muted); }
+
+.option-chip-list { display: flex; flex-direction: column; gap: 14px; }
+.option-card { border: 1px solid var(--admin-line); border-radius: 14px; padding: 16px; background: #fbf7ef; }
+.option-card.is-new { border-style: dashed; border-color: var(--admin-green); background: #f4f9f6; }
+.option-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.option-card-head .option-card-name { flex: 1; font-weight: 600; }
+.chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--admin-line);
+    font-size: 0.85rem;
+}
+.chip-label { cursor: pointer; }
+.chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    color: var(--admin-muted);
+    background: transparent;
+}
+.chip-remove:hover { color: var(--admin-red); background: #fff1ee; }
+.chip.chip-editing { background: #fff; gap: 8px; padding: 6px 8px; }
+.chip.chip-editing .form-input { padding: 6px 8px; font-size: 0.85rem; }
+.chip-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px dashed var(--admin-line);
+    background: transparent;
+    color: var(--admin-muted);
+    font-size: 0.85rem;
+}
+.chip-add-btn:hover { color: var(--admin-green-2); border-color: var(--admin-green); }
+
 .segmented { display: flex; flex-wrap: wrap; gap: 8px; }
 .segmented button {
     border: 0;

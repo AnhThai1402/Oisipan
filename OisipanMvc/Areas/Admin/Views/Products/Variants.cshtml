@@ -26,77 +26,15 @@
 <section id="variants-root" data-product-id="@Model.ProductId" data-product-name="@Model.ProductName">
     @Html.AntiForgeryToken()
 
-    <!-- KHU VỰC 1: BỐ CỤC 2 CỘT CHO OPTION VÀ VALUE -->
-    <div class="admin-grid two-columns">
-        <!-- Cột 1: Tùy chọn biến thể -->
-        <article class="panel">
-            <div class="panel-head">
-                <h2>Tùy chọn biến thể</h2>
-            </div>
+    <!-- KHU VỰC 1: TÙY CHỌN BIẾN THỂ DẠNG CHIP -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Tùy chọn biến thể</h2>
+            <button id="option-add-btn" type="button" class="soft-action"><i class="bi bi-plus-circle"></i> Thêm tùy chọn</button>
+        </div>
 
-            <form id="option-form" class="form-row" style="margin-bottom:1rem; gap:0.75rem;">
-                <input type="hidden" id="option-id" />
-                <div class="form-group" style="flex:1; margin:0;">
-                    <label for="option-name">Tên nhóm tùy chọn</label>
-                    <input id="option-name" class="form-input" maxlength="100" placeholder="Ví dụ: Size, Màu" required />
-                </div>
-                <div style="display:flex; align-items:flex-end; gap:0.5rem;">
-                    <button id="option-submit" type="submit" class="primary-action"><i class="bi bi-plus-circle"></i> Lưu</button>
-                    <button id="option-cancel" type="button" class="soft-action" style="display:none;">Hủy</button>
-                </div>
-            </form>
-
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Tùy chọn</th>
-                            <th>Số giá trị</th>
-                            <th style="width:120px;">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody id="option-tbody"></tbody>
-                </table>
-            </div>
-        </article>
-
-        <!-- Cột 2: Giá trị tùy chọn -->
-        <article class="panel">
-            <div class="panel-head">
-                <h2 id="value-title">Giá trị tùy chọn</h2>
-            </div>
-
-            <form id="value-form" class="form-row" style="margin-bottom:1rem; gap:0.75rem;">
-                <input type="hidden" id="value-id" />
-                <input type="hidden" id="value-option-id" />
-                <div class="form-group" style="flex:1; margin:0;">
-                    <label for="value-name">Tên giá trị</label>
-                    <input id="value-name" class="form-input" maxlength="100" placeholder="Ví dụ: Nhỏ, Lớn" required />
-                </div>
-                <div class="form-group" style="width:180px; margin:0;">
-                    <label for="value-additional-price">Giá cộng thêm</label>
-                    <input id="value-additional-price" type="number" min="0" step="1000" class="form-input" value="0" required />
-                </div>
-                <div style="display:flex; align-items:flex-end; gap:0.5rem;">
-                    <button id="value-submit" type="submit" class="primary-action"><i class="bi bi-plus-circle"></i> Lưu</button>
-                    <button id="value-cancel" type="button" class="soft-action" style="display:none;">Hủy</button>
-                </div>
-            </form>
-
-            <div class="admin-table-wrap" style="margin-bottom:1rem;">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Giá trị</th>
-                            <th>Giá cộng thêm</th>
-                            <th style="width:120px;">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody id="value-tbody"></tbody>
-                </table>
-            </div>
-        </article>
-    </div>
+        <div id="option-chip-list" class="option-chip-list"></div>
+    </article>
 
     <!-- KHU VỰC 2: DANH SÁCH VARIANTS (FULL-WIDTH) -->
     <article class="panel" style="margin-top: 1.5rem;">
