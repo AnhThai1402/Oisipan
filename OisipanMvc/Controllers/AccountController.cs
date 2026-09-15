@@ -74,33 +74,41 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var response = await Api.PostAsJsonAsync("api/auth/login", model);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            await AddApiErrors(response);
+            var response = await Api.PostAsJsonAsync("api/auth/login", model);
+            if (!response.IsSuccessStatusCode)
+            {
+                await AddApiErrors(response);
+                return View(model);
+            }
+
+            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (account is null)
+            {
+                ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
+                return View(model);
+            }
+
+            await SignIn(account, model.RememberMe);
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+        catch (HttpRequestException)
+        {
+            ModelState.AddModelError(string.Empty, "Không kết nối được tới API. Hãy chạy BackendApi (http://localhost:5110) rồi thử lại.");
             return View(model);
         }
-
-        var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
-        if (account is null)
-        {
-            ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
-            return View(model);
-        }
-
-        await SignIn(account, model.RememberMe);
-
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
-            return Redirect(returnUrl);
-        }
-
-        if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
-        }
-
-        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]
