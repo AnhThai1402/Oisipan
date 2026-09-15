@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -148,6 +149,185 @@ public class ProductsController : AdminBaseController
         return model is null ? NotFound() : View(model);
     }
 
+    [HttpGet("/Admin/Products/{id:guid}/Variants")]
+    public async Task<IActionResult> Variants(Guid id)
+    {
+        var model = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    [HttpGet("/Admin/Products/{id:guid}/Variants/Data")]
+    public async Task<IActionResult> GetVariantsData(Guid id)
+    {
+        var product = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
+        if (product is null)
+        {
+            return NotFound(new { message = "Không tìm thấy sản phẩm." });
+        }
+
+        var options = await Api.GetFromJsonAsyncWithOptions<List<ProductOptionAdminViewModel>>($"api/productoptions/product/{id}") ?? new();
+        var variants = await Api.GetFromJsonAsyncWithOptions<List<ProductVariantAdminViewModel>>($"api/products/{id}/variants") ?? new();
+
+        return Ok(new
+        {
+            productId = product.ProductId,
+            productName = product.ProductName,
+            options,
+            variants
+        });
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Options")]
+    public async Task<IActionResult> CreateVariantOption(Guid id, [FromBody] VariantOptionRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PostAsJsonAsync("api/productoptions", new
+        {
+            ProductId = id,
+            request.OptionName
+        });
+
+        return await ToProxyResult(response);
+    }
+
+    [HttpPut("/Admin/Products/{id:guid}/Variants/Options/{optionId:guid}")]
+    public async Task<IActionResult> UpdateVariantOption(Guid id, Guid optionId, [FromBody] VariantOptionRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PutAsJsonAsync($"api/productoptions/{optionId}", new
+        {
+            ProductId = id,
+            request.OptionName
+        });
+
+        return await ToProxyResult(response);
+    }
+
+    [HttpDelete("/Admin/Products/{id:guid}/Variants/Options/{optionId:guid}")]
+    public async Task<IActionResult> DeleteVariantOption(Guid id, Guid optionId)
+    {
+        var response = await Api.DeleteAsync($"api/productoptions/{optionId}");
+        return await ToProxyResult(response);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Options/{optionId:guid}/Values")]
+    public async Task<IActionResult> CreateVariantValue(Guid id, Guid optionId, [FromBody] VariantValueRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PostAsJsonAsync("api/productvalues", new
+        {
+            ProductOptionId = optionId,
+            request.ValueName,
+            request.AdditionalPrice
+        });
+
+        return await ToProxyResult(response);
+    }
+
+    [HttpPut("/Admin/Products/{id:guid}/Variants/Values/{valueId:guid}")]
+    public async Task<IActionResult> UpdateVariantValue(Guid id, Guid valueId, [FromBody] VariantValueUpdateRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PutAsJsonAsync($"api/productvalues/{valueId}", new
+        {
+            request.ProductOptionId,
+            request.ValueName,
+            request.AdditionalPrice
+        });
+
+        return await ToProxyResult(response);
+    }
+
+    [HttpDelete("/Admin/Products/{id:guid}/Variants/Values/{valueId:guid}")]
+    public async Task<IActionResult> DeleteVariantValue(Guid id, Guid valueId)
+    {
+        var response = await Api.DeleteAsync($"api/productvalues/{valueId}");
+        return await ToProxyResult(response);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Generate")]
+    public async Task<IActionResult> GenerateVariantsManual(Guid id)
+    {
+        var response = await Api.PostAsync($"api/products/{id}/generate-variants", null);
+        return await ToProxyResult(response);
+    }
+
+    [HttpPut("/Admin/Products/{id:guid}/Variants/{variantId:guid}")]
+    public async Task<IActionResult> UpdateVariant(Guid id, Guid variantId, [FromBody] VariantUpdateRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PutAsJsonAsync($"api/products/{id}/variants/{variantId}", request);
+        return await ToProxyResult(response);
+    }
+
+    [HttpDelete("/Admin/Products/{id:guid}/Variants/{variantId:guid}")]
+    public async Task<IActionResult> DeleteVariant(Guid id, Guid variantId)
+    {
+        var response = await Api.DeleteAsync($"api/products/{id}/variants/{variantId}");
+        return await ToProxyResult(response);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Bulk/Status")]
+    public async Task<IActionResult> BulkUpdateVariantStatus(Guid id, [FromBody] VariantBulkStatusRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/products/{id}/variants/bulk/status", request);
+        return await ToProxyResult(response);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Bulk/Delete")]
+    public async Task<IActionResult> BulkDeleteVariants(Guid id, [FromBody] VariantBulkDeleteRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/products/{id}/variants/bulk/delete", request);
+        return await ToProxyResult(response);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/Bulk/StockAdjust")]
+    public async Task<IActionResult> BulkAdjustVariantStock(Guid id, [FromBody] VariantBulkStockAdjustRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var response = await Api.PostAsJsonAsync($"api/products/{id}/variants/bulk/stock-adjust", request);
+        return await ToProxyResult(response);
+    }
+
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
@@ -240,5 +420,81 @@ public class ProductsController : AdminBaseController
         }
     }
 
+    private static async Task<IActionResult> ToProxyResult(HttpResponseMessage response)
+    {
+        var payload = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            return new StatusCodeResult((int)response.StatusCode);
+        }
+
+        return new ContentResult
+        {
+            Content = payload,
+            ContentType = "application/json",
+            StatusCode = (int)response.StatusCode
+        };
+    }
+
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
+}
+
+public class VariantOptionRequest
+{
+    [Required]
+    [StringLength(100)]
+    public string OptionName { get; set; } = string.Empty;
+}
+
+public class VariantValueRequest
+{
+    [Required]
+    [StringLength(100)]
+    public string ValueName { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal AdditionalPrice { get; set; }
+}
+
+public class VariantValueUpdateRequest : VariantValueRequest
+{
+    [Required]
+    public Guid ProductOptionId { get; set; }
+}
+
+public class VariantUpdateRequest
+{
+    [StringLength(50)]
+    public string? Sku { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [Range(0, short.MaxValue)]
+    public short StockQuantity { get; set; }
+
+    public bool IsActive { get; set; } = true;
+}
+
+public class VariantBulkStatusRequest
+{
+    [Required]
+    public List<Guid> VariantIds { get; set; } = new();
+
+    public bool IsActive { get; set; }
+}
+
+public class VariantBulkDeleteRequest
+{
+    [Required]
+    public List<Guid> VariantIds { get; set; } = new();
+}
+
+public class VariantBulkStockAdjustRequest
+{
+    [Required]
+    public List<Guid> VariantIds { get; set; } = new();
+
+    [Range(-100000, 100000)]
+    public int DeltaQuantity { get; set; }
 }

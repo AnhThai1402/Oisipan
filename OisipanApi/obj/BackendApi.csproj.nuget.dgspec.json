@@ -1,25 +1,31 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DATN\\Oisipandev\\Oisipan\\OisipanApi\\BackendApi.csproj": {}
+    "F:\\DATN\\OisipanApi\\BackendApi.csproj": {}
   },
   "projects": {
-    "D:\\DATN\\Oisipandev\\Oisipan\\OisipanApi\\BackendApi.csproj": {
+    "F:\\DATN\\OisipanApi\\BackendApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanApi\\BackendApi.csproj",
+        "projectUniqueName": "F:\\DATN\\OisipanApi\\BackendApi.csproj",
         "projectName": "BackendApi",
-        "projectPath": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanApi\\BackendApi.csproj",
-        "packagesPath": "C:\\Users\\GALLERIA\\.nuget\\packages\\",
-        "outputPath": "D:\\DATN\\Oisipandev\\Oisipan\\OisipanApi\\obj\\",
+        "projectPath": "F:\\DATN\\OisipanApi\\BackendApi.csproj",
+        "packagesPath": "C:\\Users\\pphiu\\.nuget\\packages\\",
+        "outputPath": "F:\\DATN\\OisipanApi\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\GALLERIA\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\pphiu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -64,6 +70,12 @@
               "target": "Package",
               "version": "[10.0.8, )"
             },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
             "QuestPDF": {
               "target": "Package",
               "version": "[2024.12.0, )"
@@ -100,7 +112,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.303/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

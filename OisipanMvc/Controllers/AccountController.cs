@@ -13,11 +13,13 @@ public class AccountController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly FrontendMvc.Services.IImageStorageService _imageStorageService;
+    private readonly IConfiguration _configuration;
 
-    public AccountController(IHttpClientFactory httpClientFactory, FrontendMvc.Services.IImageStorageService imageStorageService)
+    public AccountController(IHttpClientFactory httpClientFactory, FrontendMvc.Services.IImageStorageService imageStorageService, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
         _imageStorageService = imageStorageService;
+        _configuration = configuration;
     }
 
     [HttpGet]

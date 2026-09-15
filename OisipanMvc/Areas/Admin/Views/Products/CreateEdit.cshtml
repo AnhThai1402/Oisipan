@@ -16,7 +16,15 @@
         <h1>@ViewData["Title"]</h1>
         <p>@(isEdit ? "Cập nhật thông tin sản phẩm" : "Tạo sản phẩm mới để bán trên kênh của bạn")</p>
     </div>
-    <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="soft-action"><i class="bi bi-arrow-left"></i> Quay lại</a>
+    <div style="display: flex; gap: 0.5rem;">
+        @if (isEdit)
+        {
+            <a asp-area="Admin" asp-controller="Products" asp-action="Variants" asp-route-id="@Model!.ProductId" class="soft-action">
+                <i class="bi bi-shapes"></i> Quản lý biến thể
+            </a>
+        }
+        <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="soft-action"><i class="bi bi-arrow-left"></i> Quay lại</a>
+    </div>
 </section>
 
 @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))

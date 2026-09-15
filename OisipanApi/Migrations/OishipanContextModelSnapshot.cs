@@ -88,8 +88,8 @@ namespace BackendApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
+                    b.Property<short>("DisplayOrder")
+                        .HasColumnType("smallint");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("varchar(max)");
