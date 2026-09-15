@@ -100,11 +100,11 @@
             {
                 @foreach (var item in cartItems)
                 {
-                    <div class="cart-item" data-product-variant-id="@item.ProductVariantId">
+                    <div class="cart-item" data-product-variant-id="@item.ProductId">
                         <div class="cart-item-icon">
                             @if (!string.IsNullOrWhiteSpace(item.Image))
                             {
-                                <img src="@item.Image" alt="@item.Name" />
+                                <img src="@item.Image" alt="@item.ProductName" />
                             }
                             else
                             {
@@ -112,21 +112,21 @@
                             }
                         </div>
                         <div class="cart-item-details">
-                            <span class="cart-item-title">@item.Name</span>
-                            @if (!string.IsNullOrEmpty(item.VariantName))
+                            <span class="cart-item-title">@item.ProductName</span>
+                            @if (!string.IsNullOrEmpty(item.ProductName))
                             {
                                 <span class="cart-item-variant" style="font-size:0.8rem; color:var(--text-light); margin-bottom: 2px; display:block;">
-                                    @item.VariantName
+                                    @item.ProductName
                                 </span>
                             }
                             <span class="cart-item-price">@item.UnitPrice.ToString("N0")đ</span>
                             <div class="cart-item-actions">
-                                <button type="button" class="cart-qty-btn cart-qty-decrease" data-product-variant-id="@item.ProductVariantId" data-action="update" data-quantity="@(item.Quantity - 1)">-</button>
+                                <button type="button" class="cart-qty-btn cart-qty-decrease" data-product-variant-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity - 1)">-</button>
                                 <span style="font-size: 0.9rem; font-weight: 600;" class="cart-qty-display">@item.Quantity</span>
-                                <button type="button" class="cart-qty-btn cart-qty-increase" data-product-variant-id="@item.ProductVariantId" data-action="update" data-quantity="@(item.Quantity + 1)">+</button>
+                                <button type="button" class="cart-qty-btn cart-qty-increase" data-product-variant-id="@item.ProductId" data-action="update" data-quantity="@(item.Quantity + 1)">+</button>
                             </div>
                         </div>
-                        <button type="button" class="remove-item cart-remove-btn" data-product-variant-id="@item.ProductVariantId" data-action="remove" title="Xóa khỏi giỏ">
+                        <button type="button" class="remove-item cart-remove-btn" data-product-variant-id="@item.ProductId" data-action="remove" title="Xóa khỏi giỏ">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

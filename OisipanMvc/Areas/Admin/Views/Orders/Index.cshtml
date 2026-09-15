@@ -43,7 +43,15 @@
                                 <span class="text-muted" style="font-size: 12px;">@order.CustomerPhone</span>
                             </td>
                             <td><strong>@order.TotalAmount.ToString("N0")đ</strong></td>
-                            <td><span class="status pending">@order.Status</span></td>
+                            @{
+                                var statusClass = order.Status switch
+                                {
+                                    "Hoàn thành" => "completed",
+                                    "Đã hủy" => "cancelled",
+                                    _ => "pending"
+                                };
+                            }
+                            <td><span class="status @statusClass">@order.Status</span></td>
                             <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
                                 <div class="action-buttons">

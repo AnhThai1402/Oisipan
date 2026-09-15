@@ -119,9 +119,9 @@
                                         <span class="product-thumb"><i class="bi bi-bag-heart"></i></span>
                                         <div>
                                             <strong>@item.ProductName</strong>
-                                            @if (!string.IsNullOrEmpty(item.VariantName))
+                                            @if (!string.IsNullOrEmpty(item.ProductName))
                                             {
-                                                <small>Phân loại: @item.VariantName</small>
+                                                <small>Phân loại: @item.ProductName</small>
                                             }
                                         </div>
                                     </div>
@@ -192,6 +192,26 @@
                 </div>
             </article>
         </div>
+
+        @if (Model.Status == "Đang giao")
+        {
+            <article class="order-card action-panel" style="border: 2px solid var(--accent-green); margin-bottom: 2rem;">
+                <div class="order-card-head">
+                    <span class="card-icon" style="background-color: var(--accent-green); color: white;"><i class="bi bi-box-seam-fill"></i></span>
+                    <div>
+                        <h2 style="color: var(--accent-green);">Xác nhận nhận hàng</h2>
+                        <p>Vui lòng xác nhận sau khi bạn đã nhận đủ hàng và hài lòng với sản phẩm.</p>
+                    </div>
+                </div>
+                <form method="post" action="/Orders/ConfirmReceipt/@Model.OrderId" onsubmit="return confirm('Bạn xác nhận đã nhận được hàng và đơn hàng còn nguyên vẹn chứ? Hành động này không thể hoàn tác.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" style="background-color: var(--accent-green); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; margin-top: 10px; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Đã nhận hàng
+                    </button>
+                </form>
+            </article>
+        }
 
         @if (Model.Status != "Đã giao" && Model.Status != "Đã hủy")
         {

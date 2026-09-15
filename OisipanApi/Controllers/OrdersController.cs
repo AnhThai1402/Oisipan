@@ -68,7 +68,7 @@ public class OrdersController : ControllerBase
     {
         var orders = await _context.Orders
             .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                .ThenInclude(od => od.Product)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
@@ -87,7 +87,7 @@ public class OrdersController : ControllerBase
     {
         var order = await _context.Orders
             .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                .ThenInclude(od => od.Product)
             .FirstOrDefaultAsync(o => o.OrderId == id);
 
         if (order is null)
@@ -111,8 +111,44 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    public class CalculateShippingRequest { public string Address { get; set; } = string.Empty; }
+
+    [HttpPost("calculate-shipping")]
+    public async Task<IActionResult> CalculateShipping([FromBody] CalculateShippingRequest req, [FromServices] Oishipan.Services.IShippingService shippingService)
+    {
+        if (req == null || string.IsNullOrWhiteSpace(req.Address))
+        {
+            return BadRequest(new { message = "Vui lòng cung cấp địa chỉ." });
+        }
+
+        var distance = await shippingService.CalculateDistanceAsync(req.Address.Trim());
+        if (distance < 0)
+        {
+            return BadRequest(new {
+                isValid = false,
+                message = "Địa chỉ này nằm ngoài khu vực hỗ trợ giao hàng. Chúng tôi chỉ giao hàng trong bán kính 15km."
+            });
+        }
+        if (distance > 15)
+        {
+            return BadRequest(new { 
+                isValid = false, 
+                message = $"Địa chỉ này cách cửa hàng {distance:0.0}km. Chúng tôi chỉ giao hàng trong bán kính 15km.",
+                distance = distance
+            });
+        }
+
+        var (shippingFee, surchargeFee) = shippingService.CalculateFees(distance);
+        return Ok(new {
+            isValid = true,
+            distance = distance,
+            shippingFee = shippingFee,
+            surchargeFee = surchargeFee
+        });
+    }
+
     [HttpPost]
-    public async Task<ActionResult<OrderResponse>> Create(OrderCreateRequest request)
+    public async Task<ActionResult<OrderResponse>> Create(OrderCreateRequest request, [FromServices] Oishipan.Services.IShippingService shippingService)
     {
         if (!ModelState.IsValid)
         {
@@ -127,28 +163,35 @@ public class OrdersController : ControllerBase
         var strategy = _context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync<ActionResult<OrderResponse>>(async () =>
         {
-            var variantIds = request.Items.Select(item => item.ProductVariantId).Distinct().ToList();
-            var variants = await _context.ProductVariants
-                .Include(v => v.Product)
-                .Include(v => v.ProductVariantValues)
-                    .ThenInclude(pvv => pvv.ProductValue)
-                        .ThenInclude(pv => pv!.ProductOption)
-                .Where(v => variantIds.Contains(v.ProductVariantId))
-                .ToDictionaryAsync(v => v.ProductVariantId);
+            var productIds = request.Items.Select(item => item.ProductId).Distinct().ToList();
+            var products = await _context.Products
+                .Where(p => productIds.Contains(p.ProductId))
+                .ToDictionaryAsync(p => p.ProductId);
 
             foreach (var item in request.Items)
             {
-                if (!variants.TryGetValue(item.ProductVariantId, out var variant))
+                if (!products.TryGetValue(item.ProductId, out var product))
                 {
-                    return BadRequest(new { message = $"Biến thể sản phẩm #{item.ProductVariantId} không tồn tại." });
+                    return BadRequest(new { message = $"Sản phẩm #{item.ProductId} không tồn tại." });
                 }
 
-                if (variant.StockQuantity < item.Quantity)
+                if (product.StockQuantity < item.Quantity)
                 {
-                    var variantDesc = string.Join(", ", variant.ProductVariantValues.Select(pvv => $"{pvv.ProductValue?.ProductOption?.OptionName}: {pvv.ProductValue?.ValueName}"));
-                    return BadRequest(new { message = $"{variant.Product?.Name} ({variantDesc}) chỉ còn {variant.StockQuantity} sản phẩm." });
+                    return BadRequest(new { message = $"{product.Name} chỉ còn {product.StockQuantity} sản phẩm." });
                 }
             }
+
+            // Calculate shipping fees based on distance
+            var distance = await shippingService.CalculateDistanceAsync(request.ShippingAddress.Trim());
+            if (distance < 0)
+            {
+                return BadRequest(new { message = "Địa chỉ này nằm ngoài khu vực hỗ trợ giao hàng. Chúng tôi chỉ giao hàng trong bán kính 15km." });
+            }
+            if (distance > 15)
+            {
+                return BadRequest(new { message = $"Địa chỉ giao hàng quá xa ({distance:0.0}km). Chúng tôi chỉ giao hàng trong phạm vi 15km." });
+            }
+            var (shippingFee, surchargeFee) = shippingService.CalculateFees(distance);
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -160,41 +203,29 @@ public class OrdersController : ControllerBase
                 CreatedAt = DateTime.Now,
                 OrderStatus = "Chờ xác nhận",
                 PaymentMethod = request.PaymentMethod.Trim(),
-                ShippingAddress = request.ShippingAddress.Trim()
+                ShippingAddress = request.ShippingAddress.Trim(),
+                ShippingFee = shippingFee,
+                SurchargeFee = surchargeFee
             };
 
             foreach (var item in request.Items)
             {
-                var variant = variants[item.ProductVariantId];
-                variant.StockQuantity -= item.Quantity;
-                if (variant.StockQuantity < 0) variant.StockQuantity = 0;
-
-                if (variant.Product != null)
-                {
-                    variant.Product.StockQuantity -= item.Quantity;
-                    if (variant.Product.StockQuantity < 0) variant.Product.StockQuantity = 0;
-                }
-
-                var itemPrice = (variant.Product?.Price ?? 0) + variant.Price;
-
-                var variantNameParts = variant.ProductVariantValues
-                    .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
-                    .Select(pvv => $"{pvv.ProductValue!.ProductOption!.OptionName}: {pvv.ProductValue.ValueName}");
-                var variantName = variantNameParts.Any() ? string.Join(" - ", variantNameParts) : null;
+                var product = products[item.ProductId];
+                product.StockQuantity -= item.Quantity;
+                if (product.StockQuantity < 0) product.StockQuantity = 0;
 
                 order.OrderDetails.Add(new OrderDetail
                 {
-                    ProductVariantId = variant.ProductVariantId,
-                    ProductName = variant.Product?.Name,
-                    VariantName = variantName,
-                    UnitPrice = itemPrice,
+                    ProductId = product.ProductId,
+                    ProductName = product.Name,
+                    UnitPrice = product.Price,
                     Quantity = item.Quantity,
                     Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim()
                 });
             }
 
             order.TotalAmount = order.OrderDetails.Sum(item => item.UnitPrice * item.Quantity);
-            order.FinalAmount = order.TotalAmount;
+            order.FinalAmount = order.TotalAmount + order.ShippingFee + order.SurchargeFee;
 
             if (!string.IsNullOrWhiteSpace(request.VoucherCode))
             {
@@ -253,7 +284,7 @@ public class OrdersController : ControllerBase
 
                 order.VoucherId = voucher.VoucherId;
                 order.DiscountAmount = discount;
-                order.FinalAmount = order.TotalAmount - discount;
+                order.FinalAmount = order.TotalAmount + order.ShippingFee + order.SurchargeFee - discount;
 
                 voucher.TotalQuantity -= 1;
 
@@ -269,7 +300,6 @@ public class OrdersController : ControllerBase
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            // Assign voucher to user after successful order
             await AssignVoucherToUser(request.UserId);
 
             var created = await BuildOrderQuery()
@@ -307,6 +337,12 @@ public class OrdersController : ControllerBase
             {
                 return BadRequest(new { message = $"Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'. Trạng thái hiện tại: '{order.OrderStatus}'." });
             }
+        }
+
+        // Người dùng phải tự bấm Đã nhận hàng thì mới được chuyển sang Hoàn thành
+        if (status == "Hoàn thành" || status == "Đã giao")
+        {
+            return BadRequest(new { message = "Không thể chuyển thủ công sang 'Hoàn thành' hoặc 'Đã giao'. Trạng thái này chỉ được cập nhật khi người dùng bấm xác nhận 'Đã nhận hàng'." });
         }
 
         order.OrderStatus = status;
@@ -512,7 +548,7 @@ public class OrdersController : ControllerBase
 
             var order = await _context.Orders
                 .Include(o => o.OrderDetails)
-                    .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                    .ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.OrderId == id);
 
             if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
@@ -673,7 +709,7 @@ public class OrdersController : ControllerBase
     {
         var order = await _context.Orders
             .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                .ThenInclude(od => od.Product)
             .FirstOrDefaultAsync(o => o.OrderId == id);
 
         if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
@@ -881,7 +917,7 @@ public class OrdersController : ControllerBase
     {
         return _context.Orders
             .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                .ThenInclude(od => od.Product)
             .Include(o => o.Account)
             .Include(o => o.Voucher);
     }
@@ -906,9 +942,8 @@ public class OrdersController : ControllerBase
             Items = order.OrderDetails.Select(item => new OrderDetailResponse
             {
                 OrderDetailId = item.OrderDetailId,
-                ProductVariantId = item.ProductVariantId,
-                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.ProductVariant?.Product?.Name,
-                VariantName = item.VariantName,
+                ProductId = item.ProductId,
+                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.Product?.Name,
                 UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 Note = item.Note
@@ -941,9 +976,8 @@ public class OrdersController : ControllerBase
             Items = order.OrderDetails.Select(item => new AdminOrderItemResponse
             {
                 OrderDetailId = item.OrderDetailId,
-                ProductVariantId = item.ProductVariantId,
-                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.ProductVariant?.Product?.Name,
-                VariantName = item.VariantName,
+                ProductId = item.ProductId,
+                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.Product?.Name,
                 UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 Note = item.Note

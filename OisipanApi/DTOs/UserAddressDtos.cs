@@ -9,6 +9,7 @@ public class UserAddressResponse
     public string PhoneNumber { get; set; } = string.Empty;
     public string FullAddress { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
+    public decimal DistanceToStore { get; set; }
 }
 
 public class UserAddressCreateRequest

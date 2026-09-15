@@ -27,6 +27,9 @@ public class UserAddress : BaseEntity
 
     public bool IsDefault { get; set; } = false;
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal DistanceToStore { get; set; } = 0;
+
     [ForeignKey("UserId")]
     public virtual Account Account { get; set; } = null!;
 }

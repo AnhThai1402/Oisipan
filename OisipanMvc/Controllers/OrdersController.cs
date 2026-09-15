@@ -208,10 +208,8 @@ public class OrdersController : Controller
             OrderItems = apiOrder.Items.Select(item => new OrderItemAdminViewModel
             {
                 OrderDetailId = item.OrderDetailId,
-                ProductVariantId = item.ProductVariantId,
                 ProductId = item.ProductId,
                 ProductName = item.ProductName ?? "—",
-                VariantName = item.VariantName,
                 UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 OrderItemId = item.OrderDetailId

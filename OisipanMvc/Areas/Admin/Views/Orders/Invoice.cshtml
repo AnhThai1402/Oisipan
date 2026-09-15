@@ -1,7 +1,7 @@
 ﻿@model FrontendMvc.Models.OrderAdminViewModel
 @{
     Layout = null;
-    ViewData["Title"] = $"Hóa đơn #OP-{Model.OrderId.ToString("N")}";
+    ViewData["Title"] = $"H�a don #OP-{Model.OrderId.ToString("N")}";
 }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,28 +15,28 @@
             <img src="~/images/logo.png" alt="logo" style="height:56px; width:auto; object-fit:contain;" onerror="this.style.display='none'" />
             <div>
                 <h2>Oisipan</h2>
-                <p>Địa chỉ: Số 1, Phố A, Thành phố</p>
+                <p>�?a ch?: S? 1, Ph? A, Th�nh ph?</p>
                 <p>Hotline: 0123-456-789</p>
             </div>
         </div>
         <div class="meta">
-            <h3>HÓA ĐƠN BÁN HÀNG</h3>
-            <div>Mã đơn: <strong>#OP-@Model.OrderId.ToString("N")</strong></div>
-            <div>Ngày: <strong>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
+            <h3>H�A �ON B�N H�NG</h3>
+            <div>M� don: <strong>#OP-@Model.OrderId.ToString("N")</strong></div>
+            <div>Ng�y: <strong>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
         </div>
     </header>
 
     <section class="invoice-info">
         <div class="box">
-            <h4>Khách hàng</h4>
-            <p>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Khách vãng lai" : Model.CustomerName)</p>
+            <h4>Kh�ch h�ng</h4>
+            <p>@(string.IsNullOrWhiteSpace(Model.CustomerName) ? "Kh�ch v�ng lai" : Model.CustomerName)</p>
             <p>@Model.CustomerPhone</p>
             <p>@Model.ShippingAddress</p>
         </div>
         <div class="box">
-            <h4>Thanh toán</h4>
-            <p>Phương thức: @Model.PaymentMethod</p>
-            <p>Trạng thái: @Model.Status</p>
+            <h4>Thanh to�n</h4>
+            <p>Phuong th?c: @Model.PaymentMethod</p>
+            <p>Tr?ng th�i: @Model.Status</p>
         </div>
     </section>
 
@@ -44,10 +44,10 @@
         <table>
             <thead>
                 <tr>
-                    <th>Sản phẩm</th>
+                    <th>S?n ph?m</th>
                     <th class="center">SL</th>
-                    <th class="right">Giá</th>
-                    <th class="right">Thành tiền</th>
+                    <th class="right">Gi�</th>
+                    <th class="right">Th�nh ti?n</th>
                 </tr>
             </thead>
             <tbody>
@@ -56,46 +56,46 @@
                     <tr>
                         <td>
                             @item.ProductName
-                            @if (!string.IsNullOrEmpty(item.VariantName))
+                            @if (!string.IsNullOrEmpty(item.ProductName))
                             {
                                 <br />
-                                <small style="color: #666;">Phân loại: @item.VariantName</small>
+                                <small style="color: #666;">Ph�n lo?i: @item.ProductName</small>
                             }
                         </td>
                         <td class="center">@item.Quantity</td>
-                        <td class="right">@item.UnitPrice.ToString("N0")đ</td>
-                        <td class="right">@item.Total.ToString("N0")đ</td>
+                        <td class="right">@item.UnitPrice.ToString("N0")d</td>
+                        <td class="right">@item.Total.ToString("N0")d</td>
                     </tr>
                 }
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3">Tạm tính</td>
-                    <td class="right">@Model.TotalAmount.ToString("N0")đ</td>
+                    <td colspan="3">T?m t�nh</td>
+                    <td class="right">@Model.TotalAmount.ToString("N0")d</td>
                 </tr>
                 @if(Model.DiscountAmount > 0)
                 {
                     <tr>
-                        <td colspan="3">Giảm giá (@Model.VoucherCode ?? "")</td>
-                        <td class="right">-@Model.DiscountAmount.ToString("N0")đ</td>
+                        <td colspan="3">Gi?m gi� (@Model.VoucherCode ?? "")</td>
+                        <td class="right">-@Model.DiscountAmount.ToString("N0")d</td>
                     </tr>
                 }
                 <tr class="total">
-                    <td colspan="3">Tổng thanh toán</td>
-                    <td class="right">@Model.FinalAmount.ToString("N0")đ</td>
+                    <td colspan="3">T?ng thanh to�n</td>
+                    <td class="right">@Model.FinalAmount.ToString("N0")d</td>
                 </tr>
             </tfoot>
         </table>
     </section>
 
     <footer class="invoice-footer">
-        <p>Xin cảm ơn quý khách! Hẹn gặp lại.</p>
+        <p>Xin c?m on qu� kh�ch! H?n g?p l?i.</p>
     </footer>
 
     <div class="print-actions no-print">
-        <button class="primary-action" onclick="window.print()"><i class="bi bi-printer"></i> In hóa đơn</button>
-        <a class="soft-action" href="@Url.Action("Detail", "Orders", new { area = "Admin", id = Model.OrderId })">Quay lại</a>
-        <a class="primary-action" style="margin-left:8px; background:#0d6efd; border-color:#0d6efd;" href="@( (Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188").TrimEnd('/') + "/api/orders/" + Model.OrderId + "/invoice.pdf")">Tải PDF</a>
+        <button class="primary-action" onclick="window.print()"><i class="bi bi-printer"></i> In h�a don</button>
+        <a class="soft-action" href="@Url.Action("Detail", "Orders", new { area = "Admin", id = Model.OrderId })">Quay l?i</a>
+        <a class="primary-action" style="margin-left:8px; background:#0d6efd; border-color:#0d6efd;" href="@( (Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5188").TrimEnd('/') + "/api/orders/" + Model.OrderId + "/invoice.pdf")">T?i PDF</a>
         <img id="invoice-barcode" alt="barcode" style="margin-left:12px; height:64px; width:180px; object-fit:contain; border:1px solid var(--border-color); padding:6px;" />
     </div>
 </div>

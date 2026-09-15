@@ -4,12 +4,7 @@
 {
     foreach (var product in Model)
     {
-        var activeVariants = product.ProductVariants.Where(v => v.IsActive).ToList();
-        var minimumPrice = activeVariants.Any() ? product.Price + activeVariants.Min(v => v.Price) : product.Price;
-        var maximumPrice = activeVariants.Any() ? product.Price + activeVariants.Max(v => v.Price) : product.Price;
-        var displayPrice = minimumPrice == maximumPrice
-            ? $"{minimumPrice:N0}đ"
-            : $"{minimumPrice:N0}đ - {maximumPrice:N0}đ";
+        var displayPrice = $"{product.Price:N0}đ";
 
         <article class="product-card">
             <a class="product-card-link"

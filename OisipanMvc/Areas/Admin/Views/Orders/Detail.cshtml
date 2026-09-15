@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = $"Chi tiết đơn hàng #OP-{Model.OrderId:N}";
 
-    var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Đã giao" };
+    var statusOrder = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao" };
     var trackerLabels = new[] { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang giao", "Hoàn thành" };
     var trackerIcons = new[] { "bi-receipt", "bi-check2-circle", "bi-box2-heart", "bi-truck", "bi-house-heart" };
     var currentIndex = Array.IndexOf(statusOrder, Model.Status);
@@ -14,7 +14,7 @@
     var isCompleted = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành" || isCancelled;
     var canCancel = Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận";
     var canPrintInvoice = normalizedStatus == "đã giao" || normalizedStatus == "completed" || normalizedStatus == "hoàn thành";
-    var progressPercent = isCancelled ? 0 : currentIndex * 80.0 / (statusOrder.Length - 1);
+    var progressPercent = isCancelled ? 0 : currentIndex * 80.0 / (trackerLabels.Length - 1);
     var nextStatus = currentIndex >= 0 && currentIndex < statusOrder.Length - 1 ? statusOrder[currentIndex + 1] : null;
     var totalQuantity = Model.OrderItems.Sum(item => item.Quantity);
 }
@@ -98,9 +98,9 @@ else
                                 <span class="admin-product-icon"><i class="bi bi-bag-heart"></i></span>
                                 <div>
                                     <strong>@item.ProductName</strong>
-                                    @if (!string.IsNullOrEmpty(item.VariantName))
+                                    @if (!string.IsNullOrEmpty(item.ProductName))
                                     {
-                                        <small>Phân loại: @item.VariantName</small>
+                                        <small>Phân loại: @item.ProductName</small>
                                     }
                                 </div>
                             </div>

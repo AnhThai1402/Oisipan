@@ -41,6 +41,12 @@ namespace Oishipan.Models
         public decimal DiscountAmount { get; set; } = 0;
 
         [Column(TypeName = "decimal(18,2)")]
+        public decimal ShippingFee { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SurchargeFee { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal FinalAmount { get; set; }
 
         public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();

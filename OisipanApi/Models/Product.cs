@@ -34,7 +34,6 @@ namespace Oishipan.Models
 
         public byte? MinimumStock { get; set; }
 
-        public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
-        public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
+
     }
 }

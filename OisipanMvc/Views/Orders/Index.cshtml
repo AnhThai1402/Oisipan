@@ -67,6 +67,15 @@
                                     <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;" title="Xem chi tiết">
                                         <i class="bi bi-eye"></i> Xem chi tiết
                                     </a>
+                                    @if (order.Status == "Đang giao")
+                                    {
+                                        <form method="post" action="/Orders/ConfirmReceipt/@order.OrderId" onsubmit="return confirm('Bạn xác nhận đã nhận được hàng?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-small" style="padding: 0.5rem 1rem; background-color: var(--accent-green); color: white; border: none; cursor: pointer;" title="Đã nhận hàng">
+                                                <i class="bi bi-check-circle"></i> Đã nhận
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -100,7 +109,7 @@
                                         </div>
                                         <div class="shipping-step" data-step="5">
                                             <i class="bi shipping-step-icon bi-house-check"></i>
-                                            <span class="shipping-step-label">Đã giao</span>
+                                            <span class="shipping-step-label">Hoàn thành</span>
                                         </div>
                                     </div>
                                 </div>

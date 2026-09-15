@@ -31,7 +31,7 @@ public class OrderCreateRequest
 
 public class OrderItemCreateRequest
 {
-    public Guid ProductVariantId { get; set; }
+    public Guid ProductId { get; set; }
 
     [Range(1, byte.MaxValue)]
     public byte Quantity { get; set; }
@@ -68,9 +68,8 @@ public class OrderResponse
 public class OrderDetailResponse
 {
     public Guid OrderDetailId { get; set; }
-    public Guid ProductVariantId { get; set; }
+    public Guid ProductId { get; set; }
     public string? ProductName { get; set; }
-    public string? VariantName { get; set; }
     public decimal UnitPrice { get; set; }
     public byte Quantity { get; set; }
     public string? Note { get; set; }

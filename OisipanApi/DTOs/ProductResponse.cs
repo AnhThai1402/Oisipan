@@ -13,6 +13,4 @@ public class ProductResponse
     public string? Description { get; set; }
     public byte? MinimumStock { get; set; }
     public string Status { get; set; } = "active";
-    public List<ProductOptionResponse> ProductOptions { get; set; } = new();
-    public List<ProductVariantResponse> ProductVariants { get; set; } = new();
 }

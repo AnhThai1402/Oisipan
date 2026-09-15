@@ -17,7 +17,7 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        return View(await BuildStorefrontModel());
+        return View(await BuildStorefrontModel(null, null));
     }
 
     public IActionResult Privacy()
@@ -30,9 +30,9 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> Menu([FromQuery] Guid? categoryId = null)
+    public async Task<IActionResult> Menu([FromQuery] Guid? categoryId = null, [FromQuery] int page = 1)
     {
-        return View(await BuildStorefrontModel(categoryId));
+        return View(await BuildStorefrontModel(categoryId, page));
     }
 
     public async Task<IActionResult> ProductDetail(Guid id)
@@ -51,8 +51,7 @@ public class HomeController : Controller
             return NotFound();
         }
 
-        product.ProductVariants = await Api.GetFromJsonAsync<List<ProductVariantCatalogViewModel>>(
-            $"api/productvariants?productId={id}") ?? new();
+
 
         return View(product);
     }
@@ -70,25 +69,40 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private async Task<StorefrontViewModel> BuildStorefrontModel(Guid? categoryId = null)
+    private async Task<StorefrontViewModel> BuildStorefrontModel(Guid? categoryId = null, int? page = 1)
     {
         var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
         var productsTask = Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
-        var bannersTask = Api.GetFromJsonAsyncWithOptions<List<BannerViewModel>>("api/banners");
         var categoriesTask = Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories");
         
-        await Task.WhenAll(productsTask, bannersTask, categoriesTask);
+        await Task.WhenAll(productsTask, categoriesTask);
 
         var products = await productsTask ?? new List<ProductCatalogViewModel>();
-        var banners = await bannersTask ?? new List<BannerViewModel>();
         var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
+
+        var filteredProducts = products.Where(product => product.StockQuantity > 0).ToList();
+        int totalItems = filteredProducts.Count;
+        int totalPages = 1;
+        var pagedProducts = filteredProducts;
+
+        if (page.HasValue)
+        {
+            int pageSize = 12;
+            totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            
+            if (page.Value < 1) page = 1;
+            if (page.Value > totalPages && totalPages > 0) page = totalPages;
+
+            pagedProducts = filteredProducts.Skip((page.Value - 1) * pageSize).Take(pageSize).ToList();
+        }
 
         return new StorefrontViewModel
         {
-            Products = products.Where(product => product.StockQuantity > 0).ToList(),
-            Banners = banners,
+            Products = pagedProducts,
             Categories = categories,
-            SelectedCategoryId = categoryId
+            SelectedCategoryId = categoryId,
+            CurrentPage = page ?? 1,
+            TotalPages = totalPages
         };
     }
 

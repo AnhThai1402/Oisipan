@@ -378,7 +378,7 @@
     <form id="checkout-page-form" method="post" asp-controller="Cart" asp-action="Checkout">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path" />
-        <input type="hidden" name="BuyNowProductVariantId" value="@buyNowVariantId" />
+        <input type="hidden" name="BuyNowProductId" value="@buyNowVariantId" />
         <input type="hidden" id="PaymentMethod" name="PaymentMethod" value="COD" />
 
         <!-- Address Section -->
@@ -424,7 +424,7 @@
                         <div class="product-info">
                             @if (!string.IsNullOrEmpty(item.Image))
                             {
-                                <img src="@item.Image" alt="@item.Name" class="product-img" />
+                                <img src="@item.Image" alt="@item.ProductName" class="product-img" />
                             }
                             else
                             {
@@ -433,19 +433,19 @@
                                 </div>
                             }
                             <div>
-                                <div class="product-name">@item.Name</div>
-                                @if(!string.IsNullOrEmpty(item.VariantName))
+                                <div class="product-name">@item.ProductName</div>
+                                @if(!string.IsNullOrEmpty(item.ProductName))
                                 {
-                                    <div class="product-variant">Phân loại: @item.VariantName</div>
+                                    <div class="product-variant">Phân loại: @item.ProductName</div>
                                 }
                             </div>
                         </div>
                         <div class="text-center text-muted">@item.UnitPrice.ToString("N0")đ</div>
                         <div class="text-center">
                             <div class="cart-qty-controls" style="justify-content:center;">
-                                <button type="button" class="checkout-qty-btn cart-qty-decrease" data-product-variant-id="@item.ProductVariantId" data-quantity="@(item.Quantity - 1)"><i class="bi bi-dash"></i></button>
+                                <button type="button" class="checkout-qty-btn cart-qty-decrease" data-product-variant-id="@item.ProductId" data-quantity="@(item.Quantity - 1)"><i class="bi bi-dash"></i></button>
                                 <span class="cart-qty-display">@item.Quantity</span>
-                                <button type="button" class="checkout-qty-btn cart-qty-increase" data-product-variant-id="@item.ProductVariantId" data-quantity="@(item.Quantity + 1)"><i class="bi bi-plus"></i></button>
+                                <button type="button" class="checkout-qty-btn cart-qty-increase" data-product-variant-id="@item.ProductId" data-quantity="@(item.Quantity + 1)"><i class="bi bi-plus"></i></button>
                             </div>
                         </div>
                         <div class="text-right text-dark" style="font-weight:500;">@item.LineTotal.ToString("N0")đ</div>
@@ -460,8 +460,8 @@
                     <input type="text" class="message-input" placeholder="Lưu ý cho Người bán..." />
                 </div>
                 <div class="shipping-info">
-                    <div class="text-muted">Phương thức vận chuyển (Dự kiến 1-2 ngày)</div>
-                    <div class="shipping-fee text-dark">Miễn phí giao hàng</div>
+                    <div class="text-muted">Phương thức vận chuyển</div>
+                    <div class="shipping-fee text-dark" id="shipping-fee-status">Đang tính phí...</div>
                 </div>
             </div>
         </div>
@@ -504,7 +504,11 @@
                 </div>
                 <div class="summary-row">
                     <span>Phí vận chuyển</span>
-                    <span class="summary-val">0đ</span>
+                    <span class="summary-val" id="shipping-fee-display">0đ</span>
+                </div>
+                <div class="summary-row" style="display: none;">
+                    <span>Phụ phí (Túi giữ nhiệt > 5km)</span>
+                    <span class="summary-val" id="surcharge-fee-display">0đ</span>
                 </div>
                 
                 <div class="summary-total">
@@ -728,7 +732,13 @@
                         if(vCodeEl) vCodeEl.value = code;
                         
                         let discount = data.discountAmount || 0;
-                        const finalTotal = baseTotal - discount;
+                        
+                        let currentShippingStr = document.getElementById('shipping-fee-display')?.textContent.replace(/[^0-9]/g, '') || '0';
+                        let currentSurchargeStr = document.getElementById('surcharge-fee-display')?.textContent.replace(/[^0-9]/g, '') || '0';
+                        let currentShipping = parseFloat(currentShippingStr) || 0;
+                        let currentSurcharge = parseFloat(currentSurchargeStr) || 0;
+
+                        const finalTotal = baseTotal + currentShipping + currentSurcharge - discount;
 
                         if (selectedVoucherDisplay) {
                             selectedVoucherDisplay.style.display = 'inline';
@@ -758,7 +768,14 @@
                             openModalBtn.textContent = 'Chọn Voucher';
                         }
                         if(discountRow) discountRow.style.display = 'none';
-                        if(finalTotalEl) finalTotalEl.textContent = baseTotal.toLocaleString('vi-VN') + 'đ';
+
+                        let currentShippingStr = document.getElementById('shipping-fee-display')?.textContent.replace(/[^0-9]/g, '') || '0';
+                        let currentSurchargeStr = document.getElementById('surcharge-fee-display')?.textContent.replace(/[^0-9]/g, '') || '0';
+                        let currentShipping = parseFloat(currentShippingStr) || 0;
+                        let currentSurcharge = parseFloat(currentSurchargeStr) || 0;
+                        const finalTotal = baseTotal + currentShipping + currentSurcharge;
+
+                        if(finalTotalEl) finalTotalEl.textContent = finalTotal.toLocaleString('vi-VN') + 'đ';
                         
                         if (!isInitial && typeof triggerToast === 'function') triggerToast(data.message || 'Voucher không hợp lệ', 'error');
                     }
@@ -767,6 +784,69 @@
                 }
             }
         })();
+
+        async function calculateShipping(address) {
+            if (!address) return;
+            const checkoutBtn = document.getElementById('submit-checkout-btn');
+            try {
+                if (checkoutBtn) checkoutBtn.disabled = true;
+                
+                const response = await fetch('/Cart/CalculateShipping', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Address: address })
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch(err) {
+                    throw new Error("Server returned an invalid response (not JSON). Please restart the application.");
+                }
+                
+                // Cập nhật giao diện
+                let shippingDisplay = document.getElementById('shipping-fee-display');
+                let surchargeDisplay = document.getElementById('surcharge-fee-display');
+                let finalTotalEl = document.getElementById('final-total');
+                let shippingStatusDisplay = document.getElementById('shipping-fee-status');
+                let baseAmount = parseFloat(document.getElementById('base-amount').value || 0);
+                let discountAmountStr = document.getElementById('discount-amount')?.textContent.replace(/[^0-9]/g, '') || '0';
+                let discountAmount = parseFloat(discountAmountStr) || 0;
+
+                if (!response.ok || result.isValid === false) {
+                    if (typeof triggerToast === 'function') triggerToast(result.message || 'Lỗi tính phí giao hàng', 'error');
+                    if (shippingDisplay) shippingDisplay.textContent = 'Không hỗ trợ';
+                    if (shippingStatusDisplay) shippingStatusDisplay.textContent = 'Không hỗ trợ giao hàng';
+                    if (surchargeDisplay) surchargeDisplay.parentElement.style.display = 'none';
+                    if (checkoutBtn) checkoutBtn.disabled = true;
+                } else {
+                    let feeText = result.shippingFee > 0 ? (result.shippingFee.toLocaleString('vi-VN') + 'đ') : 'Miễn phí giao hàng';
+                    if (shippingDisplay) shippingDisplay.textContent = result.shippingFee.toLocaleString('vi-VN') + 'đ';
+                    if (shippingStatusDisplay) shippingStatusDisplay.textContent = feeText;
+                    
+                    if (surchargeDisplay && result.surchargeFee > 0) {
+                        surchargeDisplay.parentElement.style.display = 'flex';
+                        surchargeDisplay.textContent = result.surchargeFee.toLocaleString('vi-VN') + 'đ';
+                    } else if (surchargeDisplay) {
+                        surchargeDisplay.parentElement.style.display = 'none';
+                    }
+
+                    let newTotal = baseAmount + result.shippingFee + (result.surchargeFee || 0) - discountAmount;
+                    if (finalTotalEl) finalTotalEl.textContent = newTotal.toLocaleString('vi-VN') + 'đ';
+
+                    if (checkoutBtn) checkoutBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error(error);
+                if (typeof triggerToast === 'function') triggerToast('Lỗi khi tính phí vận chuyển.', 'error');
+            }
+        }
+        
+        // Gọi tính phí ban đầu nếu có sẵn địa chỉ
+        const initialAddress = document.getElementById('CustomerAddress')?.value;
+        if (initialAddress) {
+            calculateShipping(initialAddress);
+        }
         
         // Quantity update handling
         document.querySelectorAll('.checkout-qty-btn').forEach(btn => {
@@ -869,7 +949,7 @@
             document.getElementById('address-add-view').style.display = 'none';
         }
 
-        function selectAddress(name, phone, address) {
+        async function selectAddress(name, phone, address) {
             document.getElementById('CustomerName').value = name;
             document.getElementById('CustomerPhone').value = phone;
             document.getElementById('CustomerAddress').value = address;
@@ -879,6 +959,8 @@
             document.getElementById('display-full-address').innerHTML = address;
             
             closeAddressModal();
+
+            await calculateShipping(address);
         }
 
         async function submitNewAddress() {

@@ -214,7 +214,7 @@ function setupCartUpdateHandlers() {
     document.querySelectorAll('.cart-qty-increase, .cart-qty-decrease').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const productVariantId = btn.dataset.productVariantId;
+            const productId = btn.dataset.productId;
             const quantity = parseInt(btn.dataset.quantity);
             
             const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -227,7 +227,7 @@ function setupCartUpdateHandlers() {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
                     body: new URLSearchParams({
-                        productVariantId: productVariantId,
+                        productId: productId,
                         quantity: quantity,
                         __RequestVerificationToken: token
                     })
@@ -257,7 +257,7 @@ function setupCartUpdateHandlers() {
     document.querySelectorAll('.cart-remove-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const productVariantId = btn.dataset.productVariantId;
+            const productId = btn.dataset.productId;
             const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
             
             try {
@@ -268,7 +268,7 @@ function setupCartUpdateHandlers() {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
                     body: new URLSearchParams({
-                        productVariantId: productVariantId,
+                        productId: productId,
                         __RequestVerificationToken: token
                     })
                 });
@@ -295,22 +295,22 @@ function updateCartDisplay(cartData) {
 
     // Update quantity display for each item
     cartData.items.forEach(item => {
-        const qtyDisplay = document.querySelector(`.cart-item[data-product-variant-id="${item.productVariantId}"] .cart-qty-display`);
+        const qtyDisplay = document.querySelector(`.cart-item[data-product-id="${item.productId}"] .cart-qty-display`);
         if (qtyDisplay) {
             qtyDisplay.textContent = item.quantity;
         }
         
         // Update quantity buttons data
-        const increaseBtn = document.querySelector(`.cart-item[data-product-variant-id="${item.productVariantId}"] .cart-qty-increase`);
-        const decreaseBtn = document.querySelector(`.cart-item[data-product-variant-id="${item.productVariantId}"] .cart-qty-decrease`);
+        const increaseBtn = document.querySelector(`.cart-item[data-product-id="${item.productId}"] .cart-qty-increase`);
+        const decreaseBtn = document.querySelector(`.cart-item[data-product-id="${item.productId}"] .cart-qty-decrease`);
         if (increaseBtn) increaseBtn.dataset.quantity = item.quantity + 1;
         if (decreaseBtn) decreaseBtn.dataset.quantity = item.quantity - 1;
     });
 
     // Remove items that no longer exist (quantity = 0)
     document.querySelectorAll('.cart-item').forEach(item => {
-        const productVariantId = item.dataset.productVariantId ? item.dataset.productVariantId.toLowerCase() : '';
-        if (!cartData.items.find(i => i.productVariantId && i.productVariantId.toLowerCase() === productVariantId)) {
+        const productId = item.dataset.productId ? item.dataset.productId.toLowerCase() : '';
+        if (!cartData.items.find(i => i.productId && i.productId.toLowerCase() === productId)) {
             item.remove();
         }
     });
@@ -595,15 +595,17 @@ function handleForgotPasswordRequest(event) {
 }
 
 function triggerBuyNow(productId) {
-    const variantIdInput = document.getElementById('productVariantId');
+    const variantIdInput = document.getElementById('productId');
+    const quantityInput = document.getElementById('quantity');
     if (variantIdInput) {
         const variantId = variantIdInput.value;
+        const qty = quantityInput ? quantityInput.value : 1;
         if (!variantId || variantId === "00000000-0000-0000-0000-000000000000") {
                 triggerToast("Vui lòng chọn đầy đủ các lựa chọn trước khi mua ngay.", 'warning');
                 return;
             }
             
-            window.location.href = '/Cart/Checkout?buyNowVariantId=' + variantId;
+            window.location.href = '/Cart/Checkout?buyNowVariantId=' + variantId + '&buyNowQuantity=' + qty;
         } else {
             triggerToast("Có lỗi xảy ra, không tìm thấy sản phẩm.", 'error');
         }

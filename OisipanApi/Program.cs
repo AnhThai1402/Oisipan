@@ -77,6 +77,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<Oishipan.Services.IShippingService, Oishipan.Services.ShippingService>();
+
 // Cấu hình CORS
 builder.Services.AddCors(options =>
 {

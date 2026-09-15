@@ -89,10 +89,8 @@ public class UserOrderApiResponse
 public class UserOrderItemApiResponse
 {
     public Guid OrderDetailId { get; set; }
-    public Guid ProductVariantId { get; set; }
     public Guid ProductId { get; set; }
     public string? ProductName { get; set; }
-    public string? VariantName { get; set; }
     public decimal UnitPrice { get; set; }
     public byte Quantity { get; set; }
     public string? Note { get; set; }
@@ -118,13 +116,10 @@ public class OrderItemAdminViewModel
         get => OrderItemId;
         set => OrderItemId = value;
     }
-    public Guid ProductVariantId { get; set; }
     public Guid ProductId { get; set; }
 
     [Display(Name = "Tên sản phẩm")]
     public string ProductName { get; set; } = string.Empty;
-
-    public string? VariantName { get; set; }
 
     [Display(Name = "Đơn giá")]
     public decimal UnitPrice { get; set; }

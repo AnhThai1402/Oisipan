@@ -21,9 +21,6 @@ public class ProductsController : ControllerBase
     {
         var query = _context.Products
             .Include(p => p.Category)
-            .Include(p => p.ProductOptions)
-                .ThenInclude(po => po.ProductValues)
-            .Include(p => p.ProductVariants)
             .AsQueryable();
 
         if (categoryId.HasValue)
@@ -32,7 +29,7 @@ public class ProductsController : ControllerBase
         }
 
         var products = await query
-            .OrderBy(p => p.Name)
+            .OrderByDescending(p => p.CreatedAt)
             .Select(p => new ProductResponse
             {
                 ProductId = p.ProductId,
@@ -43,26 +40,9 @@ public class ProductsController : ControllerBase
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category == null ? null : p.Category.CategoryName,
                 Description = p.Description,
-                ProductOptions = p.ProductOptions
-                    .OrderBy(po => po.OptionName)
-                    .Select(po => new ProductOptionResponse
-                    {
-                        ProductOptionId = po.ProductOptionId,
-                        ProductId = po.ProductId,
-                        ProductName = p.Name,
-                        OptionName = po.OptionName,
-                        ProductValues = po.ProductValues
-                            .OrderBy(pv => pv.ValueName)
-                            .Select(pv => new ProductValueResponse
-                            {
-                                ProductValueId = pv.ProductValueId,
-                                ProductOptionId = pv.ProductOptionId,
-                                ValueName = pv.ValueName,
-                                AdditionalPrice = pv.AdditionalPrice
-                            })
-                            .ToList()
-                    })
-                    .ToList()
+                Sku = p.Sku,
+                MinimumStock = p.MinimumStock,
+                Status = p.Status ? "active" : "inactive"
             })
             .ToListAsync();
 
@@ -74,10 +54,6 @@ public class ProductsController : ControllerBase
     {
         var product = await _context.Products
             .Include(p => p.Category)
-            .Include(p => p.ProductOptions)
-                .ThenInclude(po => po.ProductValues)
-            .Include(p => p.ProductVariants)
-                .ThenInclude(pv => pv.ProductVariantValues)
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
         if (product is null)
@@ -85,95 +61,13 @@ public class ProductsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy sản phẩm." });
         }
 
-        await EnsureVariantsExistAsync(product);
-
         return Ok(ToResponse(product));
-    }
-
-    private async Task EnsureVariantsExistAsync(Product product)
-    {
-        var validOptions = product.ProductOptions
-            .Where(o => o.ProductValues != null && o.ProductValues.Any())
-            .Select(o => o.ProductValues.ToList())
-            .ToList();
-
-        if (!validOptions.Any())
-        {
-            if (!product.ProductVariants.Any())
-            {
-                var defaultVariant = new ProductVariant
-                {
-                    ProductId = product.ProductId,
-                    Price = 0m,
-                    StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
-                    Status = true
-                };
-                _context.ProductVariants.Add(defaultVariant);
-                product.ProductVariants.Add(defaultVariant);
-                await _context.SaveChangesAsync();
-            }
-
-            return;
-        }
-
-        var combinations = new List<List<ProductValue>>();
-        void Generate(int depth, List<ProductValue> current)
-        {
-            if (depth == validOptions.Count)
-            {
-                combinations.Add(new List<ProductValue>(current));
-                return;
-            }
-            foreach (var val in validOptions[depth])
-            {
-                current.Add(val);
-                Generate(depth + 1, current);
-                current.RemoveAt(current.Count - 1);
-            }
-        }
-
-        Generate(0, new List<ProductValue>());
-
-        bool added = false;
-        foreach (var combo in combinations)
-        {
-            var comboIds = combo.Select(c => c.ProductValueId).OrderBy(id => id).ToList();
-
-            bool exists = product.ProductVariants.Any(pv => 
-                pv.ProductVariantValues != null &&
-                pv.ProductVariantValues.Count == comboIds.Count &&
-                pv.ProductVariantValues.Select(pvv => pvv.ProductValueId).OrderBy(id => id).SequenceEqual(comboIds)
-            );
-
-            if (!exists)
-            {
-                var variant = new ProductVariant
-                {
-                    ProductId = product.ProductId,
-                    Price = combo.Sum(c => c.AdditionalPrice),
-                    StockQuantity = product.StockQuantity > 0 ? product.StockQuantity : (short)0,
-                    Status = true,
-                    ProductVariantValues = combo.Select(c => new ProductVariantValue { ProductValueId = c.ProductValueId }).ToList()
-                };
-                _context.ProductVariants.Add(variant);
-                product.ProductVariants.Add(variant);
-                added = true;
-            }
-        }
-
-        if (added)
-        {
-            await _context.SaveChangesAsync();
-        }
     }
 
     [HttpGet("admin/products")]
     public async Task<ActionResult<IEnumerable<AdminProductResponse>>> GetAllForAdmin([FromQuery] Guid? categoryId = null)
     {
-        var query = _context.Products
-            .Include(p => p.ProductOptions)
-                .ThenInclude(po => po.ProductValues)
-            .AsQueryable();
+        var query = _context.Products.AsQueryable();
 
         if (categoryId.HasValue)
         {
@@ -201,8 +95,6 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<AdminProductResponse>> GetByIdForAdmin(Guid id)
     {
         var product = await _context.Products
-            .Include(p => p.ProductOptions)
-                .ThenInclude(po => po.ProductValues)
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
         if (product is null)
@@ -288,24 +180,7 @@ public class ProductsController : ControllerBase
         product.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         product.Status = request.Status?.ToLower() == "active";
         product.MinimumStock = request.MinimumStock;
-
-        var validOptions = await _context.ProductOptions
-            .Include(o => o.ProductValues)
-            .Where(o => o.ProductId == id && o.ProductValues.Any())
-            .ToListAsync();
-
-        if (!validOptions.Any())
-        {
-            var defaultVariant = await _context.ProductVariants
-                .Include(v => v.ProductVariantValues)
-                .FirstOrDefaultAsync(v => v.ProductId == id && !v.ProductVariantValues.Any());
-                
-            if (defaultVariant != null)
-            {
-                defaultVariant.StockQuantity = request.StockQuantity;
-                defaultVariant.Status = product.Status;
-            }
-        }
+        product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
@@ -339,46 +214,9 @@ public class ProductsController : ControllerBase
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.CategoryName,
             Description = product.Description,
-            ProductOptions = product.ProductOptions
-                .OrderBy(po => po.OptionName)
-                .Select(po => new ProductOptionResponse
-                {
-                    ProductOptionId = po.ProductOptionId,
-                    ProductId = po.ProductId,
-                    ProductName = product.Name,
-                    OptionName = po.OptionName,
-                    ProductValues = po.ProductValues
-                        .OrderBy(pv => pv.ValueName)
-                        .Select(pv => new ProductValueResponse
-                        {
-                            ProductValueId = pv.ProductValueId,
-                            ProductOptionId = pv.ProductOptionId,
-                            ValueName = pv.ValueName,
-                            AdditionalPrice = pv.AdditionalPrice
-                        })
-                        .ToList()
-                })
-                .ToList(),
-            ProductVariants = product.ProductVariants
-                .Select(pv => new ProductVariantResponse
-                {
-                    ProductVariantId = pv.ProductVariantId,
-                    ProductId = pv.ProductId,
-                    Price = pv.Price,
-                    StockQuantity = pv.StockQuantity,
-                    Sku = pv.Sku,
-                    IsActive = pv.Status,
-                    VariantValues = pv.ProductVariantValues != null ? pv.ProductVariantValues
-                        .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
-                        .Select(pvv => new ProductVariantValueResponse
-                        {
-                            ProductOptionId = pvv.ProductValue!.ProductOptionId,
-                            OptionName = pvv.ProductValue.ProductOption!.OptionName,
-                            ProductValueId = pvv.ProductValueId,
-                            ValueName = pvv.ProductValue.ValueName
-                        }).ToList() : new List<ProductVariantValueResponse>()
-                })
-                .ToList()
+            Sku = product.Sku,
+            MinimumStock = product.MinimumStock,
+            Status = product.Status ? "active" : "inactive"
         };
     }
 
@@ -395,29 +233,10 @@ public class ProductsController : ControllerBase
             CategoryId = product.CategoryId,
             CategoryName = categoryName ?? product.Category?.CategoryName,
             Description = product.Description,
+            Sku = product.Sku,
             Status = product.Status ? "active" : "inactive",
             CreatedAt = product.CreatedAt,
-            UpdatedAt = product.UpdatedAt,
-            ProductOptions = product.ProductOptions
-                .OrderBy(po => po.OptionName)
-                .Select(po => new AdminProductOptionResponse
-                {
-                    ProductOptionId = po.ProductOptionId,
-                    ProductId = po.ProductId,
-                    ProductName = product.Name,
-                    OptionName = po.OptionName,
-                    ProductValues = po.ProductValues
-                        .OrderBy(pv => pv.ValueName)
-                        .Select(pv => new AdminProductValueResponse
-                        {
-                            ProductValueId = pv.ProductValueId,
-                            ProductOptionId = pv.ProductOptionId,
-                            ValueName = pv.ValueName,
-                            AdditionalPrice = pv.AdditionalPrice
-                        })
-                        .ToList()
-                })
-                .ToList()
+            UpdatedAt = product.UpdatedAt
         };
     }
 }
