@@ -17,20 +17,20 @@ namespace BackendApi.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "PhoneNumber",
                 table: "Accounts",
-                type: "nvarchar(15)",
+                type: "varchar(15)",
                 maxLength: 15,
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(15)",
+                oldType: "varchar(15)",
                 oldMaxLength: 15);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Password",
                 table: "Accounts",
-                type: "nvarchar(max)",
+                type: "varchar(max)",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
+                oldType: "varchar(max)");
 
             migrationBuilder.AddColumn<string>(
                 name: "AuthProvider",
@@ -38,7 +38,7 @@ namespace BackendApi.Migrations
                 type: "nvarchar(20)",
                 maxLength: 20,
                 nullable: false,
-                defaultValue: "");
+                defaultValue: "Local");
 
             migrationBuilder.AddColumn<string>(
                 name: "GoogleId",
@@ -84,23 +84,23 @@ namespace BackendApi.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "PhoneNumber",
                 table: "Accounts",
-                type: "nvarchar(15)",
+                type: "varchar(15)",
                 maxLength: 15,
                 nullable: false,
-                defaultValue: "",
+                defaultValue: "Local",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(15)",
+                oldType: "varchar(15)",
                 oldMaxLength: 15,
                 oldNullable: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Password",
                 table: "Accounts",
-                type: "nvarchar(max)",
+                type: "varchar(max)",
                 nullable: false,
-                defaultValue: "",
+                defaultValue: "Local",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
+                oldType: "varchar(max)",
                 oldNullable: true);
 
             migrationBuilder.CreateIndex(

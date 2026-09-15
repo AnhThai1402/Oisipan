@@ -19,35 +19,37 @@ public class ProductValuesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetAll()
     {
-        var values = await _context.ProductValues
+        var valuesData = await _context.ProductValues
             .OrderBy(pv => pv.ValueName)
-            .Select(pv => ToResponse(pv))
             .ToListAsync();
+
+        var values = valuesData.Select(pv => ToResponse(pv)).ToList();
 
         return Ok(values);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductValueResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductValueResponse>> GetById(Guid id)
     {
         var value = await _context.ProductValues.FindAsync(id);
 
         return value is null ? NotFound(new { message = "Khong tim thay gia tri tuy chon." }) : Ok(ToResponse(value));
     }
 
-    [HttpGet("option/{productOptionId:int}")]
-    public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetByOptionId(int productOptionId)
+    [HttpGet("option/{productOptionId:guid}")]
+    public async Task<ActionResult<IEnumerable<ProductValueResponse>>> GetByOptionId(Guid productOptionId)
     {
         if (!await _context.ProductOptions.AnyAsync(po => po.ProductOptionId == productOptionId))
         {
             return NotFound(new { message = "Khong tim thay tuy chon san pham." });
         }
 
-        var values = await _context.ProductValues
+        var valuesData = await _context.ProductValues
             .Where(pv => pv.ProductOptionId == productOptionId)
             .OrderBy(pv => pv.ValueName)
-            .Select(pv => ToResponse(pv))
             .ToListAsync();
+
+        var values = valuesData.Select(pv => ToResponse(pv)).ToList();
 
         return Ok(values);
     }
@@ -84,8 +86,8 @@ public class ProductValuesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = value.ProductValueId }, ToResponse(value));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, ProductValueRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductValueRequest request)
     {
         var value = await _context.ProductValues.FindAsync(id);
         if (value is null)
@@ -120,8 +122,8 @@ public class ProductValuesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var value = await _context.ProductValues.FindAsync(id);
         if (value is null)
@@ -129,8 +131,28 @@ public class ProductValuesController : ControllerBase
             return NotFound(new { message = "Khong tim thay gia tri tuy chon." });
         }
 
+        var isInUse = await _context.ProductVariantValues.AnyAsync(pvv => pvv.ProductValueId == id);
+        if (isInUse)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa giá trị này vì đã được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+            });
+        }
+
         _context.ProductValues.Remove(value);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa giá trị vì dữ liệu đang được sử dụng ở nơi khác. Vui lòng kiểm tra các biến thể liên quan."
+            });
+        }
 
         return NoContent();
     }

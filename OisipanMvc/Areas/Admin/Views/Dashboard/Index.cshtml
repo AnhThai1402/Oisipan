@@ -1,0 +1,147 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@model FrontendMvc.Areas.Admin.Controllers.DashboardStatsDto
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+    var dashboardJson = System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    });
+}
+
+<link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+<script>
+    window.dashboardStats = @Html.Raw(dashboardJson);
+    // API base URL used by client-side JS (matches OisipanApi default)
+    window.apiBaseUrl = '@(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Configuration["ApiBaseUrl"] ?? "http://localhost:5188"))';
+</script>
+
+<section class="admin-hero">
+    <div>
+        <h1>Bảng điều khiển</h1>
+    </div>
+    <button class="primary-action" onclick="window.print()"><i class="fa-solid fa-file-export"></i> Xuất báo cáo</button>
+</section>
+
+<section class="metric-grid">
+    <article class="metric-card glow-green">
+        <span>Doanh thu hôm nay</span>
+        <strong>@Model.TodayRevenue.ToString("N0")đ</strong>
+        <small>@Model.RecentOrders.Count đơn hàng</small>
+    </article>
+    <article class="metric-card glow-gold">
+        <span>Đơn chờ xử lý</span>
+        <strong>@Model.PendingOrders</strong>
+        <small>@Model.ConfirmedOrders đơn cần xác nhận</small>
+    </article>
+    <article class="metric-card glow-red">
+        <span>Sắp hết hàng</span>
+        <strong>@Model.LowStockProducts</strong>
+        <small>@Model.OutOfStockProducts hết hàng</small>
+    </article>
+    <article class="metric-card glow-blue">
+        <span>Khách hàng</span>
+        <strong>@Model.TotalCustomers</strong>
+        <small>+@Model.NewCustomersThisMonth mới tháng này</small>
+    </article>
+</section>
+
+<section class="admin-grid two-columns">
+    <article class="panel growth-panel">
+        <div class="panel-head">
+            <div><span class="eyebrow">Hiệu suất</span><h2>Doanh thu tháng</h2></div>
+            <div class="growth-badge">
+                <span class="dot"></span>
+                <strong id="growthTrendLabel">Đang tải...</strong>
+            </div>
+        </div>
+        <div class="chart-meta">
+            <div class="chart-meta-left">
+                <span class="legend-pill"><i></i> Doanh thu theo ngày</span>
+                <span class="chart-summary" id="chartSummary">0đ</span>
+            </div>
+            <div class="chart-meta-right">
+                <span class="small-label">Tổng doanh thu tháng</span>
+                <strong>@Model.MonthRevenue.ToString("N0")đ</strong>
+            </div>
+        </div>
+        <div class="chart-frame">
+            <div id="growthChartEmpty" class="chart-empty">Không có dữ liệu để hiển thị</div>
+            <svg id="monthRevenueChart" class="growth-chart" viewBox="0 0 640 280" role="img" aria-label="Biểu đồ doanh thu"></svg>
+        </div>
+    </article>
+
+    <article class="dashboard-panel">
+        <div class="panel-head">
+            <div><span class="eyebrow">Việc cần làm</span><h2>Ưu tiên vận hành</h2></div>
+        </div>
+        <div class="task-list">
+            <label><input type="checkbox"> Xác nhận @Model.PendingOrders đơn chờ</label>
+            <label><input type="checkbox"> Kiểm tra @Model.LowStockProducts sản phẩm sắp hết</label>
+            <label><input type="checkbox"> Duyệt voucher cuối tuần</label>
+            <label><input type="checkbox"> Phản hồi yêu cầu đổi trả</label>
+        </div>
+    </article>
+</section>
+
+<section class="dashboard-panel">
+    <div class="panel-head">
+        <div><span class="eyebrow">Đơn mới</span><h2>Đơn hàng hôm nay</h2></div>
+        <a class="ghost-link" asp-area="Admin" asp-controller="Orders" asp-action="Index">Xem tất cả</a>
+    </div>
+    @if (Model.RecentOrders.Any())
+    {
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Giá trị</th>
+                        <th>Thanh toán</th>
+                        <th>Trạng thái</th>
+                        <th>ETA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.RecentOrders)
+                    {
+                        var statusClass = order.Status switch
+                        {
+                            "Chờ xác nhận" => "pending",
+                            "Đã xác nhận" => "confirmed",
+                            "Đang chuẩn bị" => "preparing",
+                            "Đang giao" => "shipping",
+                            "Đã giao" => "completed",
+                            _ => "pending"
+                        };
+                        <tr>
+                            <td>
+                                <a asp-area="Admin" asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" style="text-decoration: none; color: inherit; font-weight: 500;">
+                                    #@order.OrderCode
+                                </a>
+                            </td>
+                            <td>@order.CustomerName</td>
+                            <td>@order.TotalAmount.ToString("N0")đ</td>
+                            <td>@order.PaymentMethod</td>
+                            <td><span class="status @statusClass">@order.Status</span></td>
+                            <td>@order.EstimatedDelivery</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <p><i class="bi bi-inbox"></i></p>
+            <p style="margin: 0;">Không có đơn hàng hôm nay</p>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+}

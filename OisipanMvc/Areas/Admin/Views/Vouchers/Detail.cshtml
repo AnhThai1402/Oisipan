@@ -1,0 +1,138 @@
+@model FrontendMvc.Models.VoucherAdminViewModel
+@{
+    ViewData["Title"] = Model?.Code ?? "Chi tiết Voucher";
+    var isExpired = Model?.ExpiryDate < DateTime.Now;
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"><i class="bi bi-house-door"></i> Voucher</a>
+    <span>/</span>
+    <span>Chi tiết</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Chi tiết Voucher</span>
+        <h1>@(Model?.Code ?? "N/A")</h1>
+    </div>
+    <div class="button-group">
+        <a asp-area="Admin" asp-controller="Vouchers" asp-action="Edit" asp-route-id="@Model?.VoucherId" class="primary-action">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa
+        </a>
+        <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index" class="soft-action">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</section>
+
+<div class="admin-grid two-columns">
+    <!-- Basic Info -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-ticket-perforated"></i> Mã Voucher</h2>
+        </div>
+
+        <div class="detail-group">
+            <div class="detail-row">
+                <span class="detail-label">Mã</span>
+                <strong style="font-family: monospace; font-size: 1.1rem;">@Model?.Code</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Giá trị</span>
+                <strong style="color: var(--admin-green); font-size: 1.3rem;">@Model?.DiscountValue.ToString("N0")đ</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Trạng thái</span>
+                @if (isExpired)
+                {
+                    <span class="status inactive">
+                        <i class="bi bi-x-circle-fill"></i> Hết hạn
+                    </span>
+                }
+                else
+                {
+                    <span class="status live">
+                        <i class="bi bi-check-circle-fill"></i> Hoạt động
+                    </span>
+                }
+            </div>
+        </div>
+    </article>
+
+    <!-- Expiry Info -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2><i class="bi bi-calendar-event"></i> Thông tin hạn sử dụng</h2>
+        </div>
+
+        <div class="detail-group">
+            <div class="detail-row">
+                <span class="detail-label">Ngày tạo</span>
+                <strong>@Model?.CreatedDate.ToString("dd/MM/yyyy HH:mm")</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Hết hạn</span>
+                <strong>@Model?.ExpiryDate.ToString("dd/MM/yyyy")</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Còn lại</span>
+                <strong style="color: @(isExpired ? "var(--admin-red)" : "var(--admin-green)");">
+                    @if (isExpired)
+                    {
+                        <span>Đã hết hạn</span>
+                    }
+                    else
+                    {
+                        <span>@((Model?.ExpiryDate ?? DateTime.Now) - DateTime.Now).Days ngày</span>
+                    }
+                </strong>
+            </div>
+        </div>
+    </article>
+</div>
+    </article>
+</div>
+
+<!-- Action Buttons -->
+<div class="form-actions">
+    <button type="button" class="soft-action danger" data-open-modal="deleteModal">
+        <i class="bi bi-trash-fill"></i> Xóa Voucher
+    </button>
+    <a href="#" class="primary-action">
+        <i class="bi bi-pencil-square"></i> Chỉnh sửa
+    </a>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content modal-sm">
+        <div class="modal-head">
+            <h2><i class="bi bi-exclamation-triangle-fill" style="color: var(--admin-red);"></i> Xác nhận xóa</h2>
+        </div>
+        <p>Bạn có chắc muốn xóa Voucher <strong>SUMMER50</strong>?</p>
+        <p style="color: var(--admin-red); font-size: 0.85rem;">⚠️ Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="soft-action" data-close-modal>Hủy</button>
+            <button type="button" class="danger-action">Xóa Voucher</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-open-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-open-modal');
+                document.getElementById(modalId)?.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+                document.body.style.overflow = '';
+            });
+        });
+    </script>
+}

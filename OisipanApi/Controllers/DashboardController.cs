@@ -1,0 +1,111 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Oishipan.DTOs;
+using Oishipan.Models;
+
+namespace Oishipan.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class DashboardController : ControllerBase
+{
+    private readonly OishipanContext _context;
+
+    public DashboardController(OishipanContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet("stats")]
+    public async Task<ActionResult<DashboardStatsDto>> GetStats()
+    {
+        var today = DateTime.Now.Date;
+        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+        // Today's revenue
+        var todayOrders = await _context.Orders
+            .Where(o => o.CreatedAt.Date == today && o.OrderStatus == "Đã hoàn thành")
+            .ToListAsync();
+        var todayRevenue = todayOrders.Sum(o => o.TotalAmount);
+
+        // Month revenue
+        var monthOrders = await _context.Orders
+            .Where(o => o.CreatedAt >= startOfMonth && o.OrderStatus == "Đã hoàn thành")
+            .ToListAsync();
+        var monthRevenue = monthOrders.Sum(o => o.TotalAmount);
+
+        // Order counts
+        var pendingOrders = await _context.Orders
+            .CountAsync(o => o.OrderStatus == "Chờ xác nhận");
+        var confirmedOrders = await _context.Orders
+            .CountAsync(o => o.OrderStatus == "Đã xác nhận" || o.OrderStatus == "Đang chuẩn bị");
+
+        // Stock info
+        var lowStockProducts = await _context.Products.CountAsync(p => p.StockQuantity > 0 && p.StockQuantity <= (p.MinimumStock ?? 10));
+        var outOfStockProducts = await _context.Products.CountAsync(p => p.StockQuantity == 0);
+
+        // Customer info
+        var newCustomersThisMonth = await _context.Accounts
+            .CountAsync(a => a.CreatedAt >= startOfMonth && a.Status);
+        var totalCustomers = await _context.Accounts
+            .CountAsync(a => a.Status);
+
+        // Recent orders
+        var recentOrders = await _context.Orders
+            .Include(o => o.Account)
+            .Include(o => o.OrderDetails)
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(10)
+            .Select(o => new OrderTodayDto
+            {
+                OrderId = o.OrderId,
+                CustomerName = o.Account == null ? "Khách hàng" : o.Account.FullName,
+                CustomerPhone = o.Account == null ? "N/A" : o.Account.PhoneNumber,
+                TotalAmount = o.TotalAmount,
+                PaymentMethod = o.PaymentMethod,
+                Status = o.OrderStatus,
+                CreatedDate = o.CreatedAt,
+                EstimatedDelivery = GetEstimatedDelivery(o.OrderStatus)
+            })
+            .ToListAsync();
+
+        // Daily revenue breakdown for the month
+        var dailyRevenues = monthOrders
+            .GroupBy(o => o.CreatedAt.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new DailyRevenueDto
+            {
+                Date = g.Key.ToString("dd/MM"),
+                Revenue = g.Sum(o => o.TotalAmount)
+            })
+            .ToList();
+
+        return Ok(new DashboardStatsDto
+        {
+            TodayRevenue = todayRevenue,
+            MonthRevenue = monthRevenue,
+            PendingOrders = pendingOrders,
+            ConfirmedOrders = confirmedOrders,
+            LowStockProducts = lowStockProducts,
+            OutOfStockProducts = outOfStockProducts,
+            NewCustomersThisMonth = newCustomersThisMonth,
+            TotalCustomers = totalCustomers,
+            RecentOrders = recentOrders,
+            DailyRevenues = dailyRevenues
+        });
+    }
+
+    private static string GetEstimatedDelivery(string status)
+    {
+        return status switch
+        {
+            "Chờ xác nhận" => "Hôm nay",
+            "Đã xác nhận" => "Hôm nay",
+            "Đang chuẩn bị" => "Hôm nay",
+            "Đang giao" => "35-60 phút",
+            "Đã giao" => "Đã giao",
+            "Đã hủy" => "Đã hủy",
+            _ => "Chưa rõ"
+        };
+    }
+}

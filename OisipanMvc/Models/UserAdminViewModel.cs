@@ -5,7 +5,7 @@ namespace FrontendMvc.Models;
 
 public class UserAdminViewModel
 {
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập họ tên.")]
     [StringLength(100, ErrorMessage = "Họ tên không được vượt quá 100 ký tự.")]
@@ -26,13 +26,17 @@ public class UserAdminViewModel
 
     [Display(Name = "Địa chỉ")]
     public string? Address { get; set; }
+    public string? AvatarUrl { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
+    [RegularExpression("^(User|Admin)$", ErrorMessage = "Vai trò không hợp lệ.")]
     [Display(Name = "Vai trò")]
     public string Role { get; set; } = "User";
 
     [Display(Name = "Đang hoạt động")]
     public bool Status { get; set; } = true;
+
+    public List<UserAddressViewModel> Addresses { get; set; } = new();
 
     [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự.")]
     [Display(Name = "Mật khẩu")]

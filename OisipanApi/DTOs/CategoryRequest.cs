@@ -8,5 +8,5 @@ public class CategoryRequest
     [StringLength(100, ErrorMessage = "Tên danh mục không được vượt quá 100 ký tự.")]
     public string CategoryName { get; set; } = string.Empty;
 
-    public string? Description { get; set; }
+    public string? Image { get; set; }
 }

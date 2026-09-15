@@ -3,23 +3,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class Payment
+    public class Payment : BaseEntity
     {
         [Key]
-        public int PaymentId { get; set; }
+        public Guid PaymentId { get; set; }
 
-        public int OrderId { get; set; }
+        public Guid OrderId { get; set; }
         [ForeignKey("OrderId")]
         public virtual Order? Order { get; set; }
 
-        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Amount { get; set; }
+
         [StringLength(50)]
-        public string Vnp_TransactionNo { get; set; } = null!;
+        [Column(TypeName = "nvarchar(50)")]
+        public string PaymentMethod { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(10)]
-        public string Vnp_ResponseCode { get; set; } = null!;
+        [StringLength(100)]
+        [Column(TypeName = "varchar(100)")]
+        public string? TransactionCode { get; set; }
 
-        public DateTime PaymentDate { get; set; }
+        public DateTime? PaidAt { get; set; }
     }
 }

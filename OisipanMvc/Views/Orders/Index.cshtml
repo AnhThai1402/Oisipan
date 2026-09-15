@@ -1,0 +1,131 @@
+@model IEnumerable<OrderAdminViewModel>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+}
+
+<section class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Tài khoản của bạn</span>
+        <h2 class="section-title">Lịch sử đơn hàng</h2>
+        <p class="section-desc">Theo dõi trạng thái các đơn bánh đã đặt tại Oishipan.</p>
+    </div>
+
+    <div class="table-wrapper" style="max-width: 1100px; margin: 0 auto;">
+        @if (Model?.Any() == true)
+        {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày đặt</th>
+                    <th>Sản phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td><strong>#OP-@order.OrderId.ToString("N")</strong></td>
+                            <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @{
+                                    var orderItems = order.OrderItems ?? new List<OrderItemAdminViewModel>();
+                                    var totalQty = orderItems.Sum(i => i.Quantity);
+                                }
+                                @if (orderItems.Any())
+                                {
+                                    <div class="order-product-stack">
+                                        @foreach (var item in orderItems.Take(3))
+                                        {
+                                            <div class="order-product-item">
+                                                <span class="order-product-name">@item.ProductName</span>
+                                                <span class="order-product-qty">x @item.Quantity</span>
+                                            </div>
+                                        }
+                                        @if (orderItems.Count > 3)
+                                        {
+                                            <small class="text-muted">+@(orderItems.Count - 3) món khác</small>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@totalQty sản phẩm</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td><strong>@order.TotalAmount.ToString("N0")đ</strong></td>
+                            <td>@order.PaymentMethod</td>
+                            <td><span class="status pending">@order.Status</span></td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.OrderId" class="btn-small" style="padding: 0.5rem 1rem;" title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="order-progress-row">
+                            <td colspan="7">
+                                <div class="shipping-progress-card" data-status="@order.Status">
+                                    <div class="shipping-progress-header">
+                                        <div>
+                                            <div class="shipping-progress-title">Tiến trình giao hàng</div>
+                                            <div class="shipping-progress-subtitle" data-progress-label>Đang xử lý</div>
+                                        </div>
+                                        <span class="shipping-badge" data-progress-badge>@order.Status</span>
+                                    </div>
+
+                                    <div class="shipping-steps">
+                                        <div class="shipping-step" data-step="1">
+                                            <i class="bi shipping-step-icon bi-clock-fill"></i>
+                                            <span class="shipping-step-label">Chờ xác nhận</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="2">
+                                            <i class="bi shipping-step-icon bi-check-circle-fill"></i>
+                                            <span class="shipping-step-label">Đã xác nhận</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="3">
+                                            <i class="bi shipping-step-icon bi-box-seam"></i>
+                                            <span class="shipping-step-label">Đang chuẩn bị</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="4">
+                                            <i class="bi shipping-step-icon bi-truck"></i>
+                                            <span class="shipping-step-label">Đang giao</span>
+                                        </div>
+                                        <div class="shipping-step" data-step="5">
+                                            <i class="bi shipping-step-icon bi-house-check"></i>
+                                            <span class="shipping-step-label">Đã giao</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+            </tbody>
+        </table>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <div style="width: 80px; height: 80px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="bi bi-receipt" style="font-size: 40px; color: var(--accent-green);"></i>
+                </div>
+                <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-main); margin-bottom: 8px;">Bạn chưa có đơn hàng nào</h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;">Hãy khám phá thực đơn của Oishipan và đặt những chiếc bánh thơm ngon ngay nhé!</p>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="menu" class="btn-primary" style="padding: 12px 30px; border-radius: 30px; font-weight: 600;">
+                    <i class="bi bi-cart-plus" style="margin-right: 6px;"></i> Chọn bánh ngay
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<link rel="stylesheet" href="~/css/orders-history.css" />
+<script src="~/js/orders-history.js"></script>
+

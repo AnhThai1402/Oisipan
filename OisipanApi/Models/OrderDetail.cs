@@ -3,25 +3,34 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oishipan.Models
 {
-    public class OrderDetail
+    public class OrderDetail : BaseEntity
     {
         [Key]
-        public int OrderDetailId { get; set; }
+        public Guid OrderDetailId { get; set; }
 
-        public int OrderId { get; set; }
+        public Guid OrderId { get; set; }
         [ForeignKey("OrderId")]
         public virtual Order? Order { get; set; }
 
-        public int ProductId { get; set; }
-        [ForeignKey("ProductId")]
-        public virtual Product? Product { get; set; }
+        public Guid ProductVariantId { get; set; }
+        [ForeignKey("ProductVariantId")]
+        public virtual ProductVariant? ProductVariant { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; }
+        public decimal UnitPrice { get; set; }
 
-        public int Quantity { get; set; }
+        public byte Quantity { get; set; }
+
+        [StringLength(255)]
+        [Column(TypeName = "nvarchar(255)")]
+        public string? ProductName { get; set; }
+
+        [StringLength(255)]
+        [Column(TypeName = "nvarchar(255)")]
+        public string? VariantName { get; set; }
 
         [StringLength(500)]
+        [Column(TypeName = "nvarchar(500)")]
         public string? Note { get; set; }
     }
 }

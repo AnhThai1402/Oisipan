@@ -1,0 +1,237 @@
+@model List<FrontendMvc.Models.UserVoucherDto>
+@{
+    ViewData["Title"] = "Vouchers của tôi";
+}
+
+<section class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Tài khoản của bạn</span>
+        <h2 class="section-title">Vouchers của tôi</h2>
+        <p class="section-desc">Quản lý các mã giảm giá và ưu đãi từ Oishipan.</p>
+    </div>
+
+    <div class="vouchers-container" style="max-width: 1100px; margin: 0 auto; padding: 0 1rem;">
+        @if (!Model.Any())
+        {
+            <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <div style="width: 80px; height: 80px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="bi bi-ticket-perforated" style="font-size: 40px; color: var(--accent-green);"></i>
+                </div>
+                <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-main); margin-bottom: 8px;">Bạn chưa có voucher nào</h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;">Mua sắm ngay hôm nay để nhận các ưu đãi hấp dẫn từ Oishipan nhé!</p>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="menu" class="btn-primary" style="padding: 12px 30px; border-radius: 30px; font-weight: 600;">
+                    <i class="bi bi-cart-plus" style="margin-right: 6px;"></i> Khám phá menu
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="voucher-grid">
+                @foreach (var voucher in Model)
+                {
+                    <div class="voucher-card @(voucher.IsUsed ? "used" : (voucher.ExpiryDate < DateTime.Now ? "expired" : ""))">
+                        <div class="voucher-left">
+                            <div class="voucher-discount-text">
+                                @if (string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="discount-value">@voucher.DiscountValue.ToString("N0")</span><span class="discount-unit">%</span>
+                                }
+                                else
+                                {
+                                    <span class="discount-value">@((voucher.DiscountValue / 1000).ToString("N0"))</span><span class="discount-unit">k</span>
+                                }
+                            </div>
+                            <span class="voucher-type-label">GIẢM GIÁ</span>
+                        </div>
+                        <div class="voucher-right">
+                            <div class="voucher-header">
+                                <span class="voucher-code">@voucher.VoucherCode</span>
+                                <span class="voucher-status @GetStatusBadgeClass(voucher)">@voucher.Status</span>
+                            </div>
+                            <p class="voucher-desc">
+                                Giảm <strong>@voucher.DiscountValue.ToString("N0")@(string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase) ? "%" : " đ")</strong> cho đơn hàng hợp lệ.
+                            </p>
+                            <div class="voucher-dates">
+                                <div class="date-item">
+                                    <i class="bi bi-calendar-plus"></i> Nhận: @voucher.AssignedDate.ToString("dd/MM/yyyy")
+                                </div>
+                                <div class="date-item">
+                                    @if (voucher.IsUsed)
+                                    {
+                                        <i class="bi bi-check-circle text-success"></i> <span class="text-success">Đã dùng: @(voucher.UsedDate?.ToString("dd/MM/yyyy"))</span>
+                                    }
+                                    else if (voucher.ExpiryDate < DateTime.Now)
+                                    {
+                                        <i class="bi bi-x-circle text-danger"></i> <span class="text-danger">Hết hạn: @voucher.ExpiryDate.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-clock-history text-warning"></i> 
+                                        <span class="text-warning">
+                                            HSD: @voucher.ExpiryDate.ToString("dd/MM/yyyy") 
+                                            <small>(Còn @((voucher.ExpiryDate - DateTime.Now).Days) ngày)</small>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        
+    </div>
+</section>
+
+<style>
+    .voucher-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+    .voucher-card {
+        display: flex;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+    }
+    .voucher-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+    .voucher-left {
+        background: var(--accent-green);
+        color: #fff;
+        width: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        border-right: 2px dashed rgba(255,255,255,0.4);
+        position: relative;
+    }
+    .voucher-left::before, .voucher-left::after {
+        content: '';
+        position: absolute;
+        right: -10px;
+        width: 20px;
+        height: 20px;
+        background: #faf7f2;
+        border-radius: 50%;
+        border-left: 1px solid var(--border-color);
+    }
+    .voucher-left::before { top: -10px; }
+    .voucher-left::after { bottom: -10px; }
+    
+    .voucher-discount-text {
+        font-family: var(--font-serif);
+        font-weight: 700;
+        text-align: center;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    .discount-value { font-size: 2.2rem; }
+    .discount-unit { font-size: 1.2rem; }
+    
+    .voucher-type-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+    
+    .voucher-right {
+        padding: 1.25rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .voucher-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .voucher-code {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        letter-spacing: 0.5px;
+    }
+    
+    .voucher-status {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .status-active { background: #e6f4ea; color: #1e8e3e; }
+    .status-used { background: #f1f3f4; color: #5f6368; }
+    .status-expired { background: #fce8e6; color: #d93025; }
+    
+    .voucher-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .voucher-dates {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        border-top: 1px solid var(--border-color);
+        padding-top: 0.75rem;
+    }
+    
+    .date-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .text-success { color: #1e8e3e !important; }
+    .text-danger { color: #d93025 !important; }
+    .text-warning { color: #f29900 !important; font-weight: 600; }
+    
+    /* states */
+    .voucher-card.used .voucher-left, .voucher-card.expired .voucher-left {
+        background: #9aa0a6;
+    }
+    .voucher-card.used, .voucher-card.expired {
+        opacity: 0.85;
+        box-shadow: none;
+    }
+    .voucher-card.used:hover, .voucher-card.expired:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    @@media (max-width: 768px) {
+        .voucher-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@functions {
+    private string GetStatusBadgeClass(FrontendMvc.Models.UserVoucherDto voucher)
+    {
+        if (voucher.IsUsed)
+            return "status-used";
+        if (voucher.ExpiryDate < DateTime.Now)
+            return "status-expired";
+        return "status-active";
+    }
+}

@@ -1,0 +1,931 @@
+using Microsoft.AspNetCore.Mvc;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using QuestPDF.Drawing;
+using QuestPDF.Elements;
+using System.IO;
+using ZXing;
+using ZXing.Common;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using Microsoft.EntityFrameworkCore;
+using Oishipan.DTOs;
+using Oishipan.Models;
+
+namespace Oishipan.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController : ControllerBase
+{
+    private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Chờ xác nhận",
+        "Đã xác nhận",
+        "Đang chuẩn bị",
+        "Đang giao",
+        "Đã giao",
+        "Đã hủy"
+    };
+
+    private readonly OishipanContext _context;
+    private readonly IConfiguration _config;
+
+    public OrdersController(OishipanContext context, IConfiguration config)
+    {
+        _context = context;
+        _config = config;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<OrderResponse>>> GetAll()
+    {
+        var ordersData = await BuildOrderQuery()
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var orders = ordersData.Select(o => ToResponse(o)).ToList();
+
+        return Ok(orders);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<OrderResponse>> GetById(Guid id)
+    {
+        var order = await BuildOrderQuery()
+            .FirstOrDefaultAsync(o => o.OrderId == id);
+
+        return order is null
+            ? NotFound(new { message = "Không tìm thấy đơn hàng." })
+            : Ok(ToResponse(order));
+    }
+
+    [HttpGet("admin/orders")]
+    public async Task<ActionResult<IEnumerable<AdminOrderResponse>>> GetAllForAdmin()
+    {
+        var orders = await _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var adminOrders = new List<AdminOrderResponse>();
+        foreach (var order in orders)
+        {
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+            adminOrders.Add(await ToAdminResponse(order, account));
+        }
+
+        return Ok(adminOrders);
+    }
+
+    [HttpGet("admin/{id:guid}")]
+    public async Task<ActionResult<AdminOrderResponse>> GetByIdForAdmin(Guid id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+            .FirstOrDefaultAsync(o => o.OrderId == id);
+
+        if (order is null)
+        {
+            return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        }
+
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+        return Ok(await ToAdminResponse(order, account));
+    }
+
+    [HttpGet("user/{userId:guid}")]
+    public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUser(Guid userId)
+    {
+        var ordersData = await BuildOrderQuery()
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var orders = ordersData.Select(o => ToResponse(o)).ToList();
+
+        return Ok(orders);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<OrderResponse>> Create(OrderCreateRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        if (!await _context.Accounts.AnyAsync(a => a.UserId == request.UserId && a.Status))
+        {
+            return BadRequest(new { message = "Tài khoản đặt hàng không tồn tại hoặc đã bị khóa." });
+        }
+
+        var variantIds = request.Items.Select(item => item.ProductVariantId).Distinct().ToList();
+        var variants = await _context.ProductVariants
+            .Include(v => v.Product)
+            .Include(v => v.ProductVariantValues)
+                .ThenInclude(pvv => pvv.ProductValue)
+                    .ThenInclude(pv => pv!.ProductOption)
+            .Where(v => variantIds.Contains(v.ProductVariantId))
+            .ToDictionaryAsync(v => v.ProductVariantId);
+
+        foreach (var item in request.Items)
+        {
+            if (!variants.TryGetValue(item.ProductVariantId, out var variant))
+            {
+                return BadRequest(new { message = $"Biến thể sản phẩm #{item.ProductVariantId} không tồn tại." });
+            }
+
+            if (variant.StockQuantity < item.Quantity)
+            {
+                var variantDesc = string.Join(", ", variant.ProductVariantValues.Select(pvv => $"{pvv.ProductValue?.ProductOption?.OptionName}: {pvv.ProductValue?.ValueName}"));
+                return BadRequest(new { message = $"{variant.Product?.Name} ({variantDesc}) chỉ còn {variant.StockQuantity} sản phẩm." });
+            }
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var order = new Order
+        {
+            UserId = request.UserId,
+            CustomerName = request.CustomerName.Trim(),
+            CustomerPhone = request.CustomerPhone.Trim(),
+            CreatedAt = DateTime.Now,
+            OrderStatus = "Chờ xác nhận",
+            PaymentMethod = request.PaymentMethod.Trim(),
+            ShippingAddress = request.ShippingAddress.Trim()
+        };
+
+        foreach (var item in request.Items)
+        {
+            var variant = variants[item.ProductVariantId];
+            variant.StockQuantity -= item.Quantity;
+            if (variant.StockQuantity < 0) variant.StockQuantity = 0;
+
+            if (variant.Product != null)
+            {
+                variant.Product.StockQuantity -= item.Quantity;
+                if (variant.Product.StockQuantity < 0) variant.Product.StockQuantity = 0;
+            }
+
+            var itemPrice = (variant.Product?.Price ?? 0) + variant.Price;
+
+            var variantNameParts = variant.ProductVariantValues
+                .Where(pvv => pvv.ProductValue != null && pvv.ProductValue.ProductOption != null)
+                .Select(pvv => $"{pvv.ProductValue!.ProductOption!.OptionName}: {pvv.ProductValue.ValueName}");
+            var variantName = variantNameParts.Any() ? string.Join(" - ", variantNameParts) : null;
+
+            order.OrderDetails.Add(new OrderDetail
+            {
+                ProductVariantId = variant.ProductVariantId,
+                ProductName = variant.Product?.Name,
+                VariantName = variantName,
+                UnitPrice = itemPrice,
+                Quantity = item.Quantity,
+                Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim()
+            });
+        }
+
+        order.TotalAmount = order.OrderDetails.Sum(item => item.UnitPrice * item.Quantity);
+        order.FinalAmount = order.TotalAmount;
+
+        if (!string.IsNullOrWhiteSpace(request.VoucherCode))
+        {
+            var voucherCode = request.VoucherCode.Trim();
+            var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+            if (voucher == null)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = "Mã giảm giá không tồn tại." });
+            }
+
+            if (!voucher.Status || voucher.StartDate > DateTime.Now || voucher.ExpiryDate < DateTime.Now)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = "Mã giảm giá đã hết hạn hoặc không có hiệu lực." });
+            }
+
+            if (order.TotalAmount < voucher.MinOrderValue)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = $"Đơn hàng phải từ {voucher.MinOrderValue:N0}đ để sử dụng mã này." });
+            }
+            
+            var orderItemCount = order.OrderDetails.Sum(od => od.Quantity);
+            if (orderItemCount < voucher.MinimumItems)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = $"Đơn hàng phải có ít nhất {voucher.MinimumItems} sản phẩm để sử dụng mã này." });
+            }
+
+            if (voucher.TotalQuantity <= 0)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = "Mã giảm giá đã hết lượt sử dụng." });
+            }
+
+            decimal discount = 0;
+            if (string.Equals(voucher.DiscountType?.Trim(), "Percentage", StringComparison.OrdinalIgnoreCase))
+            {
+                discount = order.TotalAmount * (voucher.DiscountValue / 100m);
+                if (voucher.MaxDiscount > 0 && discount > voucher.MaxDiscount)
+                {
+                    discount = voucher.MaxDiscount;
+                }
+            }
+            else
+            {
+                discount = voucher.DiscountValue;
+            }
+
+            if (discount > order.TotalAmount)
+            {
+                discount = order.TotalAmount;
+            }
+
+            order.VoucherId = voucher.VoucherId;
+            order.DiscountAmount = discount;
+            order.FinalAmount = order.TotalAmount - discount;
+
+            voucher.TotalQuantity -= 1;
+
+            var userVoucher = await _context.UserVouchers.FirstOrDefaultAsync(uv => uv.UserId == request.UserId && uv.VoucherId == voucher.VoucherId && !uv.IsUsed);
+            if (userVoucher != null)
+            {
+                userVoucher.IsUsed = true;
+                userVoucher.UsedDate = DateTime.Now;
+            }
+        }
+
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        // Assign voucher to user after successful order
+        await AssignVoucherToUser(request.UserId);
+
+        var created = await BuildOrderQuery()
+            .FirstAsync(o => o.OrderId == order.OrderId);
+
+        return CreatedAtAction(nameof(GetById), new { id = order.OrderId }, ToResponse(created));
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, OrderStatusUpdateRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var status = request.Status.Trim();
+        if (!AllowedStatuses.Contains(status))
+        {
+            return BadRequest(new { message = "Trạng thái đơn hàng không hợp lệ." });
+        }
+
+        var order = await _context.Orders.FindAsync(id);
+        if (order is null)
+        {
+            return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        }
+
+        // Only allow cancellation from "Chờ xác nhận" or "Đã xác nhận" status
+        if (status == "Đã hủy")
+        {
+            var allowedCancellationStatuses = new[] { "Chờ xác nhận", "Đã xác nhận" };
+            if (!allowedCancellationStatuses.Contains(order.OrderStatus))
+            {
+                return BadRequest(new { message = $"Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'. Trạng thái hiện tại: '{order.OrderStatus}'." });
+            }
+        }
+
+        order.OrderStatus = status;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/cancellation-request")]
+    public async Task<IActionResult> RequestCancellation(Guid id, OrderCancellationCreateDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var order = await _context.Orders.FindAsync(id);
+        if (order is null)
+        {
+            return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        }
+
+        // Check if order can be cancelled
+        if (order.OrderStatus == "Đã giao" || order.OrderStatus == "Đã hủy")
+        {
+            return BadRequest(new { message = $"Không thể hủy đơn hàng ở trạng thái '{order.OrderStatus}'." });
+        }
+
+        // Check if cancellation request already exists
+        var existingRequest = await _context.CancellationReasons
+            .FirstOrDefaultAsync(r => r.OrderId == id && r.RequestStatus == "Pending");
+
+        if (existingRequest is not null)
+        {
+            return BadRequest(new { message = "Đã có yêu cầu hủy đơn chờ xử lý. Vui lòng chờ phản hồi từ admin." });
+        }
+
+        var cancellationRequest = new OrderCancellation
+        {
+            OrderId = id,
+            Reason = request.Reason.Trim(),
+            RequestStatus = "Pending",
+            CreatedAt = DateTime.Now,
+            CancelledBy = "Customer"
+        };
+
+        _context.CancellationReasons.Add(cancellationRequest);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Yêu cầu hủy đơn hàng đã được gửi. Vui lòng chờ phản hồi từ admin." });
+    }
+
+    [HttpGet("{id:guid}/cancellation-requests")]
+    public async Task<ActionResult<IEnumerable<OrderCancellationDto>>> GetCancellationRequests(Guid id)
+    {
+        var requests = await _context.CancellationReasons
+            .Where(r => r.OrderId == id)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new OrderCancellationDto
+            {
+                OrderCancellationId = r.OrderCancellationId,
+                OrderId = r.OrderId,
+                Reason = r.Reason,
+                CancelledBy = r.CancelledBy,
+                Status = r.RequestStatus,
+                CancelledAt = r.CreatedAt,
+                ResponseDate = r.ResponseDate,
+                AdminNote = r.AdminNote
+            })
+            .ToListAsync();
+
+        return Ok(requests);
+    }
+
+    [HttpPatch("cancellation-request/{id:guid}/respond")]
+    public async Task<IActionResult> RespondToCancellationRequest(Guid id, [FromBody] AdminCancellationResponseDto response)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var request = await _context.CancellationReasons.FindAsync(id);
+        if (request is null)
+        {
+            return NotFound(new { message = "Không tìm thấy yêu cầu hủy đơn." });
+        }
+
+        request.RequestStatus = response.IsApproved ? "Approved" : "Rejected";
+        request.AdminNote = response.AdminNote?.Trim();
+        request.ResponseDate = DateTime.Now;
+
+        if (response.IsApproved)
+        {
+            var order = await _context.Orders.FindAsync(request.OrderId);
+            if (order is not null)
+            {
+                order.OrderStatus = "Đã hủy";
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = request.RequestStatus == "Approved" ? "Yêu cầu hủy đơn hàng đã được phê duyệt." : "Yêu cầu hủy đơn hàng đã bị từ chối." });
+    }
+
+    [HttpGet("user/{userId:guid}/vouchers")]
+    public async Task<ActionResult<IEnumerable<UserVoucherDto>>> GetUserVouchers(Guid userId)
+    {
+        // Lấy các voucher đã được gán/sử dụng bởi user
+        var userVouchers = await _context.UserVouchers
+            .Where(uv => uv.UserId == userId)
+            .Include(uv => uv.Voucher)
+            .ToListAsync();
+
+        // Lấy các voucher public đang active
+        var publicVouchers = await _context.Vouchers
+            .Where(v => v.VoucherType == "Public" && v.Status && v.StartDate <= DateTime.Now)
+            .ToListAsync();
+
+        var uniqueUserVouchers = userVouchers
+            .GroupBy(uv => uv.VoucherId)
+            .Select(g => g.OrderBy(uv => uv.IsUsed).ThenByDescending(uv => uv.AssignedDate).First())
+            .ToList();
+
+        var result = new List<UserVoucherDto>();
+
+        foreach(var uv in uniqueUserVouchers)
+        {
+            if (uv.Voucher != null)
+            {
+                result.Add(new UserVoucherDto
+                {
+                    UserVoucherId = uv.UserVoucherId,
+                    UserId = uv.UserId,
+                    VoucherId = uv.VoucherId,
+                    VoucherCode = uv.Voucher.Code,
+                    DiscountValue = uv.Voucher.DiscountValue,
+                    DiscountType = uv.Voucher.DiscountType,
+                    MinimumItems = uv.Voucher.MinimumItems,
+                    ExpiryDate = uv.Voucher.ExpiryDate,
+                    IsUsed = uv.IsUsed,
+                    UsedDate = uv.UsedDate,
+                    AssignedDate = uv.AssignedDate
+                });
+            }
+        }
+
+        var userVoucherIds = uniqueUserVouchers.Select(uv => uv.VoucherId).ToHashSet();
+        foreach(var pv in publicVouchers)
+        {
+            if (!userVoucherIds.Contains(pv.VoucherId))
+            {
+                result.Add(new UserVoucherDto
+                {
+                    UserVoucherId = Guid.Empty,
+                    UserId = userId,
+                    VoucherId = pv.VoucherId,
+                    VoucherCode = pv.Code,
+                    DiscountValue = pv.DiscountValue,
+                    DiscountType = pv.DiscountType,
+                    MinimumItems = pv.MinimumItems,
+                    ExpiryDate = pv.ExpiryDate,
+                    IsUsed = false,
+                    UsedDate = null,
+                    AssignedDate = pv.StartDate
+                });
+            }
+        }
+
+        return Ok(result.OrderByDescending(v => v.AssignedDate));
+    }
+
+    [HttpGet("{id:guid}/invoice.pdf")]
+    public async Task<IActionResult> GetInvoicePdf(Guid id)
+    {
+        try
+        {
+            // Ensure QuestPDF license is configured
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == id);
+
+            if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+            var model = await ToAdminResponse(order, account);
+
+            // Generate PDF using QuestPDF
+            DocumentMetadata meta = new DocumentMetadata { Title = $"Invoice_OP_{model.OrderId:0000}" };
+
+            byte[] pdfBytes = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(20);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(12));
+
+                page.Header().Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Oisipan").FontSize(20).SemiBold().FontColor(Colors.Black);
+                        col.Item().Text("Địa chỉ: Số 1, Phố A, Thành phố").FontSize(10).FontColor(Colors.Grey.Darken2);
+                        col.Item().Text("Hotline: 0123-456-789").FontSize(10).FontColor(Colors.Grey.Darken2);
+                    });
+                    row.ConstantItem(160).AlignRight().Column(col =>
+                    {
+                        col.Item().Text($"HÓA ĐƠN BÁN HÀNG").FontSize(14).SemiBold();
+                        col.Item().Text($"Mã: OP-{model.OrderId:0000}").FontSize(12);
+                        col.Item().Text($"Ngày: {model.OrderDate:dd/MM/yyyy HH:mm}").FontSize(12);
+                    });
+                });
+
+                // Prepare barcode image bytes (Code128)
+                byte[] barcodeBytes = Array.Empty<byte>();
+                try
+                {
+                    var writer = new BarcodeWriterPixelData
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions
+                        {
+                            Height = 60,
+                            Width = 300,
+                            Margin = 2
+                        }
+                    };
+                    var pixel = writer.Write($"OP-{model.OrderId:0000}");
+                    try
+                    {
+                        var width = pixel.Width;
+                        var height = pixel.Height;
+                        var src = pixel.Pixels; // expected RGB24
+                        var rgba = new Rgba32[width * height];
+                        for (int i = 0, p = 0; i < rgba.Length; i++, p += 3)
+                        {
+                            rgba[i] = new Rgba32(src[p], src[p + 1], src[p + 2], 255);
+                        }
+                        using var img = SixLabors.ImageSharp.Image.LoadPixelData<Rgba32>(rgba, width, height);
+                        using var msBar = new MemoryStream();
+                        img.SaveAsPng(msBar);
+                        barcodeBytes = msBar.ToArray();
+                    }
+                    catch
+                    {
+                        barcodeBytes = Array.Empty<byte>();
+                    }
+                }
+                catch
+                {
+                    barcodeBytes = Array.Empty<byte>();
+                }
+
+                page.Content().Column(col =>
+                {
+                    col.Spacing(10);
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c=>{
+                            c.Item().Text("Khách hàng").SemiBold();
+                            c.Item().Text(model.CustomerName);
+                            c.Item().Text(model.CustomerPhone);
+                            c.Item().Text(model.ShippingAddress);
+                        });
+                        r.ConstantItem(160).Column(c=>{
+                            c.Item().Text("Thanh toán").SemiBold();
+                            c.Item().Text($"Phương thức: {model.PaymentMethod}");
+                            c.Item().Text($"Trạng thái: {model.Status}");
+                        });
+                    });
+
+                    col.Item().Element(e =>
+                    {
+                        e.Container().Background(Colors.Grey.Lighten3).Padding(6).Row(r =>
+                        {
+                            r.RelativeItem().Text("Sản phẩm").SemiBold();
+                            r.ConstantItem(50).Text("SL").SemiBold().AlignCenter();
+                            r.ConstantItem(100).Text("Giá").SemiBold().AlignRight();
+                            r.ConstantItem(100).Text("Thành tiền").SemiBold().AlignRight();
+                        });
+                    });
+
+                    foreach(var item in model.Items)
+                    {
+                        col.Item().Row(r=>{
+                            r.RelativeItem().Text(item.ProductName);
+                            r.ConstantItem(50).AlignCenter().Text(item.Quantity.ToString());
+                            r.ConstantItem(100).AlignRight().Text(item.UnitPrice.ToString("N0") + "đ");
+                            r.ConstantItem(100).AlignRight().Text((item.UnitPrice*item.Quantity).ToString("N0") + "đ");
+                        });
+                    }
+
+                    col.Item().Row(r=>{
+                        r.RelativeItem().Column(cc=>{
+                            cc.Item().Text($"Tạm tính: {model.TotalAmount:N0}đ");
+                            if(model.DiscountAmount > 0) cc.Item().Text($"Giảm giá: -{model.DiscountAmount:N0}đ");
+                        });
+                        r.ConstantItem(320).AlignRight().Column(cc=>{
+                            cc.Item().Text($"Tổng: {model.FinalAmount:N0}đ").FontSize(14).SemiBold();
+                            if(barcodeBytes.Length>0) cc.Item().Element(e => e.Image(barcodeBytes));
+                        });
+                    });
+                });
+
+                page.Footer().AlignCenter().Text("Cảm ơn quý khách! Hẹn gặp lại.");
+            });
+        }).GeneratePdf();
+
+        // Save to wwwroot/invoices
+        try
+        {
+            var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var invoicesDir = Path.Combine(webRoot, "invoices");
+            if (!Directory.Exists(invoicesDir)) Directory.CreateDirectory(invoicesDir);
+            var fileName = $"invoice-OP-{model.OrderId:0000}.pdf";
+            var filePath = Path.Combine(invoicesDir, fileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+        }
+        catch
+        {
+            // ignore save errors
+        }
+
+            var downloadName = $"OP-{model.OrderId:0000}-invoice.pdf";
+            return File(pdfBytes, "application/pdf", downloadName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"PDF generation error: {ex.Message}\n{ex.StackTrace}");
+            return StatusCode(500, new { message = "Lỗi khi tạo PDF hóa đơn: " + ex.Message });
+        }
+    }
+
+    [HttpPost("{id:guid}/send-invoice")]
+    public async Task<IActionResult> SendInvoice(Guid id, [FromBody] SendInvoiceRequest request)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+            .FirstOrDefaultAsync(o => o.OrderId == id);
+
+        if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+        var model = await ToAdminResponse(order, account);
+
+        // generate pdf bytes using same inline generator
+        DocumentMetadata meta = new DocumentMetadata { Title = $"Invoice_OP_{model.OrderId:0000}" };
+
+        byte[] pdfBytes = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(20);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(12));
+
+                page.Header().Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Oisipan").FontSize(20).SemiBold().FontColor(Colors.Black);
+                        col.Item().Text("Địa chỉ: Số 1, Phố A, Thành phố").FontSize(10).FontColor(Colors.Grey.Darken2);
+                        col.Item().Text("Hotline: 0123-456-789").FontSize(10).FontColor(Colors.Grey.Darken2);
+                    });
+                    row.ConstantItem(160).AlignRight().Column(col =>
+                    {
+                        col.Item().Text($"HÓA ĐƠN BÁN HÀNG").FontSize(14).SemiBold();
+                        col.Item().Text($"Mã: OP-{model.OrderId:0000}").FontSize(12);
+                        col.Item().Text($"Ngày: {model.OrderDate:dd/MM/yyyy HH:mm}").FontSize(12);
+                    });
+                });
+
+                // Prepare barcode image bytes (Code128)
+                byte[] barcodeBytes = Array.Empty<byte>();
+                try
+                {
+                    var writer = new BarcodeWriterPixelData
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions
+                        {
+                            Height = 60,
+                            Width = 300,
+                            Margin = 2
+                        }
+                    };
+                    var pixel = writer.Write($"OP-{model.OrderId:0000}");
+                    try
+                    {
+                        var width = pixel.Width;
+                        var height = pixel.Height;
+                        var src = pixel.Pixels; // expected RGB24
+                        var rgba = new Rgba32[width * height];
+                        for (int i = 0, p = 0; i < rgba.Length; i++, p += 3)
+                        {
+                            rgba[i] = new Rgba32(src[p], src[p + 1], src[p + 2], 255);
+                        }
+                        using var img = SixLabors.ImageSharp.Image.LoadPixelData<Rgba32>(rgba, width, height);
+                        using var msBar = new MemoryStream();
+                        img.SaveAsPng(msBar);
+                        barcodeBytes = msBar.ToArray();
+                    }
+                    catch
+                    {
+                        barcodeBytes = Array.Empty<byte>();
+                    }
+                }
+                catch
+                {
+                    barcodeBytes = Array.Empty<byte>();
+                }
+
+                page.Content().Column(col =>
+                {
+                    col.Spacing(10);
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c=>{
+                            c.Item().Text("Khách hàng").SemiBold();
+                            c.Item().Text(model.CustomerName);
+                            c.Item().Text(model.CustomerPhone);
+                            c.Item().Text(model.ShippingAddress);
+                        });
+                        r.ConstantItem(160).Column(c=>{
+                            c.Item().Text("Thanh toán").SemiBold();
+                            c.Item().Text($"Phương thức: {model.PaymentMethod}");
+                            c.Item().Text($"Trạng thái: {model.Status}");
+                        });
+                    });
+
+                    col.Item().Element(e =>
+                    {
+                        e.Container().Background(Colors.Grey.Lighten3).Padding(6).Row(r =>
+                        {
+                            r.RelativeItem().Text("Sản phẩm").SemiBold();
+                            r.ConstantItem(50).Text("SL").SemiBold().AlignCenter();
+                            r.ConstantItem(100).Text("Giá").SemiBold().AlignRight();
+                            r.ConstantItem(100).Text("Thành tiền").SemiBold().AlignRight();
+                        });
+                    });
+
+                    foreach(var item in model.Items)
+                    {
+                        col.Item().Row(r=>{
+                            r.RelativeItem().Text(item.ProductName);
+                            r.ConstantItem(50).AlignCenter().Text(item.Quantity.ToString());
+                            r.ConstantItem(100).AlignRight().Text(item.UnitPrice.ToString("N0") + "đ");
+                            r.ConstantItem(100).AlignRight().Text((item.UnitPrice*item.Quantity).ToString("N0") + "đ");
+                        });
+                    }
+
+                    col.Item().Row(r=>{
+                        r.RelativeItem().Column(cc=>{
+                            cc.Item().Text($"Tạm tính: {model.TotalAmount:N0}đ");
+                            if(model.DiscountAmount > 0) cc.Item().Text($"Giảm giá: -{model.DiscountAmount:N0}đ");
+                        });
+                        r.ConstantItem(320).AlignRight().Column(cc=>{
+                            cc.Item().Text($"Tổng: {model.FinalAmount:N0}đ").FontSize(14).SemiBold();
+                            if(barcodeBytes.Length>0) cc.Item().Element(e => e.Image(barcodeBytes));
+                        });
+                    });
+                });
+
+                page.Footer().AlignCenter().Text("Cảm ơn quý khách! Hẹn gặp lại.");
+            });
+        }).GeneratePdf();
+
+        // Save to wwwroot/invoices
+        string savedRelativePath = string.Empty;
+        InvoiceRecord rec = new InvoiceRecord { OrderId = model.OrderId, CreatedAt = DateTime.Now };
+        try
+        {
+            var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var invoicesDir = Path.Combine(webRoot, "invoices");
+            if (!Directory.Exists(invoicesDir)) Directory.CreateDirectory(invoicesDir);
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"invoice-OP-{model.OrderId:0000}-{timestamp}.pdf";
+            var filePath = Path.Combine(invoicesDir, fileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+            savedRelativePath = Path.Combine("invoices", fileName);
+            if (request.SaveCopy)
+            {
+                rec.FilePath = savedRelativePath;
+                rec.Email = request.Email;
+                _context.InvoiceRecords.Add(rec);
+                await _context.SaveChangesAsync();
+            }
+        }
+        catch
+        {
+        }
+
+        if (request.AttachPdf && !string.IsNullOrWhiteSpace(request.Email))
+        {
+            try
+            {
+                var smtpSection = _config.GetSection("Smtp");
+                var host = smtpSection.GetValue<string>("Host");
+                var port = smtpSection.GetValue<int>("Port");
+                var user = smtpSection.GetValue<string>("User");
+                var pass = smtpSection.GetValue<string>("Pass");
+                var from = smtpSection.GetValue<string>("From");
+
+                using var msg = new System.Net.Mail.MailMessage();
+                msg.From = new System.Net.Mail.MailAddress(from ?? user ?? "noreply@example.com", "Oisipan");
+                msg.To.Add(request.Email);
+                msg.Subject = $"Hóa đơn OP-{model.OrderId:0000}";
+                msg.Body = string.IsNullOrWhiteSpace(request.Message) ? "Vui lòng xem hóa đơn đính kèm." : request.Message;
+                msg.IsBodyHtml = false;
+
+                if (pdfBytes != null && pdfBytes.Length > 0)
+                {
+                    var ms = new MemoryStream(pdfBytes);
+                    var attach = new System.Net.Mail.Attachment(ms, $"OP-{model.OrderId:0000}-invoice.pdf", "application/pdf");
+                    msg.Attachments.Add(attach);
+                }
+
+                using var client = new System.Net.Mail.SmtpClient(host, port);
+                client.EnableSsl = smtpSection.GetValue<bool>("EnableSsl");
+                if (!string.IsNullOrEmpty(user)) client.Credentials = new System.Net.NetworkCredential(user, pass);
+                client.Send(msg);
+
+                // mark as sent
+                if (request.SaveCopy)
+                {
+                    rec.EmailSent = true;
+                    rec.SentAt = DateTime.Now;
+                    _context.InvoiceRecords.Update(rec);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Gửi email thất bại.", detail = ex.Message });
+            }
+        }
+
+        return Ok(new { message = "Invoice processed.", path = savedRelativePath });
+    }
+
+    private IQueryable<Order> BuildOrderQuery()
+    {
+        return _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ProductVariant).ThenInclude(v => v.Product)
+            .Include(o => o.Account)
+            .Include(o => o.Voucher);
+    }
+
+    private static OrderResponse ToResponse(Order order)
+    {
+        return new OrderResponse
+        {
+            OrderId = order.OrderId,
+            UserId = order.UserId,
+            CustomerName = !string.IsNullOrWhiteSpace(order.CustomerName) ? order.CustomerName : order.Account?.FullName,
+            CustomerPhone = !string.IsNullOrWhiteSpace(order.CustomerPhone) ? order.CustomerPhone : order.Account?.PhoneNumber,
+            ShippingAddress = order.ShippingAddress,
+            OrderDate = order.CreatedAt,
+            TotalAmount = order.TotalAmount,
+            DiscountAmount = order.DiscountAmount,
+            FinalAmount = order.FinalAmount,
+            VoucherId = order.VoucherId,
+            VoucherCode = order.Voucher?.Code,
+            Status = order.OrderStatus,
+            PaymentMethod = order.PaymentMethod,
+            Items = order.OrderDetails.Select(item => new OrderDetailResponse
+            {
+                OrderDetailId = item.OrderDetailId,
+                ProductVariantId = item.ProductVariantId,
+                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.ProductVariant?.Product?.Name,
+                VariantName = item.VariantName,
+                UnitPrice = item.UnitPrice,
+                Quantity = item.Quantity,
+                Note = item.Note
+            }).ToList()
+        };
+    }
+
+    private async Task<AdminOrderResponse> ToAdminResponse(Order order, Account? account = null)
+    {
+        var customer = account ?? await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == order.UserId);
+
+        return new AdminOrderResponse
+        {
+            OrderId = order.OrderId,
+            UserId = order.UserId,
+            CustomerName = !string.IsNullOrWhiteSpace(order.CustomerName) ? order.CustomerName : customer?.FullName,
+            CustomerEmail = customer?.Email,
+            CustomerPhone = !string.IsNullOrWhiteSpace(order.CustomerPhone) ? order.CustomerPhone : customer?.PhoneNumber,
+            ShippingAddress = order.ShippingAddress,
+            OrderDate = order.CreatedAt,
+            TotalAmount = order.TotalAmount,
+            DiscountAmount = order.DiscountAmount,
+            FinalAmount = order.FinalAmount,
+            VoucherId = order.VoucherId,
+            VoucherCode = order.Voucher?.Code,
+            Status = order.OrderStatus,
+            PaymentMethod = order.PaymentMethod,
+            UpdatedDate = null,
+            Notes = null,
+            Items = order.OrderDetails.Select(item => new AdminOrderItemResponse
+            {
+                OrderDetailId = item.OrderDetailId,
+                ProductVariantId = item.ProductVariantId,
+                ProductName = !string.IsNullOrWhiteSpace(item.ProductName) ? item.ProductName : item.ProductVariant?.Product?.Name,
+                VariantName = item.VariantName,
+                UnitPrice = item.UnitPrice,
+                Quantity = item.Quantity,
+                Note = item.Note
+            }).ToList()
+        };
+    }
+
+    private Task AssignVoucherToUser(Guid userId)
+    {
+        return Task.CompletedTask;
+    }
+}

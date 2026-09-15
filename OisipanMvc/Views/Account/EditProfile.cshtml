@@ -1,0 +1,63 @@
+@model FrontendMvc.Models.ProfileUpdateViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa hồ sơ";
+}
+
+<section class="section-padding">
+    <div class="section-header">
+        <span class="section-subtitle">Tài khoản Oishipan</span>
+        <h1 class="section-title">Chỉnh sửa hồ sơ</h1>
+        <p class="section-desc">Cập nhật thông tin cá nhân và địa chỉ giao hàng mặc định của bạn.</p>
+    </div>
+
+    <div style="max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: 2rem; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <form asp-action="EditProfile" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="AvatarUrl" />
+
+            <div style="margin-bottom: 1.5rem; text-align: center;">
+                <div style="margin-bottom: 1rem;">
+                    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);" />
+                    }
+                    else
+                    {
+                        <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #ccc;">
+                            <i class="bi bi-person" style="font-size: 3rem; color: #aaa;"></i>
+                        </div>
+                    }
+                </div>
+                <label asp-for="Avatar" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Ảnh đại diện (Tùy chọn)</label>
+                <input asp-for="Avatar" type="file" accept="image/*" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px;" />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label asp-for="FullName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Họ và tên <span class="text-danger">*</span></label>
+                <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px;" />
+                <span asp-validation-for="FullName" class="text-danger" style="font-size: 0.875rem; display: block; margin-top: 0.25rem;"></span>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label asp-for="PhoneNumber" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Số điện thoại <span class="text-danger">*</span></label>
+                <input asp-for="PhoneNumber" class="form-control" placeholder="Nhập số điện thoại" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px;" />
+                <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 0.875rem; display: block; margin-top: 0.25rem;"></span>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label asp-for="Email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email <span class="text-danger">*</span></label>
+                <input asp-for="Email" class="form-control" placeholder="Nhập địa chỉ email" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px;" />
+                <span asp-validation-for="Email" class="text-danger" style="font-size: 0.875rem; display: block; margin-top: 0.25rem;"></span>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <a asp-action="Profile" class="btn-secondary" style="flex: 1; text-align: center; text-decoration: none; padding: 0.8rem; border-radius: 5px;">Hủy bỏ</a>
+                <button type="submit" class="btn-primary" style="flex: 1; padding: 0.8rem; border-radius: 5px; border: none;">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

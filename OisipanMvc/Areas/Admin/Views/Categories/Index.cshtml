@@ -1,0 +1,104 @@
+@model IEnumerable<FrontendMvc.Models.CategoryAdminViewModel>
+@{
+    ViewData["Title"] = "Danh mục";
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">
+            @TempData["Message"]
+        </div>
+    </div>
+}
+
+<section class="page-title-row">
+    <div>
+        <h1>Quản lý danh mục</h1>
+    </div>
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Create" class="primary-action">
+        <i class="bi bi-plus-circle"></i> Thêm danh mục
+    </a>
+</section>
+
+<section class="toolbar-panel">
+    <div class="search-bar-group">
+        <input type="search" class="form-input" placeholder="Tìm danh mục..." id="categorySearch" />
+        <i class="bi bi-search"></i>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="table-wrapper">
+        <table class="admin-table" id="categoryTable">
+            <thead>
+                <tr>
+                    <th>Danh mục</th>
+                    <th>Số sản phẩm</th>
+                    <th style="width: 140px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() == true)
+                {
+                    @foreach (var category in Model)
+                    {
+                        <tr onclick="window.location='@Url.Action("Detail", "Categories", new { area = "Admin", id = category.CategoryId })';" style="cursor: pointer;">
+                            <td>
+                                <div class="category-admin-cell">
+                                    @if (!string.IsNullOrWhiteSpace(category.Image))
+                                    {
+                                        <img src="@category.Image" alt="@category.CategoryName" />
+                                    }
+                                    else
+                                    {
+                                        <span class="category-admin-fallback"><i class="bi bi-image"></i></span>
+                                    }
+                                    <strong>@category.CategoryName</strong>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-info">@category.ProductCount sản phẩm</span></td>
+                            <td onclick="event.stopPropagation();">
+                                <div class="action-buttons">
+                                    <a asp-area="Admin" asp-controller="Categories" asp-action="Detail" asp-route-id="@category.CategoryId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                    <a asp-area="Admin" asp-controller="Categories" asp-action="Edit" asp-route-id="@category.CategoryId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                    <form method="post" asp-area="Admin" asp-controller="Categories" asp-action="Delete" asp-route-id="@category.CategoryId" class="delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px;">
+                            <i class="bi bi-inbox" style="font-size: 48px; color: var(--admin-line); margin-bottom: 16px; display: block;"></i>
+                            <strong>Chưa có danh mục</strong>
+                            <p style="color: var(--admin-muted);">Hãy tạo danh mục đầu tiên để bắt đầu</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('categorySearch')?.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#categoryTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            });
+        });
+    </script>
+}
+    </div>
+</div>
