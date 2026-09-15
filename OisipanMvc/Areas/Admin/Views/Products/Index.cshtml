@@ -1,0 +1,285 @@
+@model IEnumerable<FrontendMvc.Models.ProductAdminViewModel>
+@{
+    ViewData["Title"] = "Sản phẩm";
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">
+            @TempData["Message"]
+        </div>
+    </div>
+}
+
+<section class="page-title-row">
+    <div>
+        <h1>Quản lý sản phẩm</h1>
+    </div>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="primary-action">
+        <i class="bi bi-plus-circle"></i> Thêm sản phẩm
+    </a>
+</section>
+
+<section class="toolbar-panel">
+    <div class="toolbar-left" style="display: flex; gap: 1rem; align-items: center;">
+        <div class="search-bar-group">
+            <input type="search" class="form-input" placeholder="Tìm sản phẩm..." id="productSearch" />
+            <i class="bi bi-search"></i>
+        </div>
+        <form method="get" id="categoryFilterForm" style="margin: 0;">
+            <select name="categoryId" onchange="document.getElementById('categoryFilterForm').submit();" class="form-input" style="padding-right: 2.5rem; cursor: pointer;">
+                <option value="">Tất cả danh mục</option>
+                @if (ViewBag.Categories != null)
+                {
+                    foreach (var cat in ViewBag.Categories as List<FrontendMvc.Models.CategoryAdminViewModel>)
+                    {
+                        if (ViewBag.SelectedCategoryId == cat.CategoryId)
+                        {
+                            <option value="@cat.CategoryId" selected>@cat.CategoryName</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.CategoryId">@cat.CategoryName</option>
+                        }
+                    }
+                }
+            </select>
+        </form>
+    </div>
+    <div class="toolbar-right">
+        <div class="segmented">
+            <button class="active" data-filter="all"><i class="bi bi-funnel"></i> Tất cả</button>
+            <button data-filter="selling">Đủ hàng</button>
+            <button data-filter="low-stock">Sắp hết</button>
+            <button data-filter="hidden">Hết hàng</button>
+        </div>
+    </div>
+</section>
+
+
+<section class="panel">
+    <div class="admin-table-wrap">
+        <table class="admin-table" id="productTable">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>Giá</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th style="width: 150px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() == true)
+                {
+                    @foreach (var product in Model)
+                    {
+                        var status = product.StockQuantity <= 0 ? "hidden" : product.StockQuantity <= (product.MinimumStock ?? 10) ? "low-stock" : "selling";
+                        var statusClass = status == "hidden" ? "muted" : status == "low-stock" ? "warning" : "live";
+                        var statusText = status == "hidden" ? "Hết hàng" : status == "low-stock" ? "Sắp hết" : "Đang bán";
+
+
+                        <tr data-status="@status" style="cursor: pointer;" onclick="window.location='@Url.Action("Detail", "Products", new { area = "Admin", id = product.ProductId })'">
+                            <td class="product-name-cell">
+                                <div class="product-list-item">
+                                    @{
+                                        var imgUrl = product.ImageUrl; // alias to Image
+                                        var hasImg = !string.IsNullOrWhiteSpace(imgUrl);
+                                    }
+                                    <div class="product-list-thumb @(hasImg ? "has-image" : String.Empty)">
+                                        @if (hasImg)
+                                        {
+                                            <img src="@imgUrl" alt="@product.ProductName" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <div class="product-list-icon"><i class="bi bi-cake2"></i></div>
+                                        }
+                                    </div>
+                                    <div class="product-name">
+                                        <strong>@product.ProductName</strong>
+                                        <span class="text-muted">Mã: @product.ProductId</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@(product.CategoryName ?? "Chưa có")</td>
+                            <td class="text-success">@product.Price.ToString("N0")đ</td>
+                            <td>@product.StockQuantity</td>
+                            <td><span class="status @statusClass">@statusText</span></td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="action-buttons product-action-buttons">
+                                    <button type="button" class="icon-action" title="Chỉnh sửa tồn kho" onclick="openEditQuantityModal(@product.ProductId, '@product.ProductName', @product.StockQuantity)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a asp-area="Admin" asp-controller="Products" asp-action="Detail" asp-route-id="@product.ProductId" class="icon-action" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                    <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@product.ProductId" class="icon-action" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                    <form method="post" asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@product.ProductId" class="delete-form" onsubmit="return showDeleteConfirm(event, '@product.ProductName');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="icon-action danger delete-btn" title="Xóa"><i class="bi bi-trash-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center" style="padding: 40px; color: var(--admin-muted);">
+                            <i class="bi bi-inbox" style="font-size: 40px; margin-bottom: 12px;"></i>
+                            <div>Chưa có sản phẩm</div>
+                            <div>Thêm sản phẩm đầu tiên để hiển thị trên menu.</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+
+<!-- Edit Quantity Modal -->
+<div class="modal-overlay" id="editQuantityModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 5px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.2rem;">Chỉnh sửa tồn kho</h3>
+            <button type="button" onclick="closeEditQuantityModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form method="post" asp-area="Admin" asp-controller="Products" asp-action="UpdateQuantity" id="editQuantityForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="product-id" value="0" />
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-main);" id="product-name-label"></label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" class="quantity-btn" onclick="decreaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">−</button>
+                    <input type="number" name="quantity" id="product-quantity" min="0" max="9999" style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px; text-align: center; font-size: 1rem; font-weight: 600;" required />
+                    <button type="button" class="quantity-btn" onclick="increaseQuantity()" style="background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.1rem;">+</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" onclick="closeEditQuantityModal()" class="soft-action" style="flex: 1; padding: 0.8rem; background: rgba(0, 0, 0, 0.05); border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
+                    Hủy bỏ
+                </button>
+                <button type="submit" class="primary-action" style="flex: 1; padding: 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
+                    Lưu
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-dialog modal-dialog-danger">
+        <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="modal-title">Xóa sản phẩm?</h2>
+        <p class="modal-message">Bạn có chắc chắn muốn xóa sản phẩm <strong id="productName"></strong>? Hành động này không thể hoàn tác.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Xóa sản phẩm</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingForm = null;
+
+        function openEditQuantityModal(productId, productName, quantity) {
+            document.getElementById('product-id').value = productId;
+            document.getElementById('product-name-label').textContent = productName;
+            document.getElementById('product-quantity').value = quantity;
+            document.getElementById('editQuantityModal').style.display = 'flex';
+        }
+
+        function closeEditQuantityModal() {
+            document.getElementById('editQuantityModal').style.display = 'none';
+        }
+
+        function increaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            input.value = parseInt(input.value || 0) + 1;
+        }
+
+        function decreaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            const current = parseInt(input.value || 0);
+            if (current > 0) {
+                input.value = current - 1;
+            }
+        }
+
+        function showDeleteConfirm(event, productName) {
+            event.preventDefault();
+            pendingForm = event.target;
+            
+            // Update modal with product name
+            document.getElementById('productName').textContent = productName;
+            
+            // Show modal with animation
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('active');
+            pendingForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
+        const productRows = document.querySelectorAll('#productTable tbody tr[data-status]');
+
+        document.querySelectorAll('.segmented button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.segmented button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.getAttribute('data-filter');
+
+                productRows.forEach(row => {
+
+                    row.style.display = filter === 'all' || row.getAttribute('data-status') === filter ? '' : 'none';
+                });
+            });
+        });
+
+        document.getElementById('productSearch')?.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+
+            productRows.forEach(row => {
+
+                row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        });
+    </script>
+}

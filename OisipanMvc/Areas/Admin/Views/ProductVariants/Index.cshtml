@@ -1,0 +1,187 @@
+@model ProductOptionManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý biến thể";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<section class="page-title-row">
+    <div>
+        <h1>Quản lý biến thể</h1>
+        <p>Tìm sản phẩm để quản lý tùy chọn, giá trị và variants.</p>
+    </div>
+</section>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content">@successMessage</div>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-error">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <div class="alert-content">@errorMessage</div>
+    </div>
+}
+
+<form method="get"
+      asp-area="Admin"
+      asp-controller="ProductVariants"
+      asp-action="Index"
+      class="toolbar-panel variant-toolbar">
+    <div class="form-group variant-filter product-search">
+        <label for="productSearchInput">Chọn sản phẩm</label>
+        <input type="hidden" name="productId" id="productIdInput" value="@Model.SelectedProductId" />
+        <input type="search"
+               id="productSearchInput"
+               class="form-input"
+               autocomplete="off"
+               placeholder="Tìm sản phẩm theo tên..."
+               value="@Model.SelectedProductName" />
+        <div id="productSearchResults" class="search-dropdown"></div>
+    </div>
+</form>
+
+@if (Model.SelectedProductId.HasValue)
+{
+    <div id="variant-flash" class="alert" style="display:none; margin-bottom:1rem;"></div>
+
+    <section id="variants-root" data-product-id="@Model.SelectedProductId" data-product-name="@Model.SelectedProductName">
+        @Html.AntiForgeryToken()
+
+        <!-- KHU VỰC 1: TÙY CHỌN BIẾN THỂ DẠNG CHIP -->
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Tùy chọn biến thể</h2>
+                <button id="option-add-btn" type="button" class="soft-action"><i class="bi bi-plus-circle"></i> Thêm tùy chọn</button>
+            </div>
+
+            <div id="option-chip-list" class="option-chip-list"></div>
+        </article>
+
+        <!-- KHU VỰC 2: DANH SÁCH VARIANTS (FULL-WIDTH) -->
+        <article class="panel" style="margin-top: 1.5rem;">
+            <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 1rem;">
+                <h2 style="margin:0; font-size:1.25rem;">Danh sách variants</h2>
+                <div style="display:flex; align-items:center; gap: 1rem;">
+                    <small id="variants-loading" class="text-muted" style="display:none;"><i class="bi bi-arrow-repeat"></i> Đang xử lý...</small>
+                    <button id="generate-btn" type="button" class="primary-action"><i class="bi bi-diagram-3"></i> Generate variants</button>
+                </div>
+            </div>
+
+            <div class="toolbar-panel" style="margin-bottom:0.75rem;">
+                <div class="toolbar-left" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input id="variant-search" type="search" class="form-input" style="width:220px;" placeholder="Tìm theo biến thể hoặc SKU" />
+                    <select id="variant-status-filter" class="form-input" style="width:150px;">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="active">Đang bán</option>
+                        <option value="inactive">Ẩn</option>
+                    </select>
+                    <button id="bulk-status-active" type="button" class="soft-action">Bật bán</button>
+                    <button id="bulk-status-inactive" type="button" class="soft-action">Ẩn</button>
+                    <button id="bulk-delete" type="button" class="soft-action" style="color:#b42318; border-color:#fda29b;">Xóa đã chọn</button>
+                </div>
+                <div class="toolbar-right" style="display:flex; gap:0.5rem; align-items:center;">
+                    <input id="bulk-stock-delta" type="number" class="form-input" style="width:140px;" placeholder="+/- tồn kho" />
+                    <button id="bulk-stock-apply" type="button" class="soft-action">Áp dụng tồn kho</button>
+                </div>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;"><input type="checkbox" id="variant-select-all" /></th>
+                            <th>Biến thể</th>
+                            <th>SKU</th>
+                            <th style="width:150px;">Giá</th>
+                            <th style="width:100px;">Tồn kho</th>
+                            <th style="width:200px;">Trạng thái</th>
+                            <th style="width:120px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="variant-tbody"></tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+}
+else
+{
+    <section class="panel variant-empty-state">
+        <i class="bi bi-boxes"></i>
+        <strong>Hãy chọn một sản phẩm</strong>
+        <span>Sau đó bạn có thể quản lý tùy chọn, giá trị và variants.</span>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Products.Select(p => new { id = p.Value, name = p.Text })));
+
+            var searchInput = document.getElementById('productSearchInput');
+            var resultsBox = document.getElementById('productSearchResults');
+            var idInput = document.getElementById('productIdInput');
+
+            function renderResults(matches) {
+                resultsBox.innerHTML = '';
+                if (matches.length === 0) {
+                    resultsBox.innerHTML = '<div class="search-dropdown-empty">Không tìm thấy sản phẩm</div>';
+                } else {
+                    matches.slice(0, 20).forEach(function (product) {
+                        var item = document.createElement('div');
+                        item.className = 'search-dropdown-item';
+                        item.textContent = product.name;
+                        item.addEventListener('mousedown', function () {
+                            idInput.value = product.id;
+                            searchInput.value = product.name;
+                            resultsBox.classList.remove('is-open');
+                            searchInput.closest('form').submit();
+                        });
+                        resultsBox.appendChild(item);
+                    });
+                }
+                resultsBox.classList.add('is-open');
+            }
+
+            searchInput.addEventListener('input', function () {
+                var keyword = searchInput.value.trim().toLowerCase();
+                idInput.value = '';
+                if (!keyword) {
+                    resultsBox.classList.remove('is-open');
+                    return;
+                }
+                renderResults(products.filter(function (p) {
+                    return p.name.toLowerCase().includes(keyword);
+                }));
+            });
+
+            searchInput.addEventListener('focus', function () {
+                if (searchInput.value.trim()) {
+                    renderResults(products.filter(function (p) {
+                        return p.name.toLowerCase().includes(searchInput.value.trim().toLowerCase());
+                    }));
+                }
+            });
+
+            searchInput.addEventListener('blur', function () {
+                setTimeout(function () { resultsBox.classList.remove('is-open'); }, 150);
+            });
+
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    resultsBox.classList.remove('is-open');
+                }
+            });
+        })();
+    </script>
+    @if (Model.SelectedProductId.HasValue)
+    {
+        <script src="~/js/admin-product-variants.js" asp-append-version="true"></script>
+    }
+}
+

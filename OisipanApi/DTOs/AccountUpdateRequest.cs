@@ -18,7 +18,7 @@ public class AccountUpdateRequest
     [StringLength(15, ErrorMessage = "Số điện thoại không được vượt quá 15 ký tự.")]
     public string PhoneNumber { get; set; } = string.Empty;
 
-    [RegularExpression("^(Admin|User)$", ErrorMessage = "Vai trò không hợp lệ.")]
+    [RegularExpression("^User$", ErrorMessage = "Không thể cấp quyền quản trị viên cho tài khoản khác.")]
     public string Role { get; set; } = "User";
 
     [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự.")]

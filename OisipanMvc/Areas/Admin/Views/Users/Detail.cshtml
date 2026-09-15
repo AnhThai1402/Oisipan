@@ -1,0 +1,118 @@
+@model FrontendMvc.Models.UserAdminViewModel
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Users" asp-action="Index"><i class="bi bi-house-door"></i> Người dùng</a>
+    <span>/</span>
+    <span>Chi tiết</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <span class="eyebrow">Chi tiết người dùng</span>
+        <h1>@Model?.FullName</h1>
+        <p>ID: <strong>#@Model?.UserId</strong></p>
+    </div>
+    <div class="button-group">
+        <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@Model?.UserId" class="primary-action">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa
+        </a>
+        <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="soft-action">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</section>
+
+<div class="admin-grid two-columns">
+    <!-- User Basic Info -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Thông tin cơ bản</h2>
+        </div>
+
+        <div class="detail-group">
+            <div class="detail-row">
+                <span class="detail-label">Họ tên</span>
+                <strong>@Model?.FullName</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email</span>
+                <strong>@Model?.Email</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Số điện thoại</span>
+                <strong>@(Model?.PhoneNumber ?? "—")</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Vai trò</span>
+                <span class="badge" style="@(Model?.Role == "Admin" ? "background-color: var(--admin-red); color: white;" : "background-color: var(--admin-blue); color: white;")">
+                    @(Model?.Role == "Admin" ? "Quản trị viên" : "Khách hàng")
+                </span>
+            </div>
+        </div>
+    </article>
+
+    <!-- User Status Info -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Trạng thái tài khoản</h2>
+        </div>
+
+        @{
+            string statusStyle = Model?.Status == true 
+                ? "background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);" 
+                : "background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);";
+            string statusText = Model?.Status == true ? "Hoạt động" : "Bị khóa";
+            string statusDesc = Model?.Status == true ? "Tài khoản có thể truy cập" : "Tài khoản không thể truy cập";
+        }
+
+        <div class="metric-card" style="@statusStyle">
+            <span>Trạng thái</span>
+            <strong>@statusText</strong>
+            <small>@statusDesc</small>
+        </div>
+
+        <div class="detail-row" style="padding: 12px 0; border-top: 1px solid rgba(0,0,0,0.1);">
+            <span class="detail-label">Số đơn hàng</span>
+            <span>@(Model?.OrderCount ?? 0) đơn</span>
+        </div>
+    </article>
+</div>
+
+<!-- Action Log (Optional) -->
+<article class="panel" style="margin-top: 24px;">
+    <div class="panel-head">
+        <h2>Lịch sử hoạt động gần đây</h2>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Hành động</th>
+                    <th>Thời gian</th>
+                    <th>Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Đăng nhập</td>
+                    <td>15/06/2026 14:30</td>
+                    <td>Thành công từ IP 192.168.1.1</td>
+                </tr>
+                <tr>
+                    <td>Cập nhật hồ sơ</td>
+                    <td>10/06/2026 10:15</td>
+                    <td>Thay đổi số điện thoại</td>
+                </tr>
+                <tr>
+                    <td>Tạo tài khoản</td>
+                    <td>01/01/2026 08:00</td>
+                    <td>Tài khoản được tạo bởi quản trị viên</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</article>

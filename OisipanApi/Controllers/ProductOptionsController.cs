@@ -24,14 +24,15 @@ public class ProductOptionsController : ControllerBase
             .Include(po => po.ProductValues)
             .OrderBy(po => po.Product == null ? string.Empty : po.Product.Name)
             .ThenBy(po => po.OptionName)
-            .Select(po => ToResponse(po))
             .ToListAsync();
 
-        return Ok(options);
+        var response = options.Select(po => ToResponse(po)).ToList();
+
+        return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductOptionResponse>> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ProductOptionResponse>> GetById(Guid id)
     {
         var option = await _context.ProductOptions
             .Include(po => po.Product)
@@ -41,8 +42,8 @@ public class ProductOptionsController : ControllerBase
         return option is null ? NotFound(new { message = "Khong tim thay tuy chon san pham." }) : Ok(ToResponse(option));
     }
 
-    [HttpGet("product/{productId:int}")]
-    public async Task<ActionResult<IEnumerable<ProductOptionResponse>>> GetByProductId(int productId)
+    [HttpGet("product/{productId:guid}")]
+    public async Task<ActionResult<IEnumerable<ProductOptionResponse>>> GetByProductId(Guid productId)
     {
         if (!await _context.Products.AnyAsync(p => p.ProductId == productId))
         {
@@ -54,10 +55,11 @@ public class ProductOptionsController : ControllerBase
             .Include(po => po.ProductValues)
             .Where(po => po.ProductId == productId)
             .OrderBy(po => po.OptionName)
-            .Select(po => ToResponse(po))
             .ToListAsync();
 
-        return Ok(options);
+        var response = options.Select(po => ToResponse(po)).ToList();
+
+        return Ok(response);
     }
 
     [HttpPost]
@@ -93,8 +95,8 @@ public class ProductOptionsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = option.ProductOptionId }, ToResponse(option));
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, ProductOptionRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, ProductOptionRequest request)
     {
         var option = await _context.ProductOptions.FindAsync(id);
         if (option is null)
@@ -128,8 +130,8 @@ public class ProductOptionsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var option = await _context.ProductOptions
             .Include(po => po.ProductValues)
@@ -140,8 +142,34 @@ public class ProductOptionsController : ControllerBase
             return NotFound(new { message = "Khong tim thay tuy chon san pham." });
         }
 
+        var productValueIds = option.ProductValues.Select(pv => pv.ProductValueId).ToList();
+        if (productValueIds.Count > 0)
+        {
+            var isInUse = await _context.ProductVariantValues
+                .AnyAsync(pvv => productValueIds.Contains(pvv.ProductValueId));
+
+            if (isInUse)
+            {
+                return BadRequest(new
+                {
+                    message = "Không thể xóa tùy chọn này vì đã được dùng trong biến thể sản phẩm. Vui lòng xóa hoặc cập nhật các biến thể liên quan trước."
+                });
+            }
+        }
+
         _context.ProductOptions.Remove(option);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new
+            {
+                message = "Không thể xóa tùy chọn vì dữ liệu đang được sử dụng ở nơi khác. Vui lòng kiểm tra các biến thể liên quan."
+            });
+        }
 
         return NoContent();
     }

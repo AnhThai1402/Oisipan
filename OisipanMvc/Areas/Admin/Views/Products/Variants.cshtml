@@ -1,0 +1,88 @@
+@model FrontendMvc.Models.ProductAdminViewModel
+@{
+    ViewData["Title"] = "Quản lý biến thể";
+}
+
+<section class="page-breadcrumb">
+    <a asp-area="Admin" asp-controller="Products" asp-action="Index"><i class="bi bi-house-door"></i> Sản phẩm</a>
+    <span>/</span>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model.ProductId">@Model.ProductName</a>
+    <span>/</span>
+    <span>Biến thể</span>
+</section>
+
+<section class="page-title-row">
+    <div>
+        <h1>Quản lý biến thể</h1>
+        <p>CRUD option/value, chỉnh sửa từng variant và thao tác hàng loạt cho sản phẩm @Model.ProductName.</p>
+    </div>
+    <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model.ProductId" class="soft-action">
+        <i class="bi bi-arrow-left"></i> Quay lại chỉnh sửa sản phẩm
+    </a>
+</section>
+
+<div id="variant-flash" class="alert" style="display:none; margin-bottom:1rem;"></div>
+
+<section id="variants-root" data-product-id="@Model.ProductId" data-product-name="@Model.ProductName">
+    @Html.AntiForgeryToken()
+
+    <!-- KHU VỰC 1: TÙY CHỌN BIẾN THỂ DẠNG CHIP -->
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Tùy chọn biến thể</h2>
+            <button id="option-add-btn" type="button" class="soft-action"><i class="bi bi-plus-circle"></i> Thêm tùy chọn</button>
+        </div>
+
+        <div id="option-chip-list" class="option-chip-list"></div>
+    </article>
+
+    <!-- KHU VỰC 2: DANH SÁCH VARIANTS (FULL-WIDTH) -->
+    <article class="panel" style="margin-top: 1.5rem;">
+        <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 1rem;">
+            <h2 style="margin:0; font-size:1.25rem;">Danh sách variants</h2>
+            <div style="display:flex; align-items:center; gap: 1rem;">
+                <small id="variants-loading" class="text-muted" style="display:none;"><i class="bi bi-arrow-repeat"></i> Đang xử lý...</small>
+                <button id="generate-btn" type="button" class="primary-action"><i class="bi bi-diagram-3"></i> Generate variants</button>
+            </div>
+        </div>
+
+        <div class="toolbar-panel" style="margin-bottom:0.75rem;">
+            <div class="toolbar-left" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                <input id="variant-search" type="search" class="form-input" style="width:220px;" placeholder="Tìm theo biến thể hoặc SKU" />
+                <select id="variant-status-filter" class="form-input" style="width:150px;">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ẩn</option>
+                </select>
+                <button id="bulk-status-active" type="button" class="soft-action">Bật bán</button>
+                <button id="bulk-status-inactive" type="button" class="soft-action">Ẩn</button>
+                <button id="bulk-delete" type="button" class="soft-action" style="color:#b42318; border-color:#fda29b;">Xóa đã chọn</button>
+            </div>
+            <div class="toolbar-right" style="display:flex; gap:0.5rem; align-items:center;">
+                <input id="bulk-stock-delta" type="number" class="form-input" style="width:140px;" placeholder="+/- tồn kho" />
+                <button id="bulk-stock-apply" type="button" class="soft-action">Áp dụng tồn kho</button>
+            </div>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"><input type="checkbox" id="variant-select-all" /></th>
+                        <th>Biến thể</th>
+                        <th>SKU</th>
+                        <th style="width:150px;">Giá</th>
+                        <th style="width:100px;">Tồn kho</th>
+                        <th style="width:200px;">Trạng thái</th>
+                        <th style="width:120px;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="variant-tbody"></tbody>
+            </table>
+        </div>
+    </article>
+</section>
+
+@section Scripts {
+    <script src="~/js/admin-product-variants.js" asp-append-version="true"></script>
+}

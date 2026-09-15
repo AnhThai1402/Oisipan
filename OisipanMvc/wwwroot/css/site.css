@@ -42,7 +42,7 @@ body {
   width: min(100%, 480px);
   padding: 28px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -98,7 +98,7 @@ body {
 .admin-hero {
   padding: 28px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -125,7 +125,7 @@ body {
   display: block;
   padding: 22px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   color: #111827;
   text-decoration: none;
   background: #fff;
@@ -148,6 +148,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin: 28px 0 20px;
+  flex-wrap: wrap;
 }
 
 .admin-page-header h1,
@@ -157,11 +158,17 @@ body {
   font-weight: 700;
 }
 
+.admin-page-header .btn {
+  white-space: nowrap;
+  padding: 0.5rem 1rem !important;
+  font-size: 14px !important;
+}
+
 .admin-table-wrap,
 .admin-form {
   padding: 22px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -190,7 +197,7 @@ body {
   width: 56px;
   height: 56px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid #e5e7eb;
 }
 
