@@ -128,11 +128,19 @@ app.MapGet("/weatherforecast", () =>
 
 using (var scope = app.Services.CreateScope())
 {
+    var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
     try
     {
-        var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
         context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration failed: {ex}");
+        throw;
+    }
 
+    try
+    {
         var passwordHasher = new PasswordHasher<Account>();
         const string adminEmail = "admin123@gmail.com";
         const string adminPassword = "Admin@123";
