@@ -12,7 +12,7 @@
                asp-action="ProductDetail"
                asp-route-id="@product.ProductId"
                aria-label="Xem chi tiết @product.Name">
-                <div class="product-img-wrap">
+                <div class="product-img-wrap menu-product-image">
                     @if (!string.IsNullOrWhiteSpace(product.Image))
                     {
                         <img class="product-img" src="@product.Image" alt="@product.Name" loading="lazy" />

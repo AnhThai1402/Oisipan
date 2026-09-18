@@ -1,16 +1,96 @@
 @model List<FrontendMvc.Models.WishlistItemViewModel>
-@{ ViewData["Title"] = "Wishlist"; }
-<section class="section-padding wishlist-page"><div class="section-header"><span class="section-subtitle">Sản phẩm đã lưu</span><h1 class="section-title">Wishlist</h1></div>
-    @if (Model.Any()) { <div class="wishlist-grid">@foreach (var item in Model) { <article class="product-card wishlist-product-card"><div class="wishlist-image-wrap">@if (!string.IsNullOrWhiteSpace(item.Image)) { <img src="@item.Image" alt="@item.ProductName" class="wishlist-product-img" /> } else { <i class="bi bi-cake2 wishlist-empty-image"></i> }</div><div class="product-info"><h3 class="product-title">@item.ProductName</h3><p class="product-price">@item.Price.ToString("N0")đ</p>@if (item.StockQuantity > 0) { <form method="post" asp-action="AddToCart"><input type="hidden" name="productId" value="@item.ProductId" />@Html.AntiForgeryToken()<button class="btn-primary"><i class="bi bi-cart-plus"></i> Chuyển vào giỏ</button></form> }<form method="post" asp-action="Toggle"><input type="hidden" name="productId" value="@item.ProductId" />@Html.AntiForgeryToken()<button class="btn-view-detail" title="Bỏ yêu thích"><i class="bi bi-heart-fill"></i></button></form></div></article> }</div> } else { <div class="empty-state"><i class="bi bi-heart"></i><strong>Wishlist đang trống</strong></div> }
-</section>
+@{
+    ViewData["Title"] = "Wishlist";
+    var availableCount = Model.Count(item => item.StockQuantity > 0);
+}
+
+<main class="wishlist-page">
+    <section class="wishlist-hero">
+        <div>
+            <span class="wishlist-kicker"><i class="bi bi-bookmark-heart-fill"></i> Bộ sưu tập cá nhân</span>
+            <h1>Sản phẩm yêu thích</h1>
+            <p>Lưu lại những món bánh bạn muốn thử và quay lại bất cứ lúc nào.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Menu" class="wishlist-browse-link"><i class="bi bi-grid-3x3-gap"></i> Khám phá menu</a>
+    </section>
+
+    @if (Model.Any())
+    {
+        <div class="wishlist-summary"><span><strong>@Model.Count</strong> sản phẩm đã lưu</span><span class="wishlist-summary-stock"><i class="bi bi-check-circle-fill"></i> @availableCount sản phẩm đang còn hàng</span></div>
+        <section class="wishlist-grid" aria-label="Danh sách sản phẩm yêu thích">
+            @foreach (var item in Model)
+            {
+                var isAvailable = item.StockQuantity > 0;
+                <article class="wishlist-card @(isAvailable ? "" : "is-sold-out")">
+                    <div class="wishlist-card-media">
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" aria-label="Xem @item.ProductName">
+                            @if (!string.IsNullOrWhiteSpace(item.Image)) { <img src="@item.Image" alt="@item.ProductName" loading="lazy" /> } else { <i class="bi bi-cake2 wishlist-placeholder" aria-hidden="true"></i> }
+                        </a>
+                        <span class="wishlist-saved-badge"><i class="bi bi-heart-fill"></i> Đã lưu</span>
+                        <form method="post" asp-action="Toggle" class="wishlist-remove-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@item.ProductId" />
+                            <button type="submit" class="wishlist-remove-button" title="Bỏ khỏi wishlist" aria-label="Bỏ @item.ProductName khỏi wishlist"><i class="bi bi-heart-fill"></i></button>
+                        </form>
+                    </div>
+                    <div class="wishlist-card-body">
+                        <div class="wishlist-card-heading"><h2>@item.ProductName</h2>@if (isAvailable) { <span class="wishlist-stock"><i class="bi bi-check2"></i> Còn hàng</span> } else { <span class="wishlist-stock sold-out"><i class="bi bi-dash-circle"></i> Hết hàng</span> }</div>
+                        <strong class="wishlist-price">@item.Price.ToString("N0")đ</strong>
+                        <div class="wishlist-card-actions">
+                            @if (isAvailable)
+                            {
+                                <form method="post" asp-action="AddToCart" class="wishlist-cart-form">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@item.ProductId" /><button type="submit" class="wishlist-cart-button"><i class="bi bi-cart-plus"></i> Chuyển vào giỏ</button></form>
+                            }
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="wishlist-detail-link" title="Xem chi tiết"><i class="bi bi-arrow-up-right"></i></a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="wishlist-empty-state"><div class="wishlist-empty-icon"><i class="bi bi-heart"></i></div><h2>Wishlist đang trống</h2><p>Bấm vào biểu tượng trái tim trên sản phẩm để lưu những món bánh bạn yêu thích.</p><a asp-controller="Home" asp-action="Menu" class="wishlist-browse-link"><i class="bi bi-arrow-left"></i> Xem menu bánh</a></section>
+    }
+</main>
+
 <style>
-    .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, 220px); justify-content: center; gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
-    .wishlist-product-card { min-width: 0; }
-    .wishlist-image-wrap { position: relative; height: 145px; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--bg-white); }
-    .wishlist-product-img { width: 80%; height: 80%; object-fit: contain; border-radius: 4px; }
-    .wishlist-empty-image { color: var(--accent-green); font-size: 3rem; }
-    .wishlist-product-card .product-info { padding: 1rem; }
-    .wishlist-product-card .product-title { font-size: 1rem; }
-    .wishlist-product-card .btn-primary { width: 100%; padding: .65rem .75rem; }
-    .wishlist-product-card .btn-view-detail { margin-top: .6rem; }
+    .wishlist-page { min-height: calc(100vh - 90px); padding: 8rem 8% 5rem; background: linear-gradient(180deg, #fbfaf4 0%, var(--bg-page) 100%); }
+    .wishlist-hero { max-width: 1100px; margin: 0 auto 2rem; display: flex; align-items: end; justify-content: space-between; gap: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.75rem; }
+    .wishlist-kicker { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: .65rem; color: var(--accent-orange-hover); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .wishlist-hero h1 { margin: 0; color: var(--accent-green); font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.05; }
+    .wishlist-hero p { margin: .8rem 0 0; color: var(--text-muted); font-size: .95rem; }
+    .wishlist-browse-link { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 42px; padding: .7rem 1rem; border: 1px solid var(--accent-green); border-radius: 5px; color: var(--accent-green); background: transparent; font-size: .8rem; font-weight: 800; text-decoration: none; white-space: nowrap; transition: var(--transition-smooth); }
+    .wishlist-browse-link:hover { color: var(--bg-white); background: var(--accent-green); }
+    .wishlist-summary { max-width: 1100px; margin: 0 auto 1.25rem; display: flex; justify-content: space-between; gap: 1rem; color: var(--text-muted); font-size: .82rem; }
+    .wishlist-summary strong { color: var(--accent-green); font-size: 1rem; }
+    .wishlist-summary-stock { color: var(--accent-green); font-weight: 700; }
+    .wishlist-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+    .wishlist-card { min-width: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-card); transition: var(--transition-smooth); }
+    .wishlist-card:hover { transform: translateY(-5px); border-color: var(--accent-green); box-shadow: var(--shadow-medium); }
+    .wishlist-card-media { position: relative; height: 155px; display: grid; place-items: center; padding: 1rem; background: var(--bg-white); }
+    .wishlist-card-media a { display: grid; width: 100%; height: 100%; place-items: center; }
+    .wishlist-card-media img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(17,60,43,.1)); transition: var(--transition-smooth); }
+    .wishlist-card:hover .wishlist-card-media img { transform: scale(1.06); }
+    .wishlist-placeholder { color: var(--accent-green); font-size: 3.5rem; }
+    .wishlist-saved-badge { position: absolute; top: .75rem; left: .75rem; padding: .3rem .55rem; border-radius: 4px; color: var(--bg-white); background: var(--accent-green); font-size: .62rem; font-weight: 800; }
+    .wishlist-remove-form { position: absolute; top: .6rem; right: .6rem; margin: 0; }
+    .wishlist-remove-button, .wishlist-detail-link { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--border-color); border-radius: 50%; color: var(--accent-green); background: rgba(255,255,255,.92); cursor: pointer; text-decoration: none; transition: var(--transition-smooth); }
+    .wishlist-remove-button:hover { color: #b42318; border-color: #b42318; }
+    .wishlist-card-body { padding: 1rem; }
+    .wishlist-card-heading { display: flex; align-items: start; justify-content: space-between; gap: .5rem; }
+    .wishlist-card h2 { margin: 0; color: var(--accent-green); font-size: 1rem; line-height: 1.25; }
+    .wishlist-stock { display: inline-flex; align-items: center; gap: .15rem; color: var(--accent-green); font-size: .62rem; font-weight: 800; white-space: nowrap; }
+    .wishlist-stock.sold-out { color: var(--text-muted); }
+    .wishlist-price { display: block; margin: .7rem 0 .85rem; color: var(--accent-green); font-size: 1.15rem; }
+    .wishlist-card-actions { display: flex; align-items: center; gap: .5rem; }
+    .wishlist-cart-form { flex: 1; margin: 0; }
+    .wishlist-cart-button { display: flex; width: 100%; min-height: 36px; align-items: center; justify-content: center; gap: .35rem; border: 1px solid var(--accent-green); border-radius: 4px; color: var(--bg-white); background: var(--accent-green); font-size: .72rem; font-weight: 800; cursor: pointer; }
+    .wishlist-cart-button:hover { background: var(--accent-green-hover); }
+    .wishlist-detail-link:hover { color: var(--bg-white); background: var(--accent-green); }
+    .wishlist-empty-state { max-width: 620px; margin: 4rem auto 0; padding: 3rem 2rem; border: 1px solid var(--border-color); border-radius: 5px; text-align: center; background: rgba(255,255,255,.55); }
+    .wishlist-empty-icon { display: grid; width: 64px; height: 64px; margin: 0 auto 1rem; place-items: center; border-radius: 50%; color: var(--accent-green); background: var(--accent-green-light); font-size: 1.8rem; }
+    .wishlist-empty-state h2 { margin: 0; color: var(--accent-green); font-size: 1.4rem; }
+    .wishlist-empty-state p { margin: .65rem auto 1.25rem; max-width: 430px; color: var(--text-muted); font-size: .85rem; line-height: 1.6; }
+    @@media (max-width: 700px) { .wishlist-page { padding: 7rem 5% 3rem; } .wishlist-hero { align-items: start; flex-direction: column; } .wishlist-summary { align-items: start; flex-direction: column; gap: .35rem; } .wishlist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; } .wishlist-card-media { height: 125px; padding: .6rem; } .wishlist-card-body { padding: .75rem; } .wishlist-card-heading { display: block; } .wishlist-stock { margin-top: .35rem; } .wishlist-price { margin: .55rem 0 .7rem; } }
 </style>
