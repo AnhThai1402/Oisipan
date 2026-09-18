@@ -27,9 +27,27 @@
                         <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId" class="btn-view-detail" title="Xem chi tiết">
                             <i class="bi bi-eye"></i>
                         </a>
-                        <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId" class="btn-add-cart" title="Chọn tùy chọn">
-                            <i class="bi bi-cart-plus"></i>
-                        </a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <form method="post" asp-controller="Wishlist" asp-action="Toggle" class="wishlist-grid-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@product.ProductId" />
+                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                <button type="submit" class="btn-view-detail" title="Yêu thích sản phẩm" aria-label="Yêu thích @product.Name"><i class="bi bi-heart"></i></button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn-view-detail" title="Đăng nhập để yêu thích" aria-label="Yêu thích @product.Name">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        }
+                        @if (product.StockQuantity > 0)
+                        {
+                            <a asp-controller="Cart" asp-action="Checkout" asp-route-buyNowProductId="@product.ProductId" asp-route-buyNowQuantity="1" class="buy-now-card-btn" title="Mua ngay @product.Name">
+                                <i class="bi bi-lightning-charge-fill"></i> Mua ngay
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

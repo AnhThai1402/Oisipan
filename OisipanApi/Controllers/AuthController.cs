@@ -69,6 +69,14 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
+        if (!await _context.Database.CanConnectAsync())
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                message = "Dịch vụ cơ sở dữ liệu đang không khả dụng. Vui lòng kiểm tra SQL Server và chuỗi kết nối."
+            });
+        }
+
         var email = request.Email.Trim().ToLowerInvariant();
         var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
 

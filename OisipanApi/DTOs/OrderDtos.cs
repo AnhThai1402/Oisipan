@@ -63,6 +63,25 @@ public class OrderResponse
     public string Status { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public List<OrderDetailResponse> Items { get; set; } = new();
+    public List<OrderStatusHistoryResponse> StatusHistory { get; set; } = new();
+    public string RefundStatus { get; set; } = "NotRequired";
+    public DateTime? RefundedAt { get; set; }
+}
+
+public class OrderStatusHistoryResponse
+{
+    public Guid OrderStatusHistoryId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = string.Empty;
+    public string ChangedBy { get; set; } = string.Empty;
+    public string? Note { get; set; }
+    public DateTime ChangedAt { get; set; }
+}
+
+public class OrderRefundRequest
+{
+    [StringLength(500)]
+    public string? Note { get; set; }
 }
 
 public class OrderDetailResponse

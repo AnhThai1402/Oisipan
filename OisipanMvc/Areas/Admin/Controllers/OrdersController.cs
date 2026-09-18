@@ -105,5 +105,14 @@ public class OrdersController : AdminBaseController
         return RedirectToAction(nameof(Detail), new { id = orderId });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Refund(Guid id, string? note)
+    {
+        var response = await Api.PostAsJsonAsync($"api/orders/{id}/refund", new { note });
+        SetFlashMessage(response.IsSuccessStatusCode ? "Đã xác nhận hoàn tiền." : "Không thể hoàn tiền cho đơn hàng.", response.IsSuccessStatusCode ? "edit" : "error");
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
     private HttpClient Api => _httpClientFactory.CreateClient("OisipanApi");
 }

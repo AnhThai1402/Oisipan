@@ -51,9 +51,19 @@ namespace Oishipan.Models
 
         public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        public virtual ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
 
         [StringLength(50)]
         [Column(TypeName = "nvarchar(50)")]
         public string OrderStatus { get; set; } = "Chờ xác nhận";
+
+        [StringLength(30)]
+        [Column(TypeName = "nvarchar(30)")]
+        public string RefundStatus { get; set; } = "NotRequired";
+
+        public DateTime? RefundedAt { get; set; }
+
+        [Column(TypeName = "nvarchar(500)")]
+        public string? RefundNote { get; set; }
     }
 }

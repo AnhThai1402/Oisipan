@@ -297,6 +297,13 @@ public class OrdersController : ControllerBase
             }
 
             _context.Orders.Add(order);
+            _context.OrderStatusHistories.Add(new OrderStatusHistory
+            {
+                OrderId = order.OrderId,
+                ToStatus = order.OrderStatus,
+                ChangedBy = "System",
+                Note = "Đơn hàng được tạo"
+            });
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -323,7 +330,10 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = "Trạng thái đơn hàng không hợp lệ." });
         }
 
-        var order = await _context.Orders.FindAsync(id);
+        var order = await _context.Orders
+            .Include(o => o.OrderDetails)
+                .ThenInclude(d => d.Product)
+            .FirstOrDefaultAsync(o => o.OrderId == id);
         if (order is null)
         {
             return NotFound(new { message = "Không tìm thấy đơn hàng." });
@@ -345,7 +355,12 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = "Không thể chuyển thủ công sang 'Hoàn thành' hoặc 'Đã giao'. Trạng thái này chỉ được cập nhật khi người dùng bấm xác nhận 'Đã nhận hàng'." });
         }
 
-        order.OrderStatus = status;
+        if (status == "Đã hủy" && order.OrderStatus != "Đã hủy")
+        {
+            RestoreOrderStock(order);
+            order.RefundStatus = order.PaymentMethod.Equals("COD", StringComparison.OrdinalIgnoreCase) ? "NotRequired" : "Pending";
+        }
+        await ChangeStatusAsync(order, status, "Admin");
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -365,7 +380,7 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = $"Chỉ có thể xác nhận nhận hàng khi đơn hàng đang ở trạng thái 'Đang giao'. Trạng thái hiện tại: '{order.OrderStatus}'." });
         }
 
-        order.OrderStatus = "Hoàn thành";
+        await ChangeStatusAsync(order, "Hoàn thành", "Customer");
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -386,7 +401,7 @@ public class OrdersController : ControllerBase
         }
 
         // Check if order can be cancelled
-        if (order.OrderStatus == "Đã giao" || order.OrderStatus == "Đã hủy")
+        if (order.OrderStatus != "Chờ xác nhận" && order.OrderStatus != "Đã xác nhận")
         {
             return BadRequest(new { message = $"Không thể hủy đơn hàng ở trạng thái '{order.OrderStatus}'." });
         }
@@ -457,16 +472,62 @@ public class OrdersController : ControllerBase
 
         if (response.IsApproved)
         {
-            var order = await _context.Orders.FindAsync(request.OrderId);
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == request.OrderId);
             if (order is not null)
             {
-                order.OrderStatus = "Đã hủy";
+                if (order.OrderStatus != "Đã hủy")
+                {
+                    RestoreOrderStock(order);
+                    await ChangeStatusAsync(order, "Đã hủy", "Admin", response.AdminNote);
+                    order.RefundStatus = order.PaymentMethod.Equals("COD", StringComparison.OrdinalIgnoreCase)
+                        ? "NotRequired"
+                        : "Pending";
+                }
             }
         }
 
         await _context.SaveChangesAsync();
 
         return Ok(new { message = request.RequestStatus == "Approved" ? "Yêu cầu hủy đơn hàng đã được phê duyệt." : "Yêu cầu hủy đơn hàng đã bị từ chối." });
+    }
+
+    [HttpPost("{id:guid}/refund")]
+    public async Task<IActionResult> Refund(Guid id, [FromBody] OrderRefundRequest request)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        if (order.OrderStatus != "Đã hủy") return BadRequest(new { message = "Chỉ hoàn tiền cho đơn đã hủy." });
+        if (order.PaymentMethod.Equals("COD", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Đơn COD không cần hoàn tiền." });
+        if (order.RefundStatus == "Completed")
+            return BadRequest(new { message = "Đơn hàng đã được hoàn tiền trước đó." });
+
+        order.RefundStatus = "Completed";
+        order.RefundedAt = DateTime.Now;
+        order.RefundNote = request.Note?.Trim();
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Đã xác nhận hoàn tiền cho khách hàng." });
+    }
+
+    [HttpGet("{id:guid}/status-history")]
+    public async Task<ActionResult<IEnumerable<OrderStatusHistoryResponse>>> GetStatusHistory(Guid id)
+    {
+        var history = await _context.OrderStatusHistories
+            .Where(h => h.OrderId == id)
+            .OrderBy(h => h.CreatedAt)
+            .Select(h => new OrderStatusHistoryResponse
+            {
+                OrderStatusHistoryId = h.OrderStatusHistoryId,
+                FromStatus = h.FromStatus,
+                ToStatus = h.ToStatus,
+                ChangedBy = h.ChangedBy,
+                Note = h.Note,
+                ChangedAt = h.CreatedAt
+            }).ToListAsync();
+        return Ok(history);
     }
 
     [HttpGet("user/{userId:guid}/vouchers")]
@@ -920,6 +981,31 @@ public class OrdersController : ControllerBase
                 .ThenInclude(od => od.Product)
             .Include(o => o.Account)
             .Include(o => o.Voucher);
+    }
+
+    private async Task ChangeStatusAsync(Order order, string status, string changedBy, string? note = null)
+    {
+        if (order.OrderStatus == status) return;
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            FromStatus = order.OrderStatus,
+            ToStatus = status,
+            ChangedBy = changedBy,
+            Note = note,
+            CreatedAt = DateTime.Now
+        });
+        order.OrderStatus = status;
+        await Task.CompletedTask;
+    }
+
+    private void RestoreOrderStock(Order order)
+    {
+        foreach (var item in order.OrderDetails)
+        {
+            var product = item.Product;
+            if (product is not null) product.StockQuantity += item.Quantity;
+        }
     }
 
     private static OrderResponse ToResponse(Order order)

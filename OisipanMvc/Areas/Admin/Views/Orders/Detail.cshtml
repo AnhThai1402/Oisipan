@@ -175,6 +175,14 @@ else
                     </button>
                 </form>
             }
+            @if (isCancelled && !Model.PaymentMethod.Equals("COD", StringComparison.OrdinalIgnoreCase))
+            {
+                <form method="post" asp-area="Admin" asp-controller="Orders" asp-action="Refund" asp-route-id="@Model.OrderId" class="admin-action-form">
+                    @Html.AntiForgeryToken()
+                    <input type="text" name="note" placeholder="Ghi chú hoàn tiền (không bắt buộc)" />
+                    <button type="submit" class="admin-action-button"><i class="bi bi-arrow-counterclockwise"></i> Xác nhận hoàn tiền</button>
+                </form>
+            }
 
             @if (canCancel)
             {

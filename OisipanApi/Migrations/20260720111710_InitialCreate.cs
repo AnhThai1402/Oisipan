@@ -287,31 +287,6 @@ namespace BackendApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InvoiceRecords",
-                columns: table => new
-                {
-                    InvoiceRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FilePath = table.Column<string>(type: "varchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "varchar(100)", nullable: true),
-                    EmailSent = table.Column<bool>(type: "bit", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Status = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InvoiceRecords", x => x.InvoiceRecordId);
-                    table.ForeignKey(
-                        name: "FK_InvoiceRecords_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "OrderId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Payments",
                 columns: table => new
                 {

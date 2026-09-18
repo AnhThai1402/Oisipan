@@ -49,6 +49,12 @@
                 </div>
 
                 <div class="product-detail-actions">
+                    <form method="post" asp-controller="Wishlist" asp-action="Toggle" class="wishlist-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@Model.ProductId" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="btn-view-detail" title="Thêm vào wishlist"><i class="bi bi-heart"></i> Yêu thích</button>
+                    </form>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         @if (Model.StockQuantity > 0)

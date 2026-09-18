@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Identity;
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Oishipan.Models;
@@ -12,6 +13,14 @@ using Oishipan.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(defaultConnectionString) ||
+    defaultConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+    defaultConnectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+{
+    defaultConnectionString = @"Server=(localdb)\MSSQLLocalDB;Database=Oisipan;Trusted_Connection=True;TrustServerCertificate=True;";
+}
 
 // Configure QuestPDF license for development
 try
@@ -34,7 +43,7 @@ builder.Services.AddControllers()
     });
 builder.Services.AddDbContext<OishipanContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        defaultConnectionString,
         sqlOptions => sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -157,45 +166,89 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
-        
-        // Ensure database is created and migrations are applied
-        context.Database.Migrate();
-        
-        var passwordHasher = new PasswordHasher<Account>();
-        const string adminEmail = "admin123@gmail.com";
-        const string adminPassword = "Admin@123";
 
-        var admin = context.Accounts.FirstOrDefault(a => a.Email == adminEmail);
-        if (admin is null)
+        if (!context.Database.CanConnect())
         {
-            var adminPhone = Enumerable.Range(0, 10)
-                .Select(index => $"090000000{index}")
-                .First(phone => !context.Accounts.Any(a => a.PhoneNumber == phone));
-
-            admin = new Account
-            {
-                FullName = "Administrator",
-                Email = adminEmail,
-                PhoneNumber = adminPhone,
-                Role = "Admin",
-                Status = true,
-                Address = "Oisipan",
-                AuthProvider = "Local"
-            };
-
-            admin.Password = passwordHasher.HashPassword(admin, adminPassword);
-            context.Accounts.Add(admin);
+            Console.WriteLine("Database is unavailable. Skipping migrations and admin seeding until SQL Server is running.");
         }
         else
         {
-            admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
-            admin.Role = "Admin";
-            admin.Status = true;
-            admin.AuthProvider = "Local";
-            admin.Password = passwordHasher.HashPassword(admin, adminPassword);
-        }
+            try
+            {
+                context.Database.Migrate();
 
-        context.SaveChanges();
+                if (TableExists(context, "Accounts"))
+                {
+                    // Some local databases were created from partial migrations and still need the newer Account columns.
+                    EnsureAccountSchema(context);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Migration attempt failed: {ex.Message}");
+
+                if (!TableExists(context, "Accounts"))
+                {
+                    try
+                    {
+                        context.Database.EnsureCreated();
+                        Console.WriteLine("Database was reset to the current EF model because the existing schema was incomplete.");
+                    }
+                    catch (Exception ensureEx)
+                    {
+                        Console.WriteLine($"EnsureCreated fallback failed: {ensureEx.Message}");
+                    }
+                }
+
+                if (TableExists(context, "Accounts"))
+                {
+                    EnsureAccountSchema(context);
+                }
+            }
+
+            if (!TableExists(context, "Accounts"))
+            {
+                Console.WriteLine("Accounts table is still unavailable. Skipping admin seeding until the database schema is repaired.");
+            }
+            else
+            {
+                var passwordHasher = new PasswordHasher<Account>();
+                const string adminEmail = "admin123@gmail.com";
+                const string adminPassword = "Admin@123";
+
+                var admin = context.Accounts.FirstOrDefault(a => a.Email == adminEmail);
+                if (admin is null)
+                {
+                    var adminPhone = Enumerable.Range(0, 10)
+                        .Select(index => $"090000000{index}")
+                        .First(phone => !context.Accounts.Any(a => a.PhoneNumber == phone));
+
+                    admin = new Account
+                    {
+                        FullName = "Administrator",
+                        Email = adminEmail,
+                        PhoneNumber = adminPhone,
+                        Role = "Admin",
+                        Status = true,
+                        Address = "Oisipan",
+                        AuthProvider = "Local"
+                    };
+
+                    admin.Password = passwordHasher.HashPassword(admin, adminPassword);
+                    context.Accounts.Add(admin);
+                }
+                else
+                {
+                    admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
+                    admin.Role = "Admin";
+                    admin.Status = true;
+                    admin.AuthProvider = "Local";
+                    admin.Password = passwordHasher.HashPassword(admin, adminPassword);
+                }
+
+                context.SaveChanges();
+            }
+        }
     }
     catch (Exception ex)
     {
@@ -204,6 +257,61 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+static void EnsureAccountSchema(OishipanContext context)
+{
+    var sql = @"
+        IF OBJECT_ID('dbo.Accounts', 'U') IS NULL
+            RETURN;
+
+        IF COL_LENGTH('Accounts', 'AuthProvider') IS NULL
+            ALTER TABLE [Accounts] ADD [AuthProvider] nvarchar(20) NOT NULL DEFAULT 'Local';
+
+        IF COL_LENGTH('Accounts', 'GoogleId') IS NULL
+            ALTER TABLE [Accounts] ADD [GoogleId] nvarchar(100) NULL;
+
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Accounts_GoogleId' AND object_id = OBJECT_ID('Accounts'))
+            CREATE UNIQUE INDEX [IX_Accounts_GoogleId] ON [Accounts] ([GoogleId]) WHERE [GoogleId] IS NOT NULL;
+    ";
+
+    context.Database.ExecuteSqlRaw(sql);
+}
+
+static bool TableExists(OishipanContext context, string tableName)
+{
+    var connection = context.Database.GetDbConnection();
+    var wasOpen = connection.State == ConnectionState.Open;
+
+    try
+    {
+        if (!wasOpen)
+        {
+            connection.Open();
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT CASE WHEN OBJECT_ID(@tableName, 'U') IS NOT NULL THEN 1 ELSE 0 END";
+
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "@tableName";
+        parameter.Value = tableName;
+        command.Parameters.Add(parameter);
+
+        var result = command.ExecuteScalar();
+        return result is not null && Convert.ToInt32(result) == 1;
+    }
+    catch
+    {
+        return false;
+    }
+    finally
+    {
+        if (!wasOpen && connection.State == ConnectionState.Open)
+        {
+            connection.Close();
+        }
+    }
+}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

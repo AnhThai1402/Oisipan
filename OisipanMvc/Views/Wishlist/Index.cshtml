@@ -1,0 +1,16 @@
+@model List<FrontendMvc.Models.WishlistItemViewModel>
+@{ ViewData["Title"] = "Wishlist"; }
+<section class="section-padding wishlist-page"><div class="section-header"><span class="section-subtitle">Sản phẩm đã lưu</span><h1 class="section-title">Wishlist</h1></div>
+    @if (Model.Any()) { <div class="wishlist-grid">@foreach (var item in Model) { <article class="product-card wishlist-product-card"><div class="wishlist-image-wrap">@if (!string.IsNullOrWhiteSpace(item.Image)) { <img src="@item.Image" alt="@item.ProductName" class="wishlist-product-img" /> } else { <i class="bi bi-cake2 wishlist-empty-image"></i> }</div><div class="product-info"><h3 class="product-title">@item.ProductName</h3><p class="product-price">@item.Price.ToString("N0")đ</p>@if (item.StockQuantity > 0) { <form method="post" asp-action="AddToCart"><input type="hidden" name="productId" value="@item.ProductId" />@Html.AntiForgeryToken()<button class="btn-primary"><i class="bi bi-cart-plus"></i> Chuyển vào giỏ</button></form> }<form method="post" asp-action="Toggle"><input type="hidden" name="productId" value="@item.ProductId" />@Html.AntiForgeryToken()<button class="btn-view-detail" title="Bỏ yêu thích"><i class="bi bi-heart-fill"></i></button></form></div></article> }</div> } else { <div class="empty-state"><i class="bi bi-heart"></i><strong>Wishlist đang trống</strong></div> }
+</section>
+<style>
+    .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, 220px); justify-content: center; gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .wishlist-product-card { min-width: 0; }
+    .wishlist-image-wrap { position: relative; height: 145px; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--bg-white); }
+    .wishlist-product-img { width: 80%; height: 80%; object-fit: contain; border-radius: 4px; }
+    .wishlist-empty-image { color: var(--accent-green); font-size: 3rem; }
+    .wishlist-product-card .product-info { padding: 1rem; }
+    .wishlist-product-card .product-title { font-size: 1rem; }
+    .wishlist-product-card .btn-primary { width: 100%; padding: .65rem .75rem; }
+    .wishlist-product-card .btn-view-detail { margin-top: .6rem; }
+</style>
