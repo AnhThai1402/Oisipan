@@ -74,33 +74,41 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var response = await Api.PostAsJsonAsync("api/auth/login", model);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            await AddApiErrors(response);
+            var response = await Api.PostAsJsonAsync("api/auth/login", model);
+            if (!response.IsSuccessStatusCode)
+            {
+                await AddApiErrors(response);
+                return View(model);
+            }
+
+            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (account is null)
+            {
+                ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
+                return View(model);
+            }
+
+            await SignIn(account, model.RememberMe);
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+        catch (HttpRequestException)
+        {
+            ModelState.AddModelError(string.Empty, "Không kết nối được tới API. Hãy chạy BackendApi (http://localhost:5110) rồi thử lại.");
             return View(model);
         }
-
-        var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
-        if (account is null)
-        {
-            ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
-            return View(model);
-        }
-
-        await SignIn(account, model.RememberMe);
-
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
-            return Redirect(returnUrl);
-        }
-
-        if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
-        }
-
-        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]
@@ -108,7 +116,6 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync("OisipanCookie");
-        HttpContext.Session.Remove("Cart");
         return RedirectToAction("Index", "Home");
     }
 
@@ -202,12 +209,11 @@ public class AccountController : Controller
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
+    public async Task<IActionResult> EditProfile(ProfileUpdateViewModel model)
     {
         if (!ModelState.IsValid)
         {
-            TempData["CartError"] = "Vui lòng kiểm tra lại thông tin nhập.";
-            return RedirectToAction(nameof(Profile), new { tab = "profile" });
+            return View(model);
         }
 
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -225,8 +231,8 @@ public class AccountController : Controller
         var response = await Api.PatchAsJsonAsync($"api/accounts/{userId}/profile", model);
         if (!response.IsSuccessStatusCode)
         {
-            TempData["CartError"] = "Lỗi khi cập nhật hồ sơ.";
-            return RedirectToAction(nameof(Profile), new { tab = "profile" });
+            await AddApiErrors(response);
+            return View(model);
         }
 
         // Update cookie claims if Email or FullName changed
@@ -251,7 +257,7 @@ public class AccountController : Controller
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddAddress([FromForm] string recipientName, [FromForm] string phoneNumber, [FromForm] string province, [FromForm] string ward, [FromForm] string detail, [FromForm] bool isDefault)
+    public async Task<IActionResult> AddAddress([FromForm] string province, [FromForm] string ward, [FromForm] string detail)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdValue, out var userId))
@@ -259,20 +265,18 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        if (string.IsNullOrWhiteSpace(recipientName) || string.IsNullOrWhiteSpace(phoneNumber) || string.IsNullOrWhiteSpace(province) || string.IsNullOrWhiteSpace(ward) || string.IsNullOrWhiteSpace(detail))
+        if (string.IsNullOrWhiteSpace(province) || string.IsNullOrWhiteSpace(ward) || string.IsNullOrWhiteSpace(detail))
         {
             TempData["CartError"] = "Vui lòng điền đầy đủ thông tin địa chỉ.";
-            return RedirectToAction(nameof(Profile), new { tab = "address" });
+            return RedirectToAction(nameof(Profile));
         }
 
         var fullAddress = $"{detail.Trim()}, {ward}, {province}";
 
         var request = new UserAddressCreateViewModel
         {
-            RecipientName = recipientName.Trim(),
-            PhoneNumber = phoneNumber.Trim(),
             FullAddress = fullAddress,
-            IsDefault = isDefault
+            IsDefault = false
         };
 
         var response = await Api.PostAsJsonAsync($"api/accounts/{userId}/addresses", request);
@@ -285,7 +289,7 @@ public class AccountController : Controller
             TempData["CartMessage"] = "Thêm địa chỉ thành công.";
         }
 
-        return RedirectToAction(nameof(Profile), new { tab = "address" });
+        return RedirectToAction(nameof(Profile));
     }
 
     [Authorize]
@@ -345,65 +349,11 @@ public class AccountController : Controller
         }
         catch (HttpRequestException ex)
         {
-            return Json(new { success = false, message = "Không thể kết nối tới máy chủ xác thực. Chi tiết: " + ex.Message });
+            return Json(new { success = false, message = "Không thể kết nối tới máy chủ xác thực. Vui lòng kiểm tra Backend API đang chạy. Chi tiết: " + ex.Message });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Có lỗi xảy ra khi đăng nhập: " + ex.Message });
-        }
-    }
-
-    [HttpGet]
-    public IActionResult PhoneLogin()
-    {
-        ViewBag.ApiKey = _configuration["Firebase:apiKey"];
-        ViewBag.AuthDomain = _configuration["Firebase:authDomain"];
-        ViewBag.ProjectId = _configuration["Firebase:projectId"];
-        ViewBag.StorageBucket = _configuration["Firebase:storageBucket"];
-        ViewBag.MessagingSenderId = _configuration["Firebase:messagingSenderId"];
-        ViewBag.AppId = _configuration["Firebase:appId"];
-
-        return View();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> PhoneLoginCallback([FromBody] GoogleLoginRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request?.IdToken))
-        {
-            return Json(new { success = false, message = "Thiếu Firebase ID Token." });
-        }
-
-        try
-        {
-            var response = await Api.PostAsJsonAsync("api/auth/phone-login", request);
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorMessage = await ExtractErrorMessage(response);
-                return Json(new { success = false, message = errorMessage });
-            }
-
-            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
-            if (account is null)
-            {
-                return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
-            }
-
-            await SignIn(account, rememberMe: true);
-
-            var redirectUrl = string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase)
-                ? Url.Action("Index", "Admin")
-                : Url.Action("Index", "Home");
-
-            return Json(new { success = true, redirectUrl });
-        }
-        catch (HttpRequestException ex)
-        {
-            return Json(new { success = false, message = "Không thể kết nối tới máy chủ. Chi tiết: " + ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            return Json(new { success = false, message = "Có lỗi xảy ra khi đăng nhập bằng Google: " + ex.Message });
         }
     }
 

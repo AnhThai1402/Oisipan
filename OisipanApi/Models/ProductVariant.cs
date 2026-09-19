@@ -27,4 +27,11 @@ public class ProductVariant : BaseEntity
     [StringLength(900)]
     [Column(TypeName = "varchar(900)")]
     public string? CombinationKey { get; set; }
+
+    // Designer feature: whether variant supports custom designer and design JSON data
+    [Column(TypeName = "bit")]
+    public bool IsDesignerEnabled { get; set; }
+
+    [Column(TypeName = "nvarchar(max)")]
+    public string? DesignData { get; set; }
 }

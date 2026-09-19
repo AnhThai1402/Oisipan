@@ -19,9 +19,10 @@ namespace Oishipan.Models
         public string Email { get; set; } = null!;
 
         [StringLength(15)]
+        [Column(TypeName = "varchar(15)")]
         public string? PhoneNumber { get; set; }
 
-        [Column(TypeName = "nvarchar(max)")]
+        [Column(TypeName = "varchar(max)")]
         public string? Password { get; set; }
 
         [StringLength(100)]

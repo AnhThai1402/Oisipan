@@ -1,17 +1,13 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Oishipan.Models;
 using Oishipan.Services;
-using System.Text;
-
-var builder = WebApplication.CreateBuilder(args);
+using QuestPDF.Infrastructure;
 
 // Configure QuestPDF license for development
 try
@@ -23,6 +19,8 @@ catch (Exception ex)
 {
     Console.WriteLine($"QuestPDF license configuration warning: {ex.Message}");
 }
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -39,17 +37,11 @@ builder.Services.AddDbContext<OishipanContext>(options =>
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(30),
             errorNumbersToAdd: null))
-    .ConfigureWarnings(w => 
+    .ConfigureWarnings(w =>
         w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
-// Add Cloudinary service
-builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection("Cloudinary"));
-builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-
-// Đăng ký JwtService
 builder.Services.AddScoped<JwtService>();
 
-// Cấu hình JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secret = jwtSettings["Secret"];
 var issuer = jwtSettings["Issuer"];
@@ -77,42 +69,25 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddHttpClient();
-builder.Services.AddScoped<Oishipan.Services.IShippingService, Oishipan.Services.ShippingService>();
+builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-// Cấu hình CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost", policy =>
     {
-        policy.WithOrigins("http://localhost:5010")
+        policy.WithOrigins(
+                  //"http://localhost:5010",
+                  "http://localhost:5110",
+                  "https://localhost:7111")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
-    });
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
 
-if (FirebaseApp.DefaultInstance == null)
-{
-    var credentialPath = Path.Combine(app.Environment.ContentRootPath, "firebase-adminsdk.json");
-    if (File.Exists(credentialPath))
-    {
-        FirebaseApp.Create(new AppOptions
-        {
-            Credential = GoogleCredential.FromFile(credentialPath)
-        });
-    }
-}
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -126,9 +101,8 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/uploads"
 });
 
-app.UseCors("AllowAll");
-app.UseCors("AllowLocalhost");
 app.UseHttpsRedirection();
+app.UseCors("AllowLocalhost");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -140,7 +114,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -154,13 +128,19 @@ app.MapGet("/weatherforecast", () =>
 
 using (var scope = app.Services.CreateScope())
 {
+    var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
     try
     {
-        var context = scope.ServiceProvider.GetRequiredService<OishipanContext>();
-        
-        // Ensure database is created and migrations are applied
         context.Database.Migrate();
-        
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration failed: {ex}");
+        throw;
+    }
+
+    try
+    {
         var passwordHasher = new PasswordHasher<Account>();
         const string adminEmail = "admin123@gmail.com";
         const string adminPassword = "Admin@123";
@@ -191,7 +171,7 @@ using (var scope = app.Services.CreateScope())
             admin.FullName = string.IsNullOrWhiteSpace(admin.FullName) ? "Administrator" : admin.FullName;
             admin.Role = "Admin";
             admin.Status = true;
-            admin.AuthProvider = "Local";
+            admin.AuthProvider = string.IsNullOrWhiteSpace(admin.AuthProvider) ? "Local" : admin.AuthProvider;
             admin.Password = passwordHasher.HashPassword(admin, adminPassword);
         }
 

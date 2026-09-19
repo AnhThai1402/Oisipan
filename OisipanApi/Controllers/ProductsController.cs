@@ -190,6 +190,222 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/variants/add-batch")]
+    public async Task<IActionResult> AddVariantBatch(Guid id, ProductVariantAddBatchRequest request)
+    {
+        var product = await _context.Products
+            .Include(p => p.ProductOptions)
+                .ThenInclude(o => o.ProductValues)
+            .Include(p => p.ProductVariants)
+                .ThenInclude(v => v.ProductVariantValues)
+            .FirstOrDefaultAsync(p => p.ProductId == id);
+
+        if (product is null)
+        {
+            return NotFound(new { message = "Không tìm thấy sản phẩm." });
+        }
+
+        var attributes = (request.Attributes ?? new())
+            .Where(a => !string.IsNullOrWhiteSpace(a.Name) && a.Values != null && a.Values.Any(v => !string.IsNullOrWhiteSpace(v)))
+            .ToList();
+
+        if (attributes.Count == 0)
+        {
+            ModelState.AddModelError(nameof(request.Attributes), "Vui lòng nhập ít nhất một thuộc tính và giá trị.");
+            return ValidationProblem(ModelState);
+        }
+
+        var valueGroups = new List<List<ProductValue>>();
+        foreach (var attr in attributes)
+        {
+            var optionName = attr.Name.Trim();
+            var option = product.ProductOptions.FirstOrDefault(o => o.OptionName.Equals(optionName, StringComparison.OrdinalIgnoreCase));
+            if (option is null)
+            {
+                option = new ProductOption { ProductId = id, OptionName = optionName };
+                _context.ProductOptions.Add(option);
+                product.ProductOptions.Add(option);
+            }
+
+            var group = new List<ProductValue>();
+            foreach (var raw in attr.Values.Select(v => v.Trim()).Where(v => v.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var value = option.ProductValues.FirstOrDefault(v => v.ValueName.Equals(raw, StringComparison.OrdinalIgnoreCase));
+                if (value is null)
+                {
+                    value = new ProductValue { ProductOptionId = option.ProductOptionId, ProductOption = option, ValueName = raw, AdditionalPrice = 0 };
+                    _context.ProductValues.Add(value);
+                    option.ProductValues.Add(value);
+                }
+                group.Add(value);
+            }
+
+            if (group.Count > 0)
+            {
+                valueGroups.Add(group);
+            }
+        }
+
+        if (valueGroups.Count == 0)
+        {
+            ModelState.AddModelError(nameof(request.Attributes), "Vui lòng nhập ít nhất một thuộc tính và giá trị hợp lệ.");
+            return ValidationProblem(ModelState);
+        }
+
+        await _context.SaveChangesAsync();
+
+        var combinations = new List<List<ProductValue>> { new() };
+        foreach (var group in valueGroups)
+        {
+            var next = new List<List<ProductValue>>();
+            foreach (var combo in combinations)
+            {
+                foreach (var value in group)
+                {
+                    var copy = new List<ProductValue>(combo) { value };
+                    next.Add(copy);
+                }
+            }
+            combinations = next;
+        }
+
+        var existingKeys = new HashSet<string>(
+            product.ProductVariants.Select(variant =>
+                !string.IsNullOrWhiteSpace(variant.CombinationKey)
+                    ? variant.CombinationKey!
+                    : BuildCombinationKey(variant.ProductVariantValues.Select(item => item.ProductValueId))),
+            StringComparer.Ordinal);
+
+        var created = 0;
+        foreach (var combo in combinations)
+        {
+            var combinationKey = BuildCombinationKey(combo.Select(c => c.ProductValueId));
+            if (existingKeys.Contains(combinationKey))
+            {
+                continue;
+            }
+
+            var variant = new ProductVariant
+            {
+                ProductId = id,
+                Price = request.Price,
+                StockQuantity = request.StockQuantity,
+                Status = true,
+                CombinationKey = combinationKey,
+                Sku = await GenerateUniqueSkuAsync(product),
+                ProductVariantValues = combo.Select(c => new ProductVariantValue { ProductValueId = c.ProductValueId }).ToList()
+            };
+            _context.ProductVariants.Add(variant);
+            existingKeys.Add(combinationKey);
+            created++;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { created });
+    }
+
+    [HttpPut("{id:guid}/variants/{variantId:guid}/full")]
+    public async Task<IActionResult> UpdateVariantFull(Guid id, Guid variantId, ProductVariantFullUpdateRequest request)
+    {
+        var product = await _context.Products
+            .Include(p => p.ProductOptions)
+                .ThenInclude(o => o.ProductValues)
+            .Include(p => p.ProductVariants)
+                .ThenInclude(v => v.ProductVariantValues)
+            .FirstOrDefaultAsync(p => p.ProductId == id);
+
+        if (product is null)
+        {
+            return NotFound(new { message = "Không tìm thấy sản phẩm." });
+        }
+
+        var variant = product.ProductVariants.FirstOrDefault(v => v.ProductVariantId == variantId);
+        if (variant is null)
+        {
+            return NotFound(new { message = "Không tìm thấy biến thể sản phẩm." });
+        }
+
+        var attributes = (request.Attributes ?? new())
+            .Where(a => !string.IsNullOrWhiteSpace(a.Name) && a.Values != null && a.Values.Any(v => !string.IsNullOrWhiteSpace(v)))
+            .ToList();
+
+        if (attributes.Count == 0)
+        {
+            ModelState.AddModelError(nameof(request.Attributes), "Vui lòng nhập ít nhất một thuộc tính và giá trị.");
+            return ValidationProblem(ModelState);
+        }
+
+        var newValues = new List<ProductValue>();
+        foreach (var attr in attributes)
+        {
+            var optionName = attr.Name.Trim();
+            var option = product.ProductOptions.FirstOrDefault(o => o.OptionName.Equals(optionName, StringComparison.OrdinalIgnoreCase));
+            if (option is null)
+            {
+                option = new ProductOption { ProductId = id, OptionName = optionName };
+                _context.ProductOptions.Add(option);
+                product.ProductOptions.Add(option);
+            }
+
+            var valueName = attr.Values.Select(v => v.Trim()).FirstOrDefault(v => v.Length > 0);
+            if (valueName is null) continue;
+
+            var value = option.ProductValues.FirstOrDefault(v => v.ValueName.Equals(valueName, StringComparison.OrdinalIgnoreCase));
+            if (value is null)
+            {
+                value = new ProductValue { ProductOptionId = option.ProductOptionId, ProductOption = option, ValueName = valueName, AdditionalPrice = 0 };
+                _context.ProductValues.Add(value);
+                option.ProductValues.Add(value);
+            }
+            newValues.Add(value);
+        }
+
+        if (newValues.Count == 0)
+        {
+            ModelState.AddModelError(nameof(request.Attributes), "Vui lòng nhập ít nhất một thuộc tính và giá trị hợp lệ.");
+            return ValidationProblem(ModelState);
+        }
+
+        await _context.SaveChangesAsync();
+
+        var newKey = BuildCombinationKey(newValues.Select(v => v.ProductValueId));
+        var conflict = product.ProductVariants.Any(v => v.ProductVariantId != variantId &&
+            (!string.IsNullOrWhiteSpace(v.CombinationKey)
+                ? v.CombinationKey
+                : BuildCombinationKey(v.ProductVariantValues.Select(x => x.ProductValueId))) == newKey);
+
+        if (conflict)
+        {
+            ModelState.AddModelError(nameof(request.Attributes), "Đã tồn tại biến thể khác với tổ hợp thuộc tính này.");
+            return ValidationProblem(ModelState);
+        }
+
+        _context.ProductVariantValues.RemoveRange(variant.ProductVariantValues);
+        variant.ProductVariantValues = newValues
+            .Select(v => new ProductVariantValue { ProductVariantId = variantId, ProductValueId = v.ProductValueId })
+            .ToList();
+        variant.CombinationKey = newKey;
+        variant.Price = request.Price;
+        variant.StockQuantity = request.StockQuantity;
+        variant.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    private async Task<string> GenerateUniqueSkuAsync(Product product)
+    {
+        var prefix = string.IsNullOrWhiteSpace(product.Sku) ? "PRD" : product.Sku;
+        string sku;
+        do
+        {
+            sku = $"{prefix}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
+        }
+        while (await _context.ProductVariants.AnyAsync(v => v.Sku == sku));
+
+        return sku;
+    }
+
     [HttpDelete("{id:guid}/variants/{variantId:guid}")]
     public async Task<IActionResult> DeleteVariant(Guid id, Guid variantId)
     {
