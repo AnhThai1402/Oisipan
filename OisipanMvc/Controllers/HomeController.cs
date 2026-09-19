@@ -8,15 +8,18 @@ namespace FrontendMvc.Controllers;
 
 public class HomeController : Controller
 {
+    private readonly IConfiguration _configuration;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public HomeController(IHttpClientFactory httpClientFactory)
+    public HomeController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
     }
 
     public async Task<IActionResult> Index()
     {
+      
         return View(await BuildStorefrontModel(null, null));
     }
 
@@ -69,37 +72,85 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private async Task<StorefrontViewModel> BuildStorefrontModel(Guid? categoryId = null, int? page = 1)
+    private async Task<StorefrontViewModel> BuildStorefrontModel(
+    Guid? categoryId = null,
+    int? page = 1)
     {
-        var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
-        var productsTask = Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
-        var categoriesTask = Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories");
-        
-        await Task.WhenAll(productsTask, categoriesTask);
+        var productUrl = categoryId.HasValue
+            ? $"api/products?categoryId={categoryId.Value}"
+            : "api/products";
 
-        var products = await productsTask ?? new List<ProductCatalogViewModel>();
-        var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
+        var productsTask =
+            Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
 
-        var filteredProducts = products.Where(product => product.StockQuantity > 0).ToList();
+        var categoriesTask =
+            Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>(
+                "api/categories");
+
+        var bannersTask =
+            Api.GetFromJsonAsyncWithOptions<List<BannerViewModel>>(
+                "api/banners?includeInactive=true");
+
+        await Task.WhenAll(
+            productsTask,
+            categoriesTask,
+            bannersTask
+        );
+
+        var products =
+            await productsTask
+            ?? new List<ProductCatalogViewModel>();
+
+        var categories =
+            await categoriesTask
+            ?? new List<CategoryAdminViewModel>();
+
+        var banners =
+            await bannersTask
+            ?? new List<BannerViewModel>();
+
+        // Chỉ lấy banner đang hiển thị
+        var heroBanners = banners
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.DisplayOrder)
+            .ToList();
+
+        // Lọc sản phẩm còn hàng
+        var filteredProducts = products
+            .Where(product => product.StockQuantity > 0)
+            .ToList();
+
         int totalItems = filteredProducts.Count;
         int totalPages = 1;
+
         var pagedProducts = filteredProducts;
 
         if (page.HasValue)
         {
             int pageSize = 12;
-            totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            
-            if (page.Value < 1) page = 1;
-            if (page.Value > totalPages && totalPages > 0) page = totalPages;
 
-            pagedProducts = filteredProducts.Skip((page.Value - 1) * pageSize).Take(pageSize).ToList();
+            totalPages = (int)Math.Ceiling(
+                totalItems / (double)pageSize
+            );
+
+            if (page.Value < 1)
+                page = 1;
+
+            if (page.Value > totalPages && totalPages > 0)
+                page = totalPages;
+
+            pagedProducts = filteredProducts
+                .Skip((page.Value - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
         }
 
         return new StorefrontViewModel
         {
             Products = pagedProducts,
             Categories = categories,
+            BannersHero = heroBanners,
+
             SelectedCategoryId = categoryId,
             CurrentPage = page ?? 1,
             TotalPages = totalPages

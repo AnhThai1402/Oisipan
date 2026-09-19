@@ -273,6 +273,72 @@ public class ProductsController : AdminBaseController
         return await ToProxyResult(response);
     }
 
+    [HttpGet("/Admin/Products/{id:guid}/Variants/Add")]
+    public async Task<IActionResult> AddVariant(Guid id)
+    {
+        var product = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var model = new VariantFormViewModel
+        {
+            ProductId = id,
+            ProductName = product.Name,
+            Mode = "add",
+            Attributes = new List<VariantFormAttribute> { new() }
+        };
+
+        return View("VariantForm", model);
+    }
+
+    [HttpGet("/Admin/Products/{id:guid}/Variants/{variantId:guid}/Edit")]
+    public async Task<IActionResult> EditVariant(Guid id, Guid variantId)
+    {
+        var product = await Api.GetFromJsonAsyncWithOptions<ProductAdminViewModel>($"api/products/admin/{id}");
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var variants = await Api.GetFromJsonAsyncWithOptions<List<ProductVariantAdminViewModel>>($"api/products/{id}/variants") ?? new();
+        var variant = variants.FirstOrDefault(v => v.ProductVariantId == variantId);
+        if (variant is null)
+        {
+            return NotFound();
+        }
+
+        var model = new VariantFormViewModel
+        {
+            ProductId = id,
+            ProductName = product.Name,
+            Mode = "edit",
+            VariantId = variantId,
+            Price = variant.Price,
+            StockQuantity = variant.StockQuantity,
+            Attributes = variant.VariantValues.Count > 0
+                ? variant.VariantValues.Select(v => new VariantFormAttribute { Name = v.OptionName, Values = v.ValueName }).ToList()
+                : new List<VariantFormAttribute> { new() }
+        };
+
+        return View("VariantForm", model);
+    }
+
+    [HttpPost("/Admin/Products/{id:guid}/Variants/AddBatch")]
+    public async Task<IActionResult> AddVariantBatch(Guid id, [FromBody] VariantAddBatchRequest request)
+    {
+        var response = await Api.PostAsJsonAsync($"api/products/{id}/variants/add-batch", request);
+        return await ToProxyResult(response);
+    }
+
+    [HttpPut("/Admin/Products/{id:guid}/Variants/{variantId:guid}/Full")]
+    public async Task<IActionResult> UpdateVariantFull(Guid id, Guid variantId, [FromBody] VariantFullUpdateRequest request)
+    {
+        var response = await Api.PutAsJsonAsync($"api/products/{id}/variants/{variantId}/full", request);
+        return await ToProxyResult(response);
+    }
+
     [HttpPut("/Admin/Products/{id:guid}/Variants/{variantId:guid}")]
     public async Task<IActionResult> UpdateVariant(Guid id, Guid variantId, [FromBody] VariantUpdateRequest request)
     {
@@ -497,4 +563,34 @@ public class VariantBulkStockAdjustRequest
 
     [Range(-100000, 100000)]
     public int DeltaQuantity { get; set; }
+}
+
+public class VariantAttributeInput
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Values { get; set; } = new();
+}
+
+public class VariantAddBatchRequest
+{
+    [Required]
+    public List<VariantAttributeInput> Attributes { get; set; } = new();
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [Range(0, short.MaxValue)]
+    public short StockQuantity { get; set; }
+}
+
+public class VariantFullUpdateRequest
+{
+    [Required]
+    public List<VariantAttributeInput> Attributes { get; set; } = new();
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [Range(0, short.MaxValue)]
+    public short StockQuantity { get; set; }
 }

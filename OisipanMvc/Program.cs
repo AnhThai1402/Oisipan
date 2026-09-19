@@ -1,29 +1,33 @@
 using FrontendMvc.Options;
 using FrontendMvc.Services;
-using Microsoft.AspNetCore.DataProtection;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-
-var dataProtectionKeysPath = Path.Combine(builder.Environment.ContentRootPath, ".aspnet-data-protection");
-Directory.CreateDirectory(dataProtectionKeysPath);
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
-    .SetApplicationName("OisipanMvc");
-
+//if (FirebaseApp.DefaultInstance == null)
+//{
+//    _ = FirebaseApp.Create(new AppOptions
+//    {
+//        Credential = GoogleCredential.FromFile("firebase-adminsdk.json")
+//    });
+//}
 // Add services to the container.
 var jsonOptions = new JsonSerializerOptions
 {
     ReferenceHandler = ReferenceHandler.IgnoreCycles,
     PropertyNameCaseInsensitive = true
 };
-
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromDays(7);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
@@ -41,13 +45,10 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpClient("OisipanApi", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5188");
-    client.Timeout = TimeSpan.FromSeconds(15);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
-builder.Services.Configure<VnPaySettings>(builder.Configuration.GetSection("VnPay"));
 builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
-builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services
     .AddAuthentication("OisipanCookie")
     .AddCookie("OisipanCookie", options =>

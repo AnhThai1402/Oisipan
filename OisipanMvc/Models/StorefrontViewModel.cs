@@ -7,6 +7,7 @@ public class StorefrontViewModel
     public Guid? SelectedCategoryId { get; set; }
     public int CurrentPage { get; set; } = 1;
     public int TotalPages { get; set; } = 1;
+    public List<BannerViewModel> BannersHero { get; set; } = new();
 }
 
 public class ProductCatalogViewModel

@@ -480,3 +480,12 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+OisipanMvc/firebase-adminsdk.json
+OishipanApi/firebase-adminsdk.json
+OisipanApi/firebase-adminsdk.json
+OisipanApi/firebasenumphone-adminsdk.json
+OisipanApi/firebase-adminsdk.local.json
+OisipanApi/firebase-adminsdk.json
+OisipanApi/firebase-adminsdk.local.json
+OisipanApi/firebase-adminsdk.json
+OisipanApi/firebase-adminsdk.local.json

@@ -1,0 +1,74 @@
+@model VariantFormViewModel
+@{
+    var isEdit = Model.Mode == "edit";
+    ViewData["Title"] = isEdit ? "Sửa biến thể" : "Thêm biến thể";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<section class="page-title-row">
+    <div>
+        <h1>@(isEdit ? "Sửa biến thể cho" : "Thêm biến thể cho") @Model.ProductName</h1>
+    </div>
+</section>
+
+<div id="variant-form-flash" class="alert" style="display:none; margin-bottom:1rem;"></div>
+
+<article class="panel"
+         id="variant-form-root"
+         data-product-id="@Model.ProductId"
+         data-variant-id="@Model.VariantId"
+         data-mode="@Model.Mode">
+    @Html.AntiForgeryToken()
+
+    <h2 style="margin-top:0;">Các thuộc tính biến thể</h2>
+
+    @if (!isEdit)
+    {
+        <div id="quick-tip-alert" class="alert alert-info" style="margin-bottom:1.25rem;">
+            <i class="bi bi-lightbulb"></i>
+            <div class="alert-content">
+                <strong>Mẹo tạo nhanh:</strong> Nhập nhiều giá trị cách nhau bằng dấu phẩy <code>,</code> (VD: Đỏ, Xanh, Đen) ở cột Giá trị. Hệ thống sẽ tự động nhân bản tạo ra hàng loạt biến thể cùng lúc!
+            </div>
+        </div>
+    }
+
+    <div id="attribute-rows">
+        @for (var i = 0; i < Model.Attributes.Count; i++)
+        {
+            <div class="attribute-row" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.75rem;">
+                @if (isEdit)
+                {
+                    <input type="text" class="form-input attr-name" style="flex:1;" placeholder="Tên" value="@Model.Attributes[i].Name" maxlength="100" readonly />
+                }
+                else
+                {
+                    <input type="text" class="form-input attr-name" style="flex:1;" placeholder="Tên (VD: Màu sắc)" value="@Model.Attributes[i].Name" maxlength="100" />
+                }
+                <input type="text" class="form-input attr-values" style="flex:1;" placeholder="@(isEdit ? "Giá trị" : "Giá trị (VD: Đỏ, Xanh, Đen)")" value="@Model.Attributes[i].Values" maxlength="500" />
+                <button type="button" class="soft-action attr-remove" style="color:#b42318; border-color:#fda29b;">Xóa</button>
+            </div>
+        }
+    </div>
+
+    <button id="attr-add-btn" type="button" class="soft-action"><i class="bi bi-plus-circle"></i> Thêm thuộc tính</button>
+
+    <div style="display:flex; gap:1.5rem; margin-top:1.5rem; flex-wrap:wrap;">
+        <div class="form-group" style="flex:1; min-width:220px;">
+            <label for="variant-price">Giá bán (VNĐ)</label>
+            <input type="number" min="0" step="1000" id="variant-price" class="form-input" value="@Model.Price" />
+        </div>
+        <div class="form-group" style="flex:1; min-width:220px;">
+            <label for="variant-stock">Số lượng tồn</label>
+            <input type="number" min="0" step="1" id="variant-stock" class="form-input" value="@Model.StockQuantity" />
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2rem;">
+        <a asp-area="Admin" asp-controller="ProductVariants" asp-action="Index" asp-route-productId="@Model.ProductId" class="soft-action">Quay lại</a>
+        <button id="variant-save-btn" type="button" class="primary-action">Lưu biến thể</button>
+    </div>
+</article>
+
+@section Scripts {
+    <script src="~/js/admin-product-variant-form.js" asp-append-version="true"></script>
+}

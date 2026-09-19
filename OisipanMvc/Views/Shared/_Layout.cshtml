@@ -152,45 +152,12 @@
         </div>
     </div>
 
-
+    
     <div class="modal-overlay" id="login-modal-overlay">
         <div class="auth-grid">
+           
             <button class="modal-close-btn" id="close-login-modal"><i class="fa-solid fa-xmark"></i></button>
-            <div class="auth-banner">
-                <div class="auth-badge-row">
-                    <span class="auth-tag">MỚI NHẤT</span>
-                    <h4 class="auth-banner-title">Bộ Sưu Tập<br>"MẤN NHÂN"</h4>
-                    <p class="auth-banner-desc">Thưởng vị ngọt thanh tươi mát kết hợp vỏ giòn rụm từ nguyên liệu thượng hạng.</p>
-                </div>
-                <div class="auth-visual-wrap">
-                    <div class="auth-bun-container">
-                        <div class="auth-glow"></div>
-                        <svg class="main-showcase-img" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 140px; height: 140px;">
-                            <circle cx="100" cy="100" r="70" fill="#E89B37" />
-                            <circle cx="98" cy="98" r="68" fill="url(#authBunGradient)" />
-                            <ellipse cx="98" cy="100" rx="42" ry="24" fill="#F4CD91" opacity="0.9" />
-                            <circle cx="70" cy="94" r="5" fill="#522D16" />
-                            <circle cx="82" cy="88" r="4.5" fill="#522D16" />
-                            <circle cx="114" cy="88" r="4.5" fill="#522D16" />
-                            <circle cx="126" cy="94" r="5" fill="#522D16" />
-                            <circle cx="98" cy="104" r="8" fill="#D32F2F" />
-                            <circle cx="96" cy="102" r="2.5" fill="#FF8A80" opacity="0.8" />
-                            <defs>
-                                <radialGradient id="authBunGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(104 90) rotate(115) scale(75)">
-                                    <stop offset="0%" stop-color="#FCD58C" />
-                                    <stop offset="50%" stop-color="#ECA343" />
-                                    <stop offset="100%" stop-color="#C6791E" />
-                                </radialGradient>
-                            </defs>
-                        </svg>
-                        <div class="auth-sparkle" style="top: 5px; right: 10px;">✨</div>
-                    </div>
-                </div>
-                <div class="auth-banner-footer">
-                    <div><p class="auth-footer-italic">"Hương vị từ xứ sở Mặt Trời"</p></div>
-                    <div class="auth-rating-box"><span class="auth-rating-score">4.9 / 5</span><span class="auth-rating-label">Đánh giá</span></div>
-                </div>
-            </div>
+            
 
             <div class="auth-forms-container">
                 <div id="login-panel" class="form-card">
@@ -508,6 +475,8 @@
             }
         };
     </script>
+     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

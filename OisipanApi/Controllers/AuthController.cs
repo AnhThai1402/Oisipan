@@ -267,7 +267,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Đăng nhập bằng số điện thoại thất bại: " + ex.Message });
         }
     }
-
+  
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<AuthResponse>> GetCurrentUser()
@@ -301,6 +301,7 @@ public class AuthController : ControllerBase
             UserId = account.UserId,
             FullName = account.FullName,
             Email = account.Email,
+            PhoneNumber = account.PhoneNumber??null,
             Role = account.Role,
             Token = token,
             AuthProvider = account.AuthProvider

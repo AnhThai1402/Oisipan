@@ -168,7 +168,7 @@ nav a:hover::after, nav a.active::after { width: 100%; }
     min-height: 100vh;
     display: flex;
     align-items: center;
-    padding: 7rem 8% 4rem;
+/*    padding: 7rem 8% 4rem;*/
     position: relative;
 }
 
@@ -627,7 +627,7 @@ footer { background: var(--bg-card); border-top: 1px solid var(--border-color); 
 .footer-bottom { border-top: 1px solid var(--border-color); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.85rem; }
 
 /* RESPONSIVE DESIGN */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .hero-wrapper { grid-template-columns: 1fr; gap: 3rem; padding: 4rem 2rem; }
     .hero-title { font-size: 3.2rem; }
     .auth-grid { grid-template-columns: 1fr; max-width: 500px; border-radius: 5px; }

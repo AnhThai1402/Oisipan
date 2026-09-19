@@ -30,9 +30,13 @@ namespace Oishipan.Models
             modelBuilder.Entity<Account>()
                 .HasIndex(a => a.Email).IsUnique();
             modelBuilder.Entity<Account>()
-                .HasIndex(a => a.PhoneNumber).IsUnique();
+                .HasIndex(a => a.PhoneNumber)
+                .IsUnique()
+                .HasFilter("[PhoneNumber] IS NOT NULL");
             modelBuilder.Entity<Account>()
-                .HasIndex(a => a.GoogleId).IsUnique();
+                .HasIndex(a => a.GoogleId)
+                .IsUnique()
+                .HasFilter("[GoogleId] IS NOT NULL");
 
             // Cấu hình Unique cho Voucher Code
             modelBuilder.Entity<Voucher>()

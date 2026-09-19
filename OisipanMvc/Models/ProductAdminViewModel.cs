@@ -159,5 +159,4 @@ public class ProductOptionManagementViewModel
     public Guid? SelectedProductId { get; set; }
     public string? SelectedProductName { get; set; }
     public List<SelectListItem> Products { get; set; } = new();
-    public List<ProductOptionAdminViewModel> Options { get; set; } = new();
 }
