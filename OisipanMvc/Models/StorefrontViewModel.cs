@@ -3,6 +3,7 @@ namespace FrontendMvc.Models;
 public class StorefrontViewModel
 {
     public List<ProductCatalogViewModel> Products { get; set; } = new();
+    public HashSet<Guid> WishlistProductIds { get; set; } = new();
     public List<CategoryAdminViewModel> Categories { get; set; } = new();
     public Guid? SelectedCategoryId { get; set; }
     public int CurrentPage { get; set; } = 1;
@@ -20,6 +21,7 @@ public class ProductCatalogViewModel
     public Guid CategoryId { get; set; }
     public string? CategoryName { get; set; }
     public string? Description { get; set; }
+    public bool IsWishlisted { get; set; }
     public List<ProductOptionCatalogViewModel> ProductOptions { get; set; } = new();
     public List<ProductVariantCatalogViewModel> ProductVariants { get; set; } = new();
 }

@@ -18,11 +18,26 @@ public class ProductsController : Controller
     {
         try
         {
+            var products = await Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>("api/products") ?? new();
+            var product = products.FirstOrDefault(p => p.ProductId == id);
+            if (product is not null)
+            {
+                return View(product);
+            }
+        }
+        catch
+        {
+            // fall through to the direct detail endpoint below
+        }
+
+        try
+        {
             var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{id}");
             if (product == null)
             {
                 return NotFound();
             }
+
             return View(product);
         }
         catch (Exception)

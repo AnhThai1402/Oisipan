@@ -134,6 +134,10 @@ public class AccountController : Controller
                 profile.Addresses = addresses;
             }
 
+            var wishlistItems = await Api.GetFromJsonAsync<List<WishlistItemViewModel>>($"api/wishlist/{userId}") ?? new();
+            ViewBag.WishlistItems = wishlistItems;
+            ViewBag.WishlistCount = wishlistItems.Count;
+
             return View(profile);
         }
         catch (HttpRequestException)

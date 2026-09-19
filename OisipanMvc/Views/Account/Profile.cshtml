@@ -1,4 +1,5 @@
 @model FrontendMvc.Models.UserAdminViewModel
+@using FrontendMvc.Models
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
     var currentTab = Context.Request.Query["tab"].ToString();
@@ -6,6 +7,8 @@
     {
         currentTab = "profile";
     }
+
+    var wishlistItems = ViewBag.WishlistItems as List<WishlistItemViewModel> ?? new List<WishlistItemViewModel>();
 }
 
 <style>
@@ -93,6 +96,7 @@
             <ul class="profile-menu">
                 <li><a href="?tab=profile" class="@(currentTab == "profile" ? "active" : "")"><i class="bi bi-person-lines-fill"></i> Hồ sơ cá nhân</a></li>
                 <li><a href="?tab=address" class="@(currentTab == "address" ? "active" : "")"><i class="bi bi-geo-alt-fill"></i> Sổ địa chỉ</a></li>
+                <li><a href="?tab=wishlist" class="@(currentTab == "wishlist" ? "active" : "")"><i class="bi bi-heart-fill"></i> Wishlist (@(wishlistItems.Count))</a></li>
             </ul>
         </div>
 
@@ -176,6 +180,68 @@
                     <div style="text-align: center; padding: 3rem 0;">
                         <i class="bi bi-geo-alt" style="font-size: 4rem; color: #eee; margin-bottom: 1rem; display: block;"></i>
                         <p style="color: #777; font-size: 1.1rem;">Bạn chưa có địa chỉ nào. Hãy thêm một địa chỉ để dễ dàng mua hàng.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Wishlist Tab -->
+            <div id="tab-wishlist" class="tab-pane @(currentTab == "wishlist" ? "active" : "")">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                    <h2 style="margin: 0; font-size: 1.5rem;">Sản phẩm yêu thích</h2>
+                    <a asp-controller="Home" asp-action="Menu" class="btn-primary" style="padding: 0.6rem 1.2rem; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; text-decoration: none;">
+                        <i class="bi bi-grid-3x3-gap"></i> Khám phá menu
+                    </a>
+                </div>
+
+                @if (wishlistItems.Any())
+                {
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+                        @foreach (var item in wishlistItems)
+                        {
+                            var isAvailable = item.StockQuantity > 0;
+                            <article style="border: 1px solid #eee; border-radius: 8px; background: var(--bg-card); overflow: hidden; position: relative;">
+                                <div style="position: relative; padding: 1rem; background: white; height: 150px; display: grid; place-items: center;">
+                                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" style="display: block; width: 100%; height: 100%; display: grid; place-items: center; text-decoration: none;">
+                                        @if (!string.IsNullOrWhiteSpace(item.Image))
+                                        {
+                                            <img src="@item.Image" alt="@item.ProductName" style="max-width: 85%; max-height: 85%; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(17,60,43,.12));" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-cake2" style="font-size: 3rem; color: var(--accent-green);"></i>
+                                        }
+                                    </a>
+                                    <span style="position: absolute; left: 0.75rem; top: 0.75rem; background: var(--accent-green); color: white; font-size: 0.62rem; font-weight: 700; padding: 0.35rem 0.55rem; border-radius: 4px;">Đã lưu</span>
+                                </div>
+                                <div style="padding: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <h3 style="margin: 0; font-size: 1rem; color: var(--accent-green); line-height: 1.3;">@item.ProductName</h3>
+                                        <span style="font-size: 0.62rem; font-weight: 700; white-space: nowrap; color: @(isAvailable ? "#1f6f50" : "#777");">
+                                            @(isAvailable ? "Còn hàng" : "Hết hàng")
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-green); margin-bottom: 1rem;">@item.Price.ToString("N0")đ</div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        @if (isAvailable)
+                                        {
+                                            <form method="post" asp-controller="Wishlist" asp-action="AddToCart" style="flex: 1; margin: 0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                                <button type="submit" style="width: 100%; min-height: 36px; border: 1px solid var(--accent-green); border-radius: 4px; background: var(--accent-green); color: white; font-size: 0.72rem; font-weight: 700; cursor: pointer;">Chuyển vào giỏ</button>
+                                            </form>
+                                        }
+                                        <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" style="width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #d7dfd9; border-radius: 50%; color: var(--accent-green); background: white; text-decoration: none;" title="Xem chi tiết @item.ProductName"><i class="bi bi-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 3rem 0;">
+                        <i class="bi bi-heart" style="font-size: 4rem; color: #e4e4e4; margin-bottom: 1rem; display: block;"></i>
+                        <p style="color: #777; font-size: 1.05rem;">Bạn chưa lưu sản phẩm nào trong wishlist.</p>
                     </div>
                 }
             </div>

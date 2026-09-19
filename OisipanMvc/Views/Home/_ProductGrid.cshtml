@@ -8,8 +8,8 @@
 
         <article class="product-card">
             <a class="product-card-link"
-               asp-controller="Home"
-               asp-action="ProductDetail"
+               asp-controller="Products"
+               asp-action="Details"
                asp-route-id="@product.ProductId"
                aria-label="Xem chi tiết @product.Name">
                 <div class="product-img-wrap menu-product-image">
@@ -50,8 +50,8 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="productId" value="@product.ProductId" />
                         <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                        <button type="submit" class="btn-view-detail" title="Yêu thích sản phẩm" aria-label="Yêu thích @product.Name">
-                            <i class="bi bi-heart"></i>
+                        <button type="submit" class="btn-view-detail @(product.IsWishlisted ? "is-wishlisted" : "")" title="@(product.IsWishlisted ? "Bỏ yêu thích" : "Yêu thích sản phẩm")" aria-label="@(product.IsWishlisted ? "Bỏ yêu thích" : "Yêu thích") @product.Name">
+                            <i class="bi @(product.IsWishlisted ? "bi-heart-fill" : "bi-heart")"></i>
                         </button>
                     </form>
                 }

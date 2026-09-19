@@ -35,12 +35,30 @@ public class WishlistController : Controller
     public async Task<IActionResult> AddToCart(Guid productId)
     {
         if (!TryGetUserId(out var userId)) return Challenge();
-        var product = await Api.GetFromJsonAsyncWithOptions<ProductCatalogViewModel>($"api/products/{productId}");
-        if (product is null || product.StockQuantity <= 0) return RedirectToAction(nameof(Index));
+
+        var wishlistItems = await Api.GetFromJsonAsyncWithOptions<List<WishlistItemViewModel>>($"api/wishlist/{userId}") ?? new();
+        var wishlistItem = wishlistItems.FirstOrDefault(item => item.ProductId == productId);
+
+        if (wishlistItem is null || wishlistItem.StockQuantity <= 0)
+        {
+            TempData["CartError"] = "Sản phẩm không còn khả dụng hoặc đã bị bỏ khỏi wishlist.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var cart = HttpContext.Session.GetJson<List<CartItemViewModel>>("Cart") ?? new();
-        if (!cart.Any(i => i.ProductId == productId)) cart.Add(new CartItemViewModel { ProductId = productId, ProductName = product.Name, UnitPrice = product.Price, Image = product.Image, Quantity = 1 });
+        if (!cart.Any(i => i.ProductId == productId))
+        {
+            cart.Add(new CartItemViewModel
+            {
+                ProductId = productId,
+                ProductName = wishlistItem.ProductName,
+                UnitPrice = wishlistItem.Price,
+                Image = wishlistItem.Image,
+                Quantity = 1
+            });
+        }
+
         HttpContext.Session.SetJson("Cart", cart);
-        await Api.DeleteAsync($"api/wishlist/{userId}/{productId}");
         TempData["CartMessage"] = "Đã chuyển sản phẩm vào giỏ hàng.";
         return RedirectToAction(nameof(Index));
     }

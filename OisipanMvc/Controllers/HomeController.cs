@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using FrontendMvc.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using FrontendMvc.Models;
@@ -35,25 +36,9 @@ public class HomeController : Controller
         return View(await BuildStorefrontModel(categoryId, page));
     }
 
-    public async Task<IActionResult> ProductDetail(Guid id)
+    public IActionResult ProductDetail(Guid id)
     {
-        var response = await Api.GetAsync($"api/products/{id}");
-        if (!response.IsSuccessStatusCode)
-        {
-            return response.StatusCode == System.Net.HttpStatusCode.NotFound
-                ? NotFound()
-                : StatusCode((int)response.StatusCode);
-        }
-
-        var product = await response.Content.ReadFromJsonAsync<ProductCatalogViewModel>();
-        if (product is null)
-        {
-            return NotFound();
-        }
-
-
-
-        return View(product);
+        return RedirectToAction("Details", "Products", new { id });
     }
 
 
@@ -74,11 +59,26 @@ public class HomeController : Controller
         var productUrl = categoryId.HasValue ? $"api/products?categoryId={categoryId.Value}" : "api/products";
         var productsTask = Api.GetFromJsonAsyncWithOptions<List<ProductCatalogViewModel>>(productUrl);
         var categoriesTask = Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories");
+        Task<List<WishlistItemViewModel>?>? wishlistTask = null;
+        if (Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            wishlistTask = Api.GetFromJsonAsyncWithOptions<List<WishlistItemViewModel>>($"api/wishlist/{userId}");
+        }
         
-        await Task.WhenAll(productsTask, categoriesTask);
+        if (wishlistTask is null)
+        {
+            await Task.WhenAll(productsTask, categoriesTask);
+        }
+        else
+        {
+            await Task.WhenAll(productsTask, categoriesTask, wishlistTask);
+        }
 
         var products = await productsTask ?? new List<ProductCatalogViewModel>();
         var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
+        var wishlistProductIds = (await wishlistTask ?? new List<WishlistItemViewModel>())
+            .Select(item => item.ProductId)
+            .ToHashSet();
 
         var filteredProducts = products.Where(product => product.StockQuantity > 0).ToList();
         int totalItems = filteredProducts.Count;
@@ -98,7 +98,12 @@ public class HomeController : Controller
 
         return new StorefrontViewModel
         {
-            Products = pagedProducts,
+            Products = pagedProducts.Select(product =>
+            {
+                product.IsWishlisted = wishlistProductIds.Contains(product.ProductId);
+                return product;
+            }).ToList(),
+            WishlistProductIds = wishlistProductIds,
             Categories = categories,
             SelectedCategoryId = categoryId,
             CurrentPage = page ?? 1,

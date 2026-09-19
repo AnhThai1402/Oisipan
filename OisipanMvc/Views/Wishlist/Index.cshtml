@@ -23,7 +23,7 @@
                 var isAvailable = item.StockQuantity > 0;
                 <article class="wishlist-card @(isAvailable ? "" : "is-sold-out")">
                     <div class="wishlist-card-media">
-                        <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" aria-label="Xem @item.ProductName">
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" aria-label="Xem @item.ProductName" title="Xem chi tiết @item.ProductName">
                             @if (!string.IsNullOrWhiteSpace(item.Image)) { <img src="@item.Image" alt="@item.ProductName" loading="lazy" /> } else { <i class="bi bi-cake2 wishlist-placeholder" aria-hidden="true"></i> }
                         </a>
                         <span class="wishlist-saved-badge"><i class="bi bi-heart-fill"></i> Đã lưu</span>
@@ -41,7 +41,7 @@
                             {
                                 <form method="post" asp-action="AddToCart" class="wishlist-cart-form">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@item.ProductId" /><button type="submit" class="wishlist-cart-button"><i class="bi bi-cart-plus"></i> Chuyển vào giỏ</button></form>
                             }
-                            <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="wishlist-detail-link" title="Xem chi tiết"><i class="bi bi-arrow-up-right"></i></a>
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="wishlist-detail-link" title="Xem chi tiết @item.ProductName"><i class="bi bi-arrow-up-right"></i></a>
                         </div>
                     </div>
                 </article>
