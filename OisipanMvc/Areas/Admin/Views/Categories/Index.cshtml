@@ -1,6 +1,10 @@
 @model IEnumerable<FrontendMvc.Models.CategoryAdminViewModel>
 @{
     ViewData["Title"] = "Danh mục";
+    var currentPage = (int?)ViewBag.CurrentPage ?? 1;
+    var totalPages = (int?)ViewBag.TotalPages ?? 1;
+    var totalItems = (int?)ViewBag.TotalItems ?? 0;
+    var search = ViewBag.Search?.ToString();
 }
 
 @if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
@@ -23,10 +27,11 @@
 </section>
 
 <section class="toolbar-panel">
-    <div class="search-bar-group">
-        <input type="search" class="form-input" placeholder="Tìm danh mục..." id="categorySearch" />
+    <form method="get" asp-area="Admin" asp-controller="Categories" asp-action="Index" class="search-bar-group" style="position: relative;">
+        <input type="search" class="form-input" placeholder="Tìm danh mục..." id="categorySearch" name="search" value="@search" />
+        <input type="hidden" name="page" value="1" />
         <i class="bi bi-search"></i>
-    </div>
+    </form>
 </section>
 
 <section class="panel">
@@ -87,6 +92,30 @@
     </div>
 </section>
 
+@if (totalItems > 0)
+{
+    <div class="category-pagination-bar">
+        <span>@totalItems danh mục · Trang @currentPage / @totalPages</span>
+        <nav class="category-pagination" aria-label="Phân trang danh mục">
+            @if (totalPages > 1 && currentPage > 1)
+            {
+                <a asp-area="Admin" asp-controller="Categories" asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-search="@search" aria-label="Trang trước"><i class="bi bi-chevron-left"></i></a>
+            }
+            @if (totalPages > 1)
+            {
+                @for (var pageNumber = 1; pageNumber <= totalPages; pageNumber++)
+                {
+                    <a asp-area="Admin" asp-controller="Categories" asp-action="Index" asp-route-page="@pageNumber" asp-route-search="@search" class="@(pageNumber == currentPage ? "active" : "")">@pageNumber</a>
+                }
+            }
+            @if (totalPages > 1 && currentPage < totalPages)
+            {
+                <a asp-area="Admin" asp-controller="Categories" asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-search="@search" aria-label="Trang sau"><i class="bi bi-chevron-right"></i></a>
+            }
+        </nav>
+    </div>
+}
+
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-dialog modal-dialog-danger">
         <div class="modal-icon">
@@ -135,14 +164,5 @@
             }
         });
 
-        // Search functionality
-        document.getElementById('categorySearch')?.addEventListener('input', function() {
-            const keyword = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#categoryTable tbody tr');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(keyword) ? '' : 'none';
-            });
-        });
     </script>
 }

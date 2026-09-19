@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using FrontendMvc.Extensions;
 using FrontendMvc.Models;
 using FrontendMvc.Services;
@@ -23,10 +24,26 @@ public class CategoriesController : AdminBaseController
         _imageStorageService = imageStorageService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] int page = 1, [FromQuery] string? search = null)
     {
         var categories = await Api.GetFromJsonAsyncWithOptions<List<CategoryAdminViewModel>>("api/categories") ?? new();
-        return View(categories);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            categories = categories
+                .Where(category => category.CategoryName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        const int pageSize = 10;
+        var totalPages = Math.Max(1, (int)Math.Ceiling(categories.Count / (double)pageSize));
+        page = Math.Clamp(page, 1, totalPages);
+        var pagedCategories = categories.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.TotalItems = categories.Count;
+        ViewBag.Search = search?.Trim();
+        return View(pagedCategories);
     }
 
     public IActionResult Create()
@@ -42,11 +59,17 @@ public class CategoriesController : AdminBaseController
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
         var response = await Api.PostAsJsonAsync("api/categories", ToRequest(model));
-        SetFlashMessage(
-            response.IsSuccessStatusCode ? "Tạo danh mục thành công" : "Không thể tạo danh mục. Vui lòng kiểm tra lại dữ liệu.",
-            response.IsSuccessStatusCode ? "create" : "error");
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(string.Empty, await GetApiErrorMessage(response, "Không thể tạo danh mục. Vui lòng kiểm tra lại dữ liệu."));
+            return View("CreateEdit", model);
+        }
 
-        return response.IsSuccessStatusCode ? RedirectToAction(nameof(Index)) : View("CreateEdit", model);
+        SetFlashMessage(
+            "Tạo danh mục thành công",
+            "create");
+
+        return RedirectToAction(nameof(Index));
     }
 
     [Authorize(Policy = "SuperAdminOnly")]
@@ -65,11 +88,17 @@ public class CategoriesController : AdminBaseController
         if (!ModelState.IsValid) return View("CreateEdit", model);
 
         var response = await Api.PutAsJsonAsync($"api/categories/{id}", ToRequest(model));
-        SetFlashMessage(
-            response.IsSuccessStatusCode ? "Cập nhật danh mục thành công" : "Không thể cập nhật danh mục. Vui lòng kiểm tra lại dữ liệu.",
-            response.IsSuccessStatusCode ? "edit" : "error");
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(string.Empty, await GetApiErrorMessage(response, "Không thể cập nhật danh mục. Vui lòng kiểm tra lại dữ liệu."));
+            return View("CreateEdit", model);
+        }
 
-        return response.IsSuccessStatusCode ? RedirectToAction(nameof(Index)) : View("CreateEdit", model);
+        SetFlashMessage(
+            "Cập nhật danh mục thành công",
+            "edit");
+
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Detail(Guid id)
@@ -98,6 +127,24 @@ public class CategoriesController : AdminBaseController
         model.CategoryName,
         model.Image
     };
+
+    private static async Task<string> GetApiErrorMessage(HttpResponseMessage response, string fallback)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return string.IsNullOrWhiteSpace(error?.Message) ? fallback : error.Message;
+        }
+        catch (JsonException)
+        {
+            return fallback;
+        }
+    }
+
+    private sealed class ApiErrorResponse
+    {
+        public string? Message { get; set; }
+    }
 
     private async Task SaveImageIfValid(CategoryAdminViewModel model)
     {

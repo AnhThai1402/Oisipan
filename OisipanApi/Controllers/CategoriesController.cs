@@ -21,7 +21,7 @@ public class CategoriesController : ControllerBase
     {
         var categories = await _context.Categories
             .Include(c => c.Products)
-            .OrderBy(c => c.CategoryName)
+            .OrderByDescending(c => c.CreatedAt)
             .Select(c => new CategoryResponse
             {
                 CategoryId = c.CategoryId,
@@ -47,9 +47,17 @@ public class CategoriesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CategoryResponse>> Create(CategoryRequest request)
     {
+        var categoryName = request.CategoryName.Trim();
+        var duplicateExists = await _context.Categories
+            .AnyAsync(c => c.CategoryName.ToLower() == categoryName.ToLower());
+        if (duplicateExists)
+        {
+            return Conflict(new { message = "Tên danh mục này đã tồn tại." });
+        }
+
         var category = new Category
         {
-            CategoryName = request.CategoryName.Trim(),
+            CategoryName = categoryName,
             Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim()
         };
 
@@ -68,7 +76,15 @@ public class CategoriesController : ControllerBase
             return NotFound(new { message = "Không tìm thấy danh mục." });
         }
 
-        category.CategoryName = request.CategoryName.Trim();
+        var categoryName = request.CategoryName.Trim();
+        var duplicateExists = await _context.Categories
+            .AnyAsync(c => c.CategoryId != id && c.CategoryName.ToLower() == categoryName.ToLower());
+        if (duplicateExists)
+        {
+            return Conflict(new { message = "Tên danh mục này đã tồn tại." });
+        }
+
+        category.CategoryName = categoryName;
         category.Image = string.IsNullOrWhiteSpace(request.Image) ? null : request.Image.Trim();
         await _context.SaveChangesAsync();
 

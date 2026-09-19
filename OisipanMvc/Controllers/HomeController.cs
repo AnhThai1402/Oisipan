@@ -76,7 +76,10 @@ public class HomeController : Controller
 
         var products = await productsTask ?? new List<ProductCatalogViewModel>();
         var categories = await categoriesTask ?? new List<CategoryAdminViewModel>();
-        var wishlistProductIds = (await wishlistTask ?? new List<WishlistItemViewModel>())
+        var wishlistItems = wishlistTask is null
+            ? new List<WishlistItemViewModel>()
+            : await wishlistTask ?? new List<WishlistItemViewModel>();
+        var wishlistProductIds = wishlistItems
             .Select(item => item.ProductId)
             .ToHashSet();
 
