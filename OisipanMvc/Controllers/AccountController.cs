@@ -11,6 +11,10 @@ namespace FrontendMvc.Controllers;
 
 public class AccountController : Controller
 {
+    private const string GoogleSetupTokenSessionKey = "GoogleSetup.IdToken";
+    private const string GoogleSetupEmailSessionKey = "GoogleSetup.Email";
+    private const string GoogleSetupNameSessionKey = "GoogleSetup.FullName";
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly FrontendMvc.Services.IImageStorageService _imageStorageService;
     private readonly IConfiguration _configuration;
@@ -333,16 +337,35 @@ public class AccountController : Controller
                 return Json(new { success = false, message = errorMessage });
             }
 
-            var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
-            if (account is null)
+            var googleResponse = await response.Content.ReadFromJsonAsync<GoogleLoginResponse>();
+            if (googleResponse is null)
             {
                 return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
             }
 
-            await SignIn(account, rememberMe: true);
+            if (googleResponse.RequiresPasswordSetup)
+            {
+                HttpContext.Session.SetString(GoogleSetupTokenSessionKey, request.IdToken);
+                HttpContext.Session.SetString(GoogleSetupEmailSessionKey, googleResponse.SetupEmail ?? string.Empty);
+                HttpContext.Session.SetString(GoogleSetupNameSessionKey, googleResponse.SetupFullName ?? string.Empty);
 
-            var redirectUrl = string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase)
-                ? Url.Action("Index", "Admin")
+                return Json(new
+                {
+                    success = true,
+                    requiresPasswordSetup = true,
+                    redirectUrl = Url.Action(nameof(SetGooglePassword), "Account")
+                });
+            }
+
+            if (googleResponse.Auth is null)
+            {
+                return Json(new { success = false, message = "Không đọc được thông tin đăng nhập." });
+            }
+
+            await SignIn(googleResponse.Auth, rememberMe: true);
+
+            var redirectUrl = string.Equals(googleResponse.Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? Url.Action("Index", "Dashboard", new { area = "Admin" })
                 : Url.Action("Index", "Home");
 
             return Json(new { success = true, redirectUrl });
@@ -355,6 +378,83 @@ public class AccountController : Controller
         {
             return Json(new { success = false, message = "Có lỗi xảy ra khi đăng nhập bằng Google: " + ex.Message });
         }
+    }
+
+    [HttpGet]
+    public IActionResult SetGooglePassword()
+    {
+        var idToken = HttpContext.Session.GetString(GoogleSetupTokenSessionKey);
+        if (string.IsNullOrWhiteSpace(idToken))
+        {
+            TempData["ErrorMessage"] = "Phiên thiết lập mật khẩu đã hết hạn. Vui lòng đăng nhập Google lại.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var model = new GooglePasswordSetupViewModel
+        {
+            Email = HttpContext.Session.GetString(GoogleSetupEmailSessionKey) ?? string.Empty,
+            FullName = HttpContext.Session.GetString(GoogleSetupNameSessionKey) ?? string.Empty
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetGooglePassword(GooglePasswordSetupViewModel model)
+    {
+        var idToken = HttpContext.Session.GetString(GoogleSetupTokenSessionKey);
+        if (string.IsNullOrWhiteSpace(idToken))
+        {
+            TempData["ErrorMessage"] = "Phiên thiết lập mật khẩu đã hết hạn. Vui lòng đăng nhập Google lại.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            model.Email = HttpContext.Session.GetString(GoogleSetupEmailSessionKey) ?? string.Empty;
+            model.FullName = HttpContext.Session.GetString(GoogleSetupNameSessionKey) ?? string.Empty;
+            return View(model);
+        }
+
+        var setupRequest = new GooglePasswordSetupRequest
+        {
+            IdToken = idToken,
+            Password = model.Password,
+            ConfirmPassword = model.ConfirmPassword
+        };
+
+        var response = await Api.PostAsJsonAsync("api/auth/google-setup-password", setupRequest);
+        if (!response.IsSuccessStatusCode)
+        {
+            await AddApiErrors(response);
+            model.Email = HttpContext.Session.GetString(GoogleSetupEmailSessionKey) ?? string.Empty;
+            model.FullName = HttpContext.Session.GetString(GoogleSetupNameSessionKey) ?? string.Empty;
+            return View(model);
+        }
+
+        var account = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        if (account is null)
+        {
+            ModelState.AddModelError(string.Empty, "Không đọc được thông tin đăng nhập.");
+            model.Email = HttpContext.Session.GetString(GoogleSetupEmailSessionKey) ?? string.Empty;
+            model.FullName = HttpContext.Session.GetString(GoogleSetupNameSessionKey) ?? string.Empty;
+            return View(model);
+        }
+
+        await SignIn(account, rememberMe: true);
+        HttpContext.Session.Remove(GoogleSetupTokenSessionKey);
+        HttpContext.Session.Remove(GoogleSetupEmailSessionKey);
+        HttpContext.Session.Remove(GoogleSetupNameSessionKey);
+
+        TempData["CartMessage"] = "Thiết lập mật khẩu thành công.";
+
+        if (string.Equals(account.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+        }
+
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]

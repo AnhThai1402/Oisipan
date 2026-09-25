@@ -54,10 +54,17 @@ window.GoogleLoginHandler = (function () {
                     throw new Error((result.data && result.data.message) || 'Đăng nhập Google thất bại.');
                 }
 
-                showMessage('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                var isSetupFlow = !!result.data.requiresPasswordSetup;
+                showMessage(
+                    isSetupFlow
+                        ? 'Vui lòng thiết lập mật khẩu để hoàn tất đăng nhập.'
+                        : 'Đăng nhập thành công! Đang chuyển hướng...',
+                    'success'
+                );
+
                 setTimeout(function () {
                     window.location.href = result.data.redirectUrl || '/';
-                }, 800);
+                }, isSetupFlow ? 400 : 800);
             })
             .catch(function (error) {
                 console.error('Google login error:', error);

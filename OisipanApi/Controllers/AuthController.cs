@@ -76,9 +76,9 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Email hoặc mật khẩu không đúng." });
         }
 
-        if (account.AuthProvider != "Local")
+        if (string.IsNullOrWhiteSpace(account.Password))
         {
-            return BadRequest(new { message = $"Tài khoản này được đăng ký bằng {account.AuthProvider}. Vui lòng sử dụng phương thức đăng nhập tương ứng." });
+            return BadRequest(new { message = "Tài khoản này chưa thiết lập mật khẩu. Vui lòng đăng nhập bằng Google để thiết lập mật khẩu." });
         }
 
         if (!IsPasswordValid(account, request.Password))
@@ -138,31 +138,20 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("google-login")]
-    public async Task<ActionResult<AuthResponse>> GoogleLogin(GoogleLoginRequest request)
+    public async Task<ActionResult<GoogleLoginResponse>> GoogleLogin(GoogleLoginRequest request)
     {
         try
         {
-            // Verify Google ID Token
-            var googleClientId = _configuration["GoogleAuth:ClientId"];
-            var settings = new GoogleJsonWebSignature.ValidationSettings
-            {
-                Audience = new[] { googleClientId }
-            };
-
-            var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
-
-            // Extract user info từ Google payload
+            var payload = await ValidateGoogleTokenAsync(request.IdToken);
             var googleId = payload.Subject;
             var email = payload.Email.ToLowerInvariant();
             var fullName = payload.Name;
 
-            // Tìm account theo GoogleId hoặc Email
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => 
+            var account = await _context.Accounts.FirstOrDefaultAsync(a =>
                 a.GoogleId == googleId || a.Email == email);
 
             if (account is null)
             {
-                // Tạo account mới cho Google user
                 account = new Account
                 {
                     FullName = fullName,
@@ -177,25 +166,62 @@ public class AuthController : ControllerBase
 
                 _context.Accounts.Add(account);
                 await _context.SaveChangesAsync();
+
+                return Ok(new GoogleLoginResponse
+                {
+                    RequiresPasswordSetup = true,
+                    SetupEmail = account.Email,
+                    SetupFullName = account.FullName
+                });
             }
-            else
+
+            if (!account.Status)
             {
-                // Account đã tồn tại - cập nhật GoogleId nếu chưa có
-                if (string.IsNullOrEmpty(account.GoogleId))
-                {
-                    account.GoogleId = googleId;
-                    account.AuthProvider = "Google";
-                    await _context.SaveChangesAsync();
-                }
-
-                // Check status
-                if (!account.Status)
-                {
-                    return BadRequest(new { message = "Tài khoản đã bị khóa." });
-                }
+                return BadRequest(new { message = "Tài khoản đã bị khóa." });
             }
 
-            return Ok(ToAuthResponse(account));
+            var hasChanges = false;
+
+            if (string.IsNullOrWhiteSpace(account.GoogleId))
+            {
+                account.GoogleId = googleId;
+                hasChanges = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(account.FullName) && !string.IsNullOrWhiteSpace(fullName))
+            {
+                account.FullName = fullName;
+                hasChanges = true;
+            }
+
+            var hasPassword = !string.IsNullOrWhiteSpace(account.Password);
+            var authProvider = ResolveAuthProvider(hasGoogle: true, hasPassword: hasPassword);
+            if (!string.Equals(account.AuthProvider, authProvider, StringComparison.OrdinalIgnoreCase))
+            {
+                account.AuthProvider = authProvider;
+                hasChanges = true;
+            }
+
+            if (hasChanges)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            if (!hasPassword)
+            {
+                return Ok(new GoogleLoginResponse
+                {
+                    RequiresPasswordSetup = true,
+                    SetupEmail = account.Email,
+                    SetupFullName = account.FullName
+                });
+            }
+
+            return Ok(new GoogleLoginResponse
+            {
+                RequiresPasswordSetup = false,
+                Auth = ToAuthResponse(account)
+            });
         }
         catch (InvalidJwtException)
         {
@@ -205,6 +231,88 @@ public class AuthController : ControllerBase
         {
             return BadRequest(new { message = "Đăng nhập Google thất bại: " + ex.Message });
         }
+    }
+
+    [HttpPost("google-setup-password")]
+    public async Task<ActionResult<AuthResponse>> SetupGooglePassword(GooglePasswordSetupRequest request)
+    {
+        try
+        {
+            var payload = await ValidateGoogleTokenAsync(request.IdToken);
+            var googleId = payload.Subject;
+            var email = payload.Email.ToLowerInvariant();
+            var fullName = payload.Name;
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a =>
+                a.GoogleId == googleId || a.Email == email);
+
+            if (account is null)
+            {
+                account = new Account
+                {
+                    FullName = fullName,
+                    Email = email,
+                    GoogleId = googleId,
+                    Role = "User",
+                    Status = true,
+                    PhoneNumber = null
+                };
+
+                _context.Accounts.Add(account);
+            }
+
+            if (!account.Status)
+            {
+                return BadRequest(new { message = "Tài khoản đã bị khóa." });
+            }
+
+            account.GoogleId = googleId;
+            if (string.IsNullOrWhiteSpace(account.FullName) && !string.IsNullOrWhiteSpace(fullName))
+            {
+                account.FullName = fullName;
+            }
+
+            account.Password = _passwordHasher.HashPassword(account, request.Password);
+            account.AuthProvider = ResolveAuthProvider(hasGoogle: true, hasPassword: true);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(ToAuthResponse(account));
+        }
+        catch (InvalidJwtException)
+        {
+            return Unauthorized(new { message = "Google token không hợp lệ." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "Thiết lập mật khẩu thất bại: " + ex.Message });
+        }
+    }
+
+    private async Task<GoogleJsonWebSignature.Payload> ValidateGoogleTokenAsync(string idToken)
+    {
+        var googleClientId = _configuration["GoogleAuth:ClientId"];
+        var settings = new GoogleJsonWebSignature.ValidationSettings
+        {
+            Audience = new[] { googleClientId }
+        };
+
+        return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+    }
+
+    private static string ResolveAuthProvider(bool hasGoogle, bool hasPassword)
+    {
+        if (hasGoogle && hasPassword)
+        {
+            return "Both";
+        }
+
+        if (hasGoogle)
+        {
+            return "Google";
+        }
+
+        return hasPassword ? "Local" : "Local";
     }
 
     [Authorize]
