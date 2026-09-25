@@ -16,7 +16,9 @@
     const priceInput = document.getElementById("variant-price");
     const stockInput = document.getElementById("variant-stock");
     const quickTipAlert = document.getElementById("quick-tip-alert");
+    const quickTipAlertEdit = document.getElementById("quick-tip-alert-edit");
 
+    // Auto-hide tip alerts
     if (quickTipAlert) {
         setTimeout(() => {
             quickTipAlert.style.transition = "opacity 0.4s ease";
@@ -25,6 +27,16 @@
                 quickTipAlert.style.display = "none";
             }, 400);
         }, 30000);
+    }
+
+    if (quickTipAlertEdit) {
+        setTimeout(() => {
+            quickTipAlertEdit.style.transition = "opacity 0.4s ease";
+            quickTipAlertEdit.style.opacity = "0";
+            setTimeout(() => {
+                quickTipAlertEdit.style.display = "none";
+            }, 400);
+        }, 15000);
     }
 
     function showFlash(message, type) {
